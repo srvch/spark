@@ -127,6 +127,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         sparkCount: filtered.length,
                         onLocationTap: () =>
                             _showLocationSelector(context),
+                        onRadiusTap: () =>
+                            _showPreferencesSheet(context),
                         radius: radius,
                       ),
                       const SizedBox(height: 14),
@@ -636,12 +638,14 @@ class _HeaderSection extends StatelessWidget {
     required this.selectedLocation,
     required this.sparkCount,
     required this.onLocationTap,
+    required this.onRadiusTap,
     required this.radius,
   });
 
   final String selectedLocation;
   final int sparkCount;
   final VoidCallback onLocationTap;
+  final VoidCallback onRadiusTap;
   final int radius;
 
   String get _greeting {
@@ -681,7 +685,7 @@ class _HeaderSection extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (sparkCount > 0)
+                  if (sparkCount >= 2)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -703,33 +707,69 @@ class _HeaderSection extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              GestureDetector(
-                onTap: onLocationTap,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      size: 13,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: onLocationTap,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          selectedLocation,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    '·',
+                    style: TextStyle(
+                      fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '$selectedLocation · ${radius}km radius',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: onRadiusTap,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${radius}km radius',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.tune_rounded,
+                          size: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 3),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
