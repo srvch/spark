@@ -23,6 +23,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   String timingPref = 'any';
   late final ScrollController _scrollController;
   bool _isInfiniteScrolling = false;
+  bool _heroExpanded = true;
 
   @override
   void initState() {
@@ -191,7 +192,89 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      const _HeroPanel(),
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => _heroExpanded = !_heroExpanded),
+                        child: AnimatedCrossFade(
+                          duration: const Duration(milliseconds: 280),
+                          crossFadeState: _heroExpanded
+                              ? CrossFadeState.showFirst
+                              : CrossFadeState.showSecond,
+                          firstChild: Stack(
+                            children: [
+                              const _HeroPanel(),
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.expand_less,
+                                        size: 14,
+                                        color: Colors.white70,
+                                      ),
+                                      SizedBox(width: 3),
+                                      Text(
+                                        'Hide',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          secondChild: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2F426F),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.explore,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Find plans happening around you',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Spacer(),
+                                Icon(
+                                  Icons.expand_more,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 12),
                       if (showMyActivity) ...[
                         InkWell(
@@ -370,13 +453,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ),
                         ),
                       if (loading) const SizedBox(height: 4),
-                      const Text(
-                        'Happening nearby',
-                        style: TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      const _LiveHeader(),
                       const SizedBox(height: 10),
                       if (filtered.isEmpty && !loading)
                         const _EmptyState(),
@@ -442,7 +519,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                           ),
                         ),
-                      const _WhySection(),
+                      const _CreateNudge(),
                     ],
                   ),
                 ),
@@ -1006,103 +1083,279 @@ class _NearbyCard extends StatelessWidget {
   final VoidCallback onTap;
   final String ctaLabel;
 
+  static Color _categoryColor(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => const Color(0xFF22C55E),
+        SparkCategory.study => const Color(0xFF3B82F6),
+        SparkCategory.ride => const Color(0xFF8B5CF6),
+        SparkCategory.events => const Color(0xFFF97316),
+        SparkCategory.hangout => const Color(0xFFEC4899),
+      };
+
+  static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => Icons.sports_soccer,
+        SparkCategory.study => Icons.menu_book_outlined,
+        SparkCategory.ride => Icons.directions_car_filled_outlined,
+        SparkCategory.events => Icons.event_outlined,
+        SparkCategory.hangout => Icons.groups_2_outlined,
+      };
+
   @override
   Widget build(BuildContext context) {
-    final icon = switch (spark.category) {
-      SparkCategory.sports => Icons.sports_soccer,
-      SparkCategory.study => Icons.menu_book_outlined,
-      SparkCategory.ride => Icons.directions_car_filled_outlined,
-      SparkCategory.events => Icons.event_outlined,
-      SparkCategory.hangout => Icons.groups_2_outlined,
-    };
+    final catColor = _categoryColor(spark.category);
+    final icon = _categoryIcon(spark.category);
+    final isLowSpots = spark.spotsLeft <= 2;
+    final isJoined = ctaLabel.startsWith('Open');
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE4EBFA),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: const Color(0xFF3E5E9E)),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    spark.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w700,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(width: 4, color: catColor),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 12, 12, 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: catColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(icon, color: catColor, size: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                spark.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${spark.timeLabel} · ${spark.location}',
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: isLowSpots
+                                          ? const Color(0xFFEF4444)
+                                          : const Color(0xFF22C55E),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    '${spark.spotsLeft} spots left',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: isLowSpots
+                                          ? const Color(0xFFEF4444)
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const Text(
+                                    ' • ',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
+                                    spark.distanceLabel,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isJoined
+                                ? const Color(0xFFE4EBFA)
+                                : AppColors.accent,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            isJoined ? 'Open' : 'Join',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: isJoined
+                                  ? AppColors.accent
+                                  : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${spark.timeLabel} · ${spark.location}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${spark.spotsLeft} spots left • ${spark.distanceLabel}',
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              ctaLabel,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _WhySection extends StatelessWidget {
-  const _WhySection();
+class _LiveHeader extends StatefulWidget {
+  const _LiveHeader();
+
+  @override
+  State<_LiveHeader> createState() => _LiveHeaderState();
+}
+
+class _LiveHeaderState extends State<_LiveHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(4, 8, 4, 8),
-      child: Text(
-        'Trusted for real-time plans,\nnear you.',
-        style: TextStyle(
-          fontSize: 33,
-          height: 1.02,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textSecondary,
+    return Row(
+      children: [
+        const Text(
+          'Happening nearby',
+          style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
         ),
+        const SizedBox(width: 8),
+        FadeTransition(
+          opacity: _pulse,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Color(0xFF22C55E),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CreateNudge extends StatelessWidget {
+  const _CreateNudge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F4FF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFD0DCFF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Nothing nearby? Start one.',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.accent,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Your spark could be what someone nearby is looking for right now.',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 14, color: Colors.white),
+                    SizedBox(width: 5),
+                    Text(
+                      'Create a spark',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
