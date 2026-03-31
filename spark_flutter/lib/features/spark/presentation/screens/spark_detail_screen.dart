@@ -82,20 +82,29 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
   }
 
   Future<void> _showJoinedSheet() async {
+    final catColor = _categoryColor(widget.spark.category);
+    final catDark = _categoryDarkColor(widget.spark.category);
+
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) {
+      builder: (ctx) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(color: catColor, shape: BoxShape.circle),
+                  child: Icon(Icons.check_rounded, size: 30, color: catDark),
+                ),
+                const SizedBox(height: 12),
                 const Text(
-                  'You are in',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                  "You're in!",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -105,80 +114,106 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 14),
-                FilledButton(
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.schedule_rounded, size: 13, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.spark.timeLabel,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(Icons.near_me_rounded, size: 13, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.spark.distanceLabel,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
+                    minimumSize: const Size.fromHeight(52),
                     backgroundColor: const Color(0xFF2F426F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () {
                     ref.read(analyticsServiceProvider).track(
                       'open_chat_from_join_sheet',
                       properties: {'spark_id': widget.spark.id},
                     );
-                    Navigator.of(context).pop();
+                    Navigator.of(ctx).pop();
                     Navigator.of(this.context).push(
                       MaterialPageRoute(
                         builder: (_) => ChatScreen(spark: widget.spark),
                       ),
                     );
                   },
-                  child: const Text('OPEN CHAT'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  icon: const Icon(Icons.chat_bubble_rounded, size: 18),
+                  label: const Text(
+                    'OPEN CHAT',
+                    style: TextStyle(letterSpacing: 0.6),
                   ),
-                  onPressed: () {
-                    showInviteFriendsBottomSheet(
-                      context: this.context,
-                      spark: widget.spark,
-                      source: 'post_join',
-                    );
-                  },
-                  child: const Text('INVITE FRIENDS'),
                 ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                const SizedBox(height: 12),
+                _JoinedActionTile(
+                  icon: Icons.person_add_rounded,
+                  label: 'Invite friends',
+                  subtitle: 'Fill spots faster by sharing',
+                  onTap: () => showInviteFriendsBottomSheet(
+                    context: this.context,
+                    spark: widget.spark,
+                    source: 'post_join',
                   ),
-                  onPressed: () => _openInMaps(this.context),
-                  child: const Text('VIEW LOCATION ON MAP'),
                 ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                _JoinedActionTile(
+                  icon: Icons.map_rounded,
+                  label: 'View location on map',
+                  subtitle: widget.spark.location,
+                  onTap: () => _openInMaps(this.context),
+                ),
+                _JoinedActionTile(
+                  icon: Icons.shield_rounded,
+                  label: 'Safety guidelines',
+                  subtitle: 'Review before meetup',
+                  onTap: _openSafetyGuidelines,
+                ),
+                const SizedBox(height: 2),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
                     ),
-                  ),
-                  onPressed: _openSafetyGuidelines,
-                  child: const Text('SAFETY GUIDELINES'),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () {
-                    unawaited(_leaveSpark(showMessage: false));
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('You left this spark')),
-                    );
-                  },
-                  child: const Text(
-                    'LEAVE SPARK',
-                    style: TextStyle(
-                      color: Color(0xFFDC2626),
-                      fontWeight: FontWeight.w700,
+                    onPressed: () {
+                      unawaited(_leaveSpark(showMessage: false));
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        const SnackBar(content: Text('You left this spark')),
+                      );
+                    },
+                    child: const Text(
+                      'Leave spark',
+                      style: TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
@@ -803,46 +838,84 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       isScrollControlled: true,
       builder: (_) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Safety Guidelines',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Please review before meetup.',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              ...guidelines.asMap().entries.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4ED),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.shield_rounded,
+                      size: 22,
+                      color: Color(0xFFEA580C),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${entry.key + 1}.',
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                        'Safety Guidelines',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        'Please review before meetup',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ...guidelines.asMap().entries.map(
+                (entry) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2F426F),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${entry.key + 1}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           entry.value,
                           style: const TextStyle(
                             fontSize: 13.5,
-                            height: 1.35,
+                            height: 1.4,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
@@ -1053,6 +1126,80 @@ class _ParticipantRowData {
   final String role;
   final String badge;
   final Color badgeColor;
+}
+
+class _JoinedActionTile extends StatelessWidget {
+  const _JoinedActionTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Icon(icon, size: 19, color: AppColors.accent),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _StatPill extends StatelessWidget {
