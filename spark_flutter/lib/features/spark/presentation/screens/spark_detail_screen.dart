@@ -234,12 +234,36 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       0.0,
       1.0,
     ).toDouble();
+    final catColor = _categoryColor(spark.category);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spark')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: catColor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 7),
+            Text(
+              spark.category.label,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: _copyShareLink,
+            icon: const Icon(Icons.ios_share_rounded, size: 20),
+            tooltip: 'Share',
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -247,7 +271,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 scale: _joinScale,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
-                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(18),
@@ -257,15 +280,23 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x10000000),
+                        color: Color(0x0C000000),
                         blurRadius: 12,
                         offset: Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(height: 4, color: catColor),
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                     Row(
                       children: [
                         Container(
@@ -274,42 +305,20 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: catColor.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: AppColors.border),
                           ),
                           child: Text(
                             spark.category.label.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              letterSpacing: 0.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              letterSpacing: 0.6,
+                              fontWeight: FontWeight.w800,
+                              color: _categoryDarkColor(spark.category),
                             ),
                           ),
                         ),
                         const Spacer(),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: _copyShareLink,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: const Icon(
-                              Icons.share_outlined,
-                              size: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         if (joined)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -320,24 +329,25 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               color: const Color(0xFFEAF2FF),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Text(
-                              'Joined',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF2F426F),
-                              ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_rounded,
+                                    size: 12, color: Color(0xFF2F426F)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Joined',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2F426F),
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         else if (spark.startsInMinutes <= 30)
-                          const Text(
-                            'Starting soon',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFEA580C),
-                            ),
-                          ),
+                          _CountdownBadge(minutes: spark.startsInMinutes),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -365,9 +375,19 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     ],
                     Row(
                       children: [
-                        _MetaInline(icon: Icons.schedule_outlined, text: spark.timeLabel),
-                        const SizedBox(width: 16),
-                        _MetaInline(icon: Icons.place_outlined, text: spark.distanceLabel),
+                        _StatPill(
+                          icon: Icons.schedule_rounded,
+                          text: spark.timeLabel,
+                          color: const Color(0xFF2F426F),
+                          bg: const Color(0xFFEEF2FF),
+                        ),
+                        const SizedBox(width: 8),
+                        _StatPill(
+                          icon: Icons.near_me_rounded,
+                          text: spark.distanceLabel,
+                          color: const Color(0xFF059669),
+                          bg: const Color(0xFFD1FAE5),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -594,7 +614,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -707,6 +731,22 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       ),
     );
   }
+
+  static Color _categoryColor(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => const Color(0xFF86EFAC),
+        SparkCategory.study => const Color(0xFF93C5FD),
+        SparkCategory.ride => const Color(0xFFC4B5FD),
+        SparkCategory.events => const Color(0xFFFDBA74),
+        SparkCategory.hangout => const Color(0xFFF9A8D4),
+      };
+
+  static Color _categoryDarkColor(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => const Color(0xFF15803D),
+        SparkCategory.study => const Color(0xFF1D4ED8),
+        SparkCategory.ride => const Color(0xFF6D28D9),
+        SparkCategory.events => const Color(0xFFB45309),
+        SparkCategory.hangout => const Color(0xFFBE185D),
+      };
 
   String _creatorDisplayName({
     required String createdByRaw,
@@ -1013,6 +1053,108 @@ class _ParticipantRowData {
   final String role;
   final String badge;
   final Color badgeColor;
+}
+
+class _StatPill extends StatelessWidget {
+  const _StatPill({
+    required this.icon,
+    required this.text,
+    required this.color,
+    required this.bg,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+  final Color bg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CountdownBadge extends StatefulWidget {
+  const _CountdownBadge({required this.minutes});
+  final int minutes;
+
+  @override
+  State<_CountdownBadge> createState() => _CountdownBadgeState();
+}
+
+class _CountdownBadgeState extends State<_CountdownBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  )..repeat(reverse: true);
+  late final Animation<double> _opacity =
+      Tween<double>(begin: 0.5, end: 1.0).animate(_pulse);
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = widget.minutes <= 0
+        ? 'Starting now'
+        : widget.minutes == 1
+            ? 'In 1 min'
+            : 'In ${widget.minutes} min';
+    return FadeTransition(
+      opacity: _opacity,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF4ED),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.bolt_rounded,
+              size: 12,
+              color: Color(0xFFEA580C),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFEA580C),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _MetaInline extends StatelessWidget {
