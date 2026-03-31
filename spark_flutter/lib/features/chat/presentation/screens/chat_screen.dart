@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/auth/auth_state.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../shared/widgets/primary_button.dart';
 import '../../../spark/domain/spark.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../controllers/chat_controller.dart';
 
-const _bannerBlue = Color(0xFF2F426F);
+const _kNavy = Color(0xFF2F426F);
+const _kNavyLight = Color(0xFFEAF0FF);
+const _kSurface = Color(0xFFF7F8FC);
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.spark});
@@ -20,17 +20,20 @@ class ChatScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
-  final TextEditingController controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
   static const _quickReplies = <String>[
-    'Reaching in 5 min',
-    'At the location',
-    'Running 10 min late',
-    'Please share exact spot',
+    'Reaching in 5 min 👋',
+    'At the location ✅',
+    'Running 10 min late 🙏',
+    'Please share exact spot 📍',
   ];
 
   @override
   void dispose() {
-    controller.dispose();
+    _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -65,13 +68,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final messages = thread
         .where((msg) => !hiddenUserIds.contains(msg.senderId))
         .toList();
-    final availableParticipants = participants
+    final visibleCount = participants
         .where((p) => !hiddenUserIds.contains(p.id))
-        .toList();
+        .length;
 
     return Scaffold(
+      backgroundColor: _kSurface,
       appBar: AppBar(
-        titleSpacing: 8,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: _kNavy,
+          ),
+        ),
+        titleSpacing: 4,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -79,14 +95,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               widget.spark.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: _kNavy,
+                fontFamily: 'Manrope',
+              ),
             ),
             Text(
-              '${availableParticipants.length} people · ${isHost ? 'Host controls on' : 'Participant'}',
+              '$visibleCount people · ${widget.spark.timeLabel}',
               style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w600,
+                color: Color(0xFF9CA3AF),
               ),
             ),
           ],
@@ -94,73 +115,134 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           if (isHost)
             IconButton(
-              tooltip: 'Manage participants',
+              tooltip: 'Host controls',
               onPressed: () => _openHostControls(context, participants, moderation),
-              icon: const Icon(Icons.shield_outlined, color: Color(0xFF2F426F)),
+              icon: const Icon(
+                Icons.shield_outlined,
+                color: _kNavy,
+                size: 20,
+              ),
             ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: const Color(0xFFF0F1F5)),
+        ),
       ),
       body: SafeArea(
         child: Column(
           children: [
+            // ── Message list ─────────────────────────────────────
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.all(12),
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final message = messages[index];
                   final showSender = index == 0 ||
                       messages[index - 1].senderId != message.senderId;
-                  return _MessageRow(message: message, showSender: showSender);
-                },
-              ),
-            ),
-            SizedBox(
-              height: 40,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  final text = _quickReplies[index];
-                  return ActionChip(
-                    label: Text(
-                      text,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    onPressed: () {
-                      controller.text = text;
-                      _sendMessage(currentUserId, currentUserName);
-                    },
+                  final isLast = index == messages.length - 1 ||
+                      messages[index + 1].senderId != message.senderId;
+                  return _MessageBubble(
+                    message: message,
+                    showSender: showSender,
+                    isLast: isLast,
                   );
                 },
-                separatorBuilder: (_, _) => const SizedBox(width: 8),
-                itemCount: _quickReplies.length,
               ),
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+            // ── Quick replies ─────────────────────────────────────
+            Container(
+              height: 38,
+              color: Colors.white,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: _quickReplies.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final text = _quickReplies[index];
+                  return GestureDetector(
+                    onTap: () {
+                      _controller.text = text;
+                      _sendMessage(currentUserId, currentUserName);
+                    },
+                    child: Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: const Color(0xFFDDE1ED)),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        text,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _kNavy,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // ── Input bar ─────────────────────────────────────────
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: controller,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(currentUserId, currentUserName),
-                      decoration: const InputDecoration(hintText: 'Message'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _kSurface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFE4E7EF)),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) =>
+                            _sendMessage(currentUserId, currentUserName),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: 'Message the group…',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFFB0B7C3),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  SizedBox(
-                    width: 92,
-                    child: PrimaryButton(
-                      label: 'SEND',
-                      compact: true,
-                      backgroundColor: _bannerBlue,
-                      onPressed: () => _sendMessage(currentUserId, currentUserName),
+                  GestureDetector(
+                    onTap: () => _sendMessage(currentUserId, currentUserName),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: _kNavy,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -182,7 +264,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       name: spark.createdBy == currentUserId ? 'You' : 'Spark host',
       isHost: true,
     );
-    final me = _ChatUser(id: currentUserId, name: currentUserName, isHost: spark.createdBy == currentUserId);
+    final me = _ChatUser(
+        id: currentUserId,
+        name: currentUserName,
+        isHost: spark.createdBy == currentUserId);
     final others = <_ChatUser>[
       for (var i = 0; i < spark.participants.length; i++)
         _ChatUser(
@@ -231,14 +316,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _sendMessage(String currentUserId, String currentUserName) {
-    final text = controller.text.trim();
+    final text = _controller.text.trim();
     if (text.isEmpty) return;
     final map = {...ref.read(chatThreadsProvider)};
-    final current = [...(map[widget.spark.id] ?? _initialMessages(
-      spark: widget.spark,
-      currentUserId: currentUserId,
-      currentUserName: currentUserName,
-    ))];
+    final current = [
+      ...(map[widget.spark.id] ??
+          _initialMessages(
+            spark: widget.spark,
+            currentUserId: currentUserId,
+            currentUserName: currentUserName,
+          ))
+    ];
     current.add(
       ChatMessage(
         senderId: currentUserId,
@@ -258,7 +346,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         'length': text.length,
       },
     );
-    controller.clear();
+    _controller.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> _openHostControls(
@@ -270,29 +367,54 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       builder: (context) {
         final members = users.where((u) => !u.isHost).toList();
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Host controls',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _kNavyLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.shield_outlined,
+                          color: _kNavy, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Host controls',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _kNavy,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                        Text(
+                          'Remove or block participants',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Remove or block participants for this spark chat.',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 ...members.map(
                   (user) => _HostControlRow(
                     user: user,
@@ -318,7 +440,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
     ref.read(chatModerationProvider.notifier).state = map;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Participant removed from this spark')),
+      const SnackBar(content: Text('Participant removed')),
     );
   }
 
@@ -330,7 +452,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
     ref.read(chatModerationProvider.notifier).state = map;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Participant blocked for this spark')),
+      const SnackBar(content: Text('Participant blocked')),
     );
   }
 
@@ -361,80 +483,104 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
+// ── Data types ────────────────────────────────────────────────────────────────
+
 class _ChatUser {
   const _ChatUser({
     required this.id,
     required this.name,
     this.isHost = false,
   });
-
   final String id;
   final String name;
   final bool isHost;
 }
 
-class _MessageRow extends StatelessWidget {
-  const _MessageRow({required this.message, required this.showSender});
+// ── Message bubble ────────────────────────────────────────────────────────────
+
+class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({
+    required this.message,
+    required this.showSender,
+    required this.isLast,
+  });
 
   final ChatMessage message;
   final bool showSender;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
     if (message.isMine) {
-      return Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 260),
-          margin: const EdgeInsets.only(bottom: 10, left: 64),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: _bannerBlue.withValues(alpha: 0.12),
-            border: Border.all(color: _bannerBlue.withValues(alpha: 0.25)),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (showSender)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    message.isHost ? 'You • Host' : 'You',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textSecondary,
-                    ),
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: isLast ? 10 : 3,
+          left: 64,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (showSender)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4, right: 2),
+                child: Text(
+                  message.isHost ? 'You · Host' : 'You',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF9CA3AF),
                   ),
                 ),
-              Text(
-                message.text,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
+              ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: _kNavy,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(18),
+                  topRight: const Radius.circular(18),
+                  bottomLeft: const Radius.circular(18),
+                  bottomRight: Radius.circular(isLast ? 4 : 18),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                message.timeLabel,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    message.text,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    message.timeLabel,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: Colors.white.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
 
+    // Others' message
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: isLast ? 10 : 3),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          _InitialAvatar(name: message.sender),
+          if (isLast)
+            _Avatar(name: message.sender)
+          else
+            const SizedBox(width: 32),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -442,23 +588,37 @@ class _MessageRow extends StatelessWidget {
               children: [
                 if (showSender)
                   Padding(
-                    padding: const EdgeInsets.only(left: 2, bottom: 4),
+                    padding: const EdgeInsets.only(bottom: 4, left: 2),
                     child: Text(
-                      message.isHost ? '${message.sender} • Host' : message.sender,
+                      message.isHost
+                          ? '${message.sender} · Host'
+                          : message.sender,
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF9CA3AF),
                       ),
                     ),
                   ),
                 Container(
                   constraints: const BoxConstraints(maxWidth: 260),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: AppColors.border),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(isLast ? 4 : 18),
+                      topRight: const Radius.circular(18),
+                      bottomLeft: const Radius.circular(18),
+                      bottomRight: const Radius.circular(18),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,16 +626,18 @@ class _MessageRow extends StatelessWidget {
                       Text(
                         message.text,
                         style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1A202C),
+                          height: 1.35,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         message.timeLabel,
                         style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
+                          fontSize: 10.5,
+                          color: Color(0xFF9CA3AF),
                         ),
                       ),
                     ],
@@ -484,11 +646,52 @@ class _MessageRow extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 64),
         ],
       ),
     );
   }
 }
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: _kNavyLight,
+        shape: BoxShape.circle,
+      ),
+      child: Text(
+        _initials(name),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: _kNavy,
+        ),
+      ),
+    );
+  }
+
+  String _initials(String value) {
+    final parts = value.trim().split(RegExp(r'\s+'));
+    if (parts.length == 1) {
+      final s = parts.first;
+      return s.isEmpty ? '?' : s.substring(0, 1).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+}
+
+// ── Host control row ──────────────────────────────────────────────────────────
 
 class _HostControlRow extends StatelessWidget {
   const _HostControlRow({
@@ -507,57 +710,77 @@ class _HostControlRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          _InitialAvatar(name: user.name),
-          const SizedBox(width: 8),
+          _Avatar(name: user.name),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               user.name,
               style: const TextStyle(
-                fontSize: 13.5,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: _kNavy,
+                fontFamily: 'Manrope',
               ),
             ),
           ),
           if (removed || blocked)
-            Text(
-              removed ? 'Removed' : 'Blocked',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: removed ? const Color(0xFFB45309) : const Color(0xFFB91C1C),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                removed ? 'Removed' : 'Blocked',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF6B7280),
+                ),
               ),
             )
           else ...[
-            TextButton(
-              onPressed: onRemove,
-              child: const Text(
-                'Remove',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFB45309),
+            GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Remove',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6B7280),
+                  ),
                 ),
               ),
             ),
-            TextButton(
-              onPressed: onBlock,
-              child: const Text(
-                'Block',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFB91C1C),
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: onBlock,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Block',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFDC2626),
+                  ),
                 ),
               ),
             ),
@@ -565,42 +788,5 @@ class _HostControlRow extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _InitialAvatar extends StatelessWidget {
-  const _InitialAvatar({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 30,
-      height: 30,
-      alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: Color(0xFFE2E8F0),
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        _toInitials(name),
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
-        ),
-      ),
-    );
-  }
-
-  String _toInitials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      final single = parts.first;
-      return single.isEmpty ? '?' : single.substring(0, 1).toUpperCase();
-    }
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-        .toUpperCase();
   }
 }
