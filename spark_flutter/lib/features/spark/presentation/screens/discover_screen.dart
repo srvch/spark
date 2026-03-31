@@ -1292,11 +1292,11 @@ class _NearbyCardState extends State<_NearbyCard> {
       };
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => Icons.sports_soccer,
-        SparkCategory.study => Icons.menu_book_outlined,
-        SparkCategory.ride => Icons.directions_car_filled_outlined,
-        SparkCategory.events => Icons.event_outlined,
-        SparkCategory.hangout => Icons.groups_2_outlined,
+        SparkCategory.sports => Icons.directions_run_rounded,
+        SparkCategory.study => Icons.auto_stories_rounded,
+        SparkCategory.ride => Icons.drive_eta_rounded,
+        SparkCategory.events => Icons.confirmation_number_outlined,
+        SparkCategory.hangout => Icons.coffee_outlined,
       };
 
   String _countdown() {

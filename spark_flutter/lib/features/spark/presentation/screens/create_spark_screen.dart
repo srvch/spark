@@ -526,11 +526,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       };
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => Icons.sports_soccer_rounded,
-        SparkCategory.study => Icons.menu_book_rounded,
-        SparkCategory.ride => Icons.directions_car_rounded,
-        SparkCategory.events => Icons.event_rounded,
-        SparkCategory.hangout => Icons.groups_2_rounded,
+        SparkCategory.sports => Icons.directions_run_rounded,
+        SparkCategory.study => Icons.auto_stories_rounded,
+        SparkCategory.ride => Icons.drive_eta_rounded,
+        SparkCategory.events => Icons.confirmation_number_outlined,
+        SparkCategory.hangout => Icons.coffee_outlined,
       };
 
   void _setPlanText(String value) {
@@ -2040,11 +2040,11 @@ class _CreateScreenHeader extends StatelessWidget {
       };
 
   static IconData _icon(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => Icons.sports_soccer_rounded,
-        SparkCategory.study => Icons.menu_book_rounded,
-        SparkCategory.ride => Icons.directions_car_rounded,
-        SparkCategory.events => Icons.event_rounded,
-        SparkCategory.hangout => Icons.groups_2_rounded,
+        SparkCategory.sports => Icons.directions_run_rounded,
+        SparkCategory.study => Icons.auto_stories_rounded,
+        SparkCategory.ride => Icons.drive_eta_rounded,
+        SparkCategory.events => Icons.confirmation_number_outlined,
+        SparkCategory.hangout => Icons.coffee_outlined,
       };
 
   @override
