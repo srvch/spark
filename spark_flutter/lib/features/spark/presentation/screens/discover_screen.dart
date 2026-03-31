@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/navigation/root_shell.dart';
 import '../../domain/spark.dart';
 import '../controllers/spark_controller.dart';
 import 'spark_detail_screen.dart';
