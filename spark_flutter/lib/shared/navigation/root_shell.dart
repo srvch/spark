@@ -15,6 +15,8 @@ class RootShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(bottomTabProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0D1117) : Colors.white;
+    final divider = isDark ? const Color(0xFF2D333B) : const Color(0xFFEEF0F4);
 
     final screens = const [
       DiscoverScreen(),
@@ -25,80 +27,63 @@ class RootShell extends ConsumerWidget {
 
     return Scaffold(
       body: screens[tab],
-      bottomNavigationBar: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-        child: Container(
-          height: 62,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161B22) : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark ? const Color(0xFF2D333B) : const Color(0xFFE5E7EB),
+      bottomNavigationBar: Container(
+        color: bg,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(height: 1, color: divider),
+            SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 58,
+                child: Row(
+                  children: [
+                    _NavItem(
+                      label: 'Discover',
+                      icon: Icons.explore_outlined,
+                      activeIcon: Icons.explore_rounded,
+                      selected: tab == 0,
+                      onTap: () =>
+                          ref.read(bottomTabProvider.notifier).state = 0,
+                    ),
+                    _NavItem(
+                      label: 'Create',
+                      icon: Icons.add_circle_outline_rounded,
+                      activeIcon: Icons.add_circle_rounded,
+                      selected: tab == 1,
+                      onTap: () =>
+                          ref.read(bottomTabProvider.notifier).state = 1,
+                    ),
+                    _NavItem(
+                      label: 'Chat',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      activeIcon: Icons.chat_bubble_rounded,
+                      selected: tab == 2,
+                      onTap: () =>
+                          ref.read(bottomTabProvider.notifier).state = 2,
+                    ),
+                    _NavItem(
+                      label: 'Profile',
+                      icon: Icons.person_outline_rounded,
+                      activeIcon: Icons.person_rounded,
+                      selected: tab == 3,
+                      onTap: () =>
+                          ref.read(bottomTabProvider.notifier).state = 3,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isDark
-                    ? Colors.black.withValues(alpha: 0.4)
-                    : Colors.black.withValues(alpha: 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _BottomNavItem(
-                  label: 'Discover',
-                  icon: Icons.explore_outlined,
-                  activeIcon: Icons.explore,
-                  selected: tab == 0,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 0,
-                ),
-              ),
-              Expanded(
-                child: _BottomNavItem(
-                  label: 'Create',
-                  icon: Icons.add_circle_outline,
-                  activeIcon: Icons.add_circle,
-                  selected: tab == 1,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 1,
-                ),
-              ),
-              Expanded(
-                child: _BottomNavItem(
-                  label: 'Chat',
-                  icon: Icons.chat_bubble_outline,
-                  activeIcon: Icons.chat_bubble,
-                  selected: tab == 2,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 2,
-                ),
-              ),
-              Expanded(
-                child: _BottomNavItem(
-                  label: 'Profile',
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  selected: tab == 3,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 3,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _BottomNavItem extends StatelessWidget {
-  const _BottomNavItem({
+class _NavItem extends StatelessWidget {
+  const _NavItem({
     required this.label,
     required this.icon,
     required this.activeIcon,
@@ -114,36 +99,49 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    final inactive = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF8B949E)
-        : const Color(0xFF6B7280);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const activeColor = Color(0xFF2F426F);
+    final inactiveColor =
+        isDark ? const Color(0xFF8B949E) : const Color(0xFF9CA3AF);
+    final activeBg = isDark
+        ? const Color(0xFF1E2A40)
+        : const Color(0xFFEEF2FF);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: Icon(
-                selected ? activeIcon : icon,
-                key: ValueKey(selected),
-                size: 20,
-                color: selected ? accent : inactive,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: selected ? activeBg : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: Icon(
+                  selected ? activeIcon : icon,
+                  key: ValueKey(selected),
+                  size: 22,
+                  color: selected ? activeColor : inactiveColor,
+                ),
               ),
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
+            const SizedBox(height: 2),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: selected ? accent : inactive,
+                fontSize: 10.5,
+                fontWeight:
+                    selected ? FontWeight.w800 : FontWeight.w500,
+                color: selected ? activeColor : inactiveColor,
               ),
+              child: Text(label),
             ),
           ],
         ),
