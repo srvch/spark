@@ -1255,10 +1255,8 @@ class _NearbyCard extends StatefulWidget {
 class _NearbyCardState extends State<_NearbyCard> {
   Timer? _timer;
 
-  static const _avatarColors = [
-    Color(0xFF6366F1), Color(0xFF0EA5E9), Color(0xFF10B981),
-    Color(0xFFF59E0B), Color(0xFFEC4899), Color(0xFF8B5CF6),
-  ];
+  static const _avatarBg = Color(0xFFDDE3F0);
+  static const _avatarFg = Color(0xFF2F426F);
   static const _avatarInitials = ['A', 'J', 'S', 'M', 'R', 'K', 'P', 'D'];
 
   @override
@@ -1274,22 +1272,6 @@ class _NearbyCardState extends State<_NearbyCard> {
     _timer?.cancel();
     super.dispose();
   }
-
-  static Color _categoryColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF86EFAC),
-        SparkCategory.study => const Color(0xFF93C5FD),
-        SparkCategory.ride => const Color(0xFFC4B5FD),
-        SparkCategory.events => const Color(0xFFFDBA74),
-        SparkCategory.hangout => const Color(0xFFF9A8D4),
-      };
-
-  static Color _categoryDarkColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF15803D),
-        SparkCategory.study => const Color(0xFF1D4ED8),
-        SparkCategory.ride => const Color(0xFF6D28D9),
-        SparkCategory.events => const Color(0xFFC2410C),
-        SparkCategory.hangout => const Color(0xFFBE185D),
-      };
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
         SparkCategory.sports => Icons.directions_run_rounded,
@@ -1312,17 +1294,14 @@ class _NearbyCardState extends State<_NearbyCard> {
     final seed = widget.spark.id.hashCode.abs();
     final count = 2 + (seed % 2);
     return List.generate(count, (i) {
-      final ci = (seed + i * 7) % _avatarColors.length;
       final ii = (seed + i * 13) % _avatarInitials.length;
-      return (_avatarColors[ci], _avatarInitials[ii]);
+      return (_avatarBg, _avatarInitials[ii]);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final spark = widget.spark;
-    final catColor = _categoryColor(spark.category);
-    final catDarkColor = _categoryDarkColor(spark.category);
     final icon = _categoryIcon(spark.category);
     final isLowSpots = spark.spotsLeft <= 2;
     final isJoined = widget.ctaLabel == 'Chat';
@@ -1349,7 +1328,7 @@ class _NearbyCardState extends State<_NearbyCard> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(width: 5, color: catColor),
+                Container(width: 4, color: const Color(0xFFE8ECF4)),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
@@ -1360,12 +1339,12 @@ class _NearbyCardState extends State<_NearbyCard> {
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: catColor.withOpacity(0.18),
+                            color: const Color(0xFFF0F3FA),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             icon,
-                            color: catDarkColor,
+                            color: const Color(0xFF2F426F),
                             size: 20,
                           ),
                         ),
@@ -1458,7 +1437,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                                       style: const TextStyle(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFFDC2626),
+                                        color: Color(0xFF2F426F),
                                       ),
                                     ),
                                   ],
@@ -1533,7 +1512,7 @@ class _AvatarStack extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 8,
                     fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    color: Color(0xFF2F426F),
                   ),
                 ),
               ),

@@ -199,9 +199,30 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                   subtitle: 'Review before meetup',
                   onTap: _openSafetyGuidelines,
                 ),
-                const SizedBox(height: 2),
-                Align(
-                  alignment: Alignment.centerLeft,
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2F426F),
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(
+                      'Done',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Center(
                   child: TextButton(
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -945,6 +966,28 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF2F426F),
+                    minimumSize: const Size.fromHeight(50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'Understood',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
               ),
