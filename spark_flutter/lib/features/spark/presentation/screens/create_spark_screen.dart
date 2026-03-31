@@ -154,17 +154,15 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _CreateScreenHeader(category: _manualCategory),
+              const SizedBox(height: 14),
               Expanded(
                 child: SingleChildScrollView(
                   child: _SectionCard(
+                    accentColor: _categoryAccentColor(_manualCategory),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "What’s your plan?",
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 6),
                         const SizedBox(height: 4),
                         _LabeledField(
                           label: 'Title',
@@ -518,6 +516,22 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       ),
     );
   }
+
+  static Color _categoryAccentColor(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => const Color(0xFF86EFAC),
+        SparkCategory.study => const Color(0xFF93C5FD),
+        SparkCategory.ride => const Color(0xFFC4B5FD),
+        SparkCategory.events => const Color(0xFFFDBA74),
+        SparkCategory.hangout => const Color(0xFFF9A8D4),
+      };
+
+  static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => Icons.sports_soccer_rounded,
+        SparkCategory.study => Icons.menu_book_rounded,
+        SparkCategory.ride => Icons.directions_car_rounded,
+        SparkCategory.events => Icons.event_rounded,
+        SparkCategory.hangout => Icons.groups_2_rounded,
+      };
 
   void _setPlanText(String value) {
     _planController.text = value;
@@ -2008,21 +2022,119 @@ class _SelectField<T> extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.child});
+class _CreateScreenHeader extends StatelessWidget {
+  const _CreateScreenHeader({required this.category});
+  final SparkCategory category;
 
-  final Widget child;
+  static Color _accentColor(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => const Color(0xFF86EFAC),
+        SparkCategory.study => const Color(0xFF93C5FD),
+        SparkCategory.ride => const Color(0xFFC4B5FD),
+        SparkCategory.events => const Color(0xFFFDBA74),
+        SparkCategory.hangout => const Color(0xFFF9A8D4),
+      };
+
+  static IconData _icon(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => Icons.sports_soccer_rounded,
+        SparkCategory.study => Icons.menu_book_rounded,
+        SparkCategory.ride => Icons.directions_car_rounded,
+        SparkCategory.events => Icons.event_rounded,
+        SparkCategory.hangout => Icons.groups_2_rounded,
+      };
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+    final accent = _accentColor(category);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'New Spark',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Plan something tiny, nearby, right now.',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              _icon(category),
+              key: ValueKey(category),
+              color: accent == const Color(0xFF86EFAC)
+                  ? const Color(0xFF15803D)
+                  : accent == const Color(0xFF93C5FD)
+                      ? const Color(0xFF1D4ED8)
+                      : accent == const Color(0xFFC4B5FD)
+                          ? const Color(0xFF6D28D9)
+                          : accent == const Color(0xFFFDBA74)
+                              ? const Color(0xFFB45309)
+                              : const Color(0xFFBE185D),
+              size: 20,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.child, this.accentColor});
+
+  final Widget child;
+  final Color? accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (accentColor != null)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: 4,
+                color: accentColor,
+              ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: child,
+            ),
+          ],
+        ),
       ),
-      child: child,
     );
   }
 }
