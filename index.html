@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spark | Nano events near you</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">S</div>
+          <div>
+            <p class="eyebrow">live around you</p>
+            <h1>Spark</h1>
+          </div>
+        </div>
+        <nav class="topnav" aria-label="Primary">
+          <a href="#discover">Discover</a>
+          <a href="#flow">How it works</a>
+          <a href="#create">Create spark</a>
+        </nav>
+        <button class="ghost-button">Set location</button>
+      </header>
+
+      <main>
+        <section class="hero" id="discover">
+          <div class="hero-copy reveal">
+            <p class="hero-kicker">Nano plans. Real people. Right now.</p>
+            <h2>Find a game, ride, show, or side quest happening near you.</h2>
+            <p class="hero-text">
+              Spark turns nearby intent into instant social plans. Browse what is
+              happening in your radius or post your own spark in under a minute.
+            </p>
+            <div class="hero-actions">
+              <button class="primary-button" type="button">Explore nearby sparks</button>
+              <button class="text-button" type="button">Preview matching radius</button>
+            </div>
+            <ul class="signal-list" aria-label="Spark benefits">
+              <li>Live within 2 hours</li>
+              <li>Radius-based matching</li>
+              <li>Built for micro plans</li>
+            </ul>
+          </div>
+
+          <div class="hero-visual reveal">
+            <div class="radar-stage">
+              <div class="radar-grid"></div>
+              <div class="radar-ring ring-one"></div>
+              <div class="radar-ring ring-two"></div>
+              <div class="radar-ring ring-three"></div>
+              <div class="radar-center"></div>
+
+              <article class="spark-pin pin-cricket">
+                <span class="pin-category">Sports</span>
+                <strong>Evening cricket</strong>
+                <span>6:30 PM · 2 spots left</span>
+              </article>
+
+              <article class="spark-pin pin-airport">
+                <span class="pin-category">Transit</span>
+                <strong>Airport cab share</strong>
+                <span>In 45 min · Terminal 3</span>
+              </article>
+
+              <article class="spark-pin pin-comedy">
+                <span class="pin-category">Culture</span>
+                <strong>Open mic drop-in</strong>
+                <span>Tonight · 1 seat open</span>
+              </article>
+
+              <article class="spark-pin pin-house">
+                <span class="pin-category">Life</span>
+                <strong>House hunting loop</strong>
+                <span>Sunday · South block</span>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="discovery-grid">
+          <div class="panel panel-main reveal">
+            <div class="section-heading">
+              <p class="eyebrow">nearby now</p>
+              <h3>Live sparks around Indiranagar</h3>
+            </div>
+
+            <div class="spark-stream">
+              <article class="stream-row">
+                <div>
+                  <span class="stream-tag sports">Sports</span>
+                  <h4>Box cricket at Turf 27</h4>
+                  <p>Starts in 2h · 4 km away · Need 3 more players</p>
+                </div>
+                <button>Join</button>
+              </article>
+
+              <article class="stream-row">
+                <div>
+                  <span class="stream-tag fun">Fun</span>
+                  <h4>Board game table at Cubby</h4>
+                  <p>7:15 PM · 1.6 km away · Casual walk-ins welcome</p>
+                </div>
+                <button>Join</button>
+              </article>
+
+              <article class="stream-row">
+                <div>
+                  <span class="stream-tag transit">Transit</span>
+                  <h4>Airport ride split to T1</h4>
+                  <p>Leaves in 35 min · 2 seats available · Verified route</p>
+                </div>
+                <button>Ride along</button>
+              </article>
+
+              <article class="stream-row">
+                <div>
+                  <span class="stream-tag culture">Culture</span>
+                  <h4>Late comedy room at Third Wave</h4>
+                  <p>8:00 PM · 2.9 km away · Looking for a small group</p>
+                </div>
+                <button>Tap in</button>
+              </article>
+            </div>
+          </div>
+
+          <aside class="panel panel-side reveal">
+            <div class="section-heading">
+              <p class="eyebrow">match settings</p>
+              <h3>Dial your spark radius</h3>
+            </div>
+
+            <div class="preference-block">
+              <div class="preference-label">
+                <span>Current radius</span>
+                <strong id="radiusValue">8 km</strong>
+              </div>
+              <input id="radiusRange" type="range" min="1" max="20" value="8" />
+            </div>
+
+            <div class="preference-block">
+              <div class="preference-label">
+                <span>Preferred vibe</span>
+                <strong>Active + social</strong>
+              </div>
+              <div class="chip-row">
+                <button class="chip active" type="button" data-category="Sports">Sports</button>
+                <button class="chip" type="button" data-category="Transit">Transit</button>
+                <button class="chip" type="button" data-category="Fun">Fun</button>
+                <button class="chip" type="button" data-category="Culture">Culture</button>
+                <button class="chip" type="button" data-category="Life">Life</button>
+              </div>
+            </div>
+
+            <div class="preference-block">
+              <div class="preference-label">
+                <span>Time window</span>
+                <strong>Today, next 4h</strong>
+              </div>
+              <div class="mini-stack">
+                <div class="mini-row">
+                  <span>Priority visibility</span>
+                  <strong>Spontaneous plans</strong>
+                </div>
+                <div class="mini-row">
+                  <span>Distance balance</span>
+                  <strong>Nearby first</strong>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="categories reveal">
+          <div class="section-heading">
+            <p class="eyebrow">categories</p>
+            <h3>Built for the tiny plans people actually make</h3>
+          </div>
+
+          <div class="category-rail">
+            <article>
+              <span>01</span>
+              <h4>Sports</h4>
+              <p>Cricket, badminton, football, padel, running loops.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <h4>Transit</h4>
+              <p>Airport rides, train station splits, intercity companions.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <h4>Fun</h4>
+              <p>Play arenas, cafés, arcade runs, spontaneous meetups.</p>
+            </article>
+            <article>
+              <span>04</span>
+              <h4>Culture</h4>
+              <p>Comedy rooms, open mics, storytelling, shows, screenings.</p>
+            </article>
+            <article>
+              <span>05</span>
+              <h4>Life</h4>
+              <p>House hunting, local errands, study circles, social chores.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="flow-band reveal" id="flow">
+          <div class="flow-copy">
+            <p class="eyebrow">how spark works</p>
+            <h3>Short shelf life is the whole point.</h3>
+            <p>
+              Every spark is location-aware, time-bound, and intentionally small.
+              That keeps the feed alive, useful, and focused on what can actually
+              happen today.
+            </p>
+          </div>
+
+          <div class="flow-steps">
+            <article>
+              <strong>01</strong>
+              <h4>Create intent</h4>
+              <p>Post what you are doing, when it starts, and how many people can join.</p>
+            </article>
+            <article>
+              <strong>02</strong>
+              <h4>Match by radius</h4>
+              <p>The app distributes sparks to people nearby with shared preferences.</p>
+            </article>
+            <article>
+              <strong>03</strong>
+              <h4>Close the plan</h4>
+              <p>Chat, confirm, and let the spark disappear once the moment is over.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="composer reveal" id="create">
+          <div class="section-heading">
+            <p class="eyebrow">create spark</p>
+            <h3>Post a spark in less than 60 seconds</h3>
+          </div>
+
+          <div class="composer-grid">
+            <form class="composer-form">
+              <label>
+                Spark title
+                <input id="sparkTitle" type="text" value="Evening cricket near HAL grounds" />
+              </label>
+              <label>
+                Category
+                <select id="sparkCategory">
+                  <option>Sports</option>
+                  <option>Transit</option>
+                  <option>Fun</option>
+                  <option>Culture</option>
+                  <option>Life</option>
+                </select>
+              </label>
+              <label>
+                Start time
+                <input id="sparkTime" type="text" value="Today · 6:30 PM" />
+              </label>
+              <label>
+                Location
+                <input id="sparkLocation" type="text" value="HAL Turf, Indiranagar" />
+              </label>
+              <label>
+                Spots open
+                <input id="sparkSpots" type="number" value="3" min="1" max="20" />
+              </label>
+              <label>
+                Visibility radius
+                <input id="sparkRadius" type="text" value="8 km around current location" />
+              </label>
+              <label class="full-span">
+                Details
+                <textarea rows="4">Need 3 players for a friendly evening cricket session. Casual level, quick game, bring your own shoes.</textarea>
+              </label>
+              <div class="form-actions full-span">
+                <button type="button" class="primary-button">Launch spark</button>
+                <button type="button" class="ghost-button">Save draft</button>
+              </div>
+            </form>
+
+            <div class="composer-preview">
+              <p class="preview-label">Live preview</p>
+              <article class="preview-card">
+                <span class="stream-tag sports" id="previewCategoryTag">Sports</span>
+                <h4 id="previewTitle">Evening cricket near HAL grounds</h4>
+                <p id="previewTime">Today · 6:30 PM</p>
+                <p id="previewLocation">HAL Turf, Indiranagar</p>
+                <div class="preview-meta">
+                  <span id="previewSpots">3 spots open</span>
+                  <span id="previewRadius">8 km radius</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
