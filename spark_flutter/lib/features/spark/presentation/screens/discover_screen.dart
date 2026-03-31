@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
@@ -25,19 +26,31 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   String query = '';
   late final ScrollController _scrollController;
   bool _isInfiniteScrolling = false;
-  bool _heroExpanded = true;
+  bool _heroExpanded = false;
   String _timingTab = 'all';
+
+  static const String _heroSeenKey = 'hero_seen_v1';
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _initHeroState();
     Future.microtask(() {
       ref.read(sparkDataControllerProvider).refreshNearby(
         radiusKm: radius.toDouble(),
       );
     });
+  }
+
+  Future<void> _initHeroState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_heroSeenKey) ?? false;
+    if (!seen) {
+      if (mounted) setState(() => _heroExpanded = true);
+      await prefs.setBool(_heroSeenKey, true);
+    }
   }
 
   void _onScroll() {
@@ -427,8 +440,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       child: _NearbyCard(
                         spark: spark,
                         ctaLabel: joinedSparkIds.contains(spark.id)
-                            ? 'Open →'
-                            : 'Join →',
+                            ? 'Chat'
+                            : 'Join',
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -1395,7 +1408,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     final catColor = _categoryColor(spark.category);
     final icon = _categoryIcon(spark.category);
     final isLowSpots = spark.spotsLeft <= 2;
-    final isJoined = widget.ctaLabel.startsWith('Open');
+    final isJoined = widget.ctaLabel == 'Chat';
     final avatars = _avatars();
 
     return InkWell(
@@ -1447,66 +1460,86 @@ class _NearbyCardState extends State<_NearbyCard> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                '${spark.location}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isLowSpots
-                                          ? const Color(0xFFFEE2E2)
-                                          : const Color(0xFFDCFCE7),
-                                      borderRadius:
-                                          BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      _countdown(),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                        color: isLowSpots
-                                            ? const Color(0xFFDC2626)
-                                            : const Color(0xFF16A34A),
-                                      ),
-                                    ),
+                                  const Icon(
+                                    Icons.schedule_rounded,
+                                    size: 12,
+                                    color: AppColors.textSecondary,
                                   ),
-                                  const SizedBox(width: 6),
-                                  _AvatarStack(avatars: avatars),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 3),
                                   Text(
-                                    '${avatars.length} joining',
+                                    _countdown(),
                                     style: const TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textSecondary,
                                     ),
                                   ),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 5),
+                                    child: Text(
+                                      '·',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.near_me_rounded,
+                                    size: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      spark.distanceLabel,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isLowSpots
-                                    ? '${spark.spotsLeft} spots left · ${spark.distanceLabel}'
-                                    : spark.distanceLabel,
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isLowSpots
-                                      ? const Color(0xFFDC2626)
-                                      : AppColors.textSecondary,
-                                ),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  _AvatarStack(avatars: avatars),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    '${spark.participants.length} joining',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  if (isLowSpots) ...[
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 5),
+                                      child: Text(
+                                        '·',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${spark.spotsLeft} left',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFFDC2626),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
@@ -1524,7 +1557,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            isJoined ? 'Open' : 'Join',
+                            widget.ctaLabel,
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,

@@ -494,7 +494,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                   ),
                 ),
               PrimaryButton(
-                label: 'CREATE SPARK',
+                label: 'Create',
                 backgroundColor: const Color(0xFF2F426F),
                 onPressed: () async {
                   if (validationMessage == null) {
@@ -1763,20 +1763,25 @@ class _ManualForm extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: SparkCategory.values
-              .map(
-                (c) => ChoiceChip(
-                  label: Text(c.label),
-                  showCheckmark: false,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  selected: c == category,
-                  onSelected: (_) => onCategoryChanged(c),
-                ),
-              )
-              .toList(),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: SparkCategory.values
+                .map(
+                  (c) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(c.label),
+                      showCheckmark: false,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      selected: c == category,
+                      onSelected: (_) => onCategoryChanged(c),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
         ),
         const SizedBox(height: 10),
         LayoutBuilder(
@@ -2053,7 +2058,7 @@ class _CreateScreenHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'New Spark',
+                "What's your plan?",
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
@@ -2189,8 +2194,8 @@ class _PeopleStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 46,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -2201,7 +2206,8 @@ class _PeopleStepper extends StatelessWidget {
           IconButton(
             onPressed: onDecrease,
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.remove, size: 18),
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.remove, size: 16),
             color: AppColors.textSecondary,
           ),
           Expanded(
@@ -2209,7 +2215,7 @@ class _PeopleStepper extends StatelessWidget {
               '$value people',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
@@ -2218,7 +2224,8 @@ class _PeopleStepper extends StatelessWidget {
           IconButton(
             onPressed: onIncrease,
             visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.add, size: 18),
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.add, size: 16),
             color: AppColors.textSecondary,
           ),
         ],
