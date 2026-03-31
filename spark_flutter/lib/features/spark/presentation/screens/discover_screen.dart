@@ -124,9 +124,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     children: [
                       _HeaderSection(
                         selectedLocation: selectedLocation,
-                        sparkCount: filtered.length,
                         onLocationTap: () =>
                             _showLocationSelector(context),
+                        onRadiusTap: () =>
+                            _showPreferencesSheet(context),
                         radius: radius,
                       ),
                       const SizedBox(height: 14),
@@ -634,14 +635,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 class _HeaderSection extends StatelessWidget {
   const _HeaderSection({
     required this.selectedLocation,
-    required this.sparkCount,
     required this.onLocationTap,
+    required this.onRadiusTap,
     required this.radius,
   });
 
   final String selectedLocation;
-  final int sparkCount;
   final VoidCallback onLocationTap;
+  final VoidCallback onRadiusTap;
   final int radius;
 
   String get _greeting {
@@ -680,56 +681,72 @@ class _HeaderSection extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  if (sparkCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2F426F),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '$sparkCount nearby',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 6),
-              GestureDetector(
-                onTap: onLocationTap,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      size: 13,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: onLocationTap,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          selectedLocation,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    '·',
+                    style: TextStyle(
+                      fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '$selectedLocation · ${radius}km radius',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: onRadiusTap,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${radius}km radius',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        const Icon(
+                          Icons.tune_rounded,
+                          size: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 3),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
