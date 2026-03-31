@@ -615,40 +615,77 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(999),
-                            child: LinearProgressIndicator(
-                              value: fillRatio,
-                              minHeight: 7,
-                              backgroundColor: const Color(0xFFE2E8F0),
-                              valueColor: AlwaysStoppedAnimation<Color>(spotsColor),
+                    if (spark.maxSpots > 0) ...[
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: fillRatio,
+                          minHeight: 7,
+                          backgroundColor: const Color(0xFFE2E8F0),
+                          valueColor: AlwaysStoppedAnimation<Color>(spotsColor),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            '${spark.maxSpots - spark.spotsLeft}/${spark.maxSpots} spots filled',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${spark.spotsLeft} left',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            color: spotsColor,
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              '·',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${spark.maxSpots - spark.spotsLeft}/${spark.maxSpots} spots filled',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
+                          if (spark.spotsLeft <= 1) ...[
+                            const Icon(
+                              Icons.bolt_rounded,
+                              size: 12,
+                              color: Color(0xFFDC2626),
+                            ),
+                            const SizedBox(width: 2),
+                          ],
+                          Text(
+                            '${spark.spotsLeft} ${spark.spotsLeft == 1 ? 'spot' : 'spots'} left',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: spotsColor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.groups_rounded,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 5),
+                          const Text(
+                            'Open group · anyone can join',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                             ],
                           ),
                         ),
