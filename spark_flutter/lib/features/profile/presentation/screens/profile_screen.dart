@@ -12,6 +12,10 @@ import '../../../spark/presentation/screens/activity_screen.dart';
 import '../../../spark/presentation/screens/spark_detail_screen.dart';
 import '../controllers/profile_preferences_controller.dart';
 
+const _kNavy = Color(0xFF2F426F);
+const _kNavyLight = Color(0xFFEAF0FF);
+const _kDivider = Color(0xFFF0F1F5);
+
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -22,6 +26,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _name = 'Saurav';
   String _email = 'spark@saurav.app';
+  final String _memberSince = "Mar '26";
   final String _referralCode = 'SAURAV10';
   final AnalyticsService _analytics = AnalyticsService();
 
@@ -33,256 +38,236 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final recent = _recentItems(created: created, joined: joined);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
+        child: Column(
+          children: [
+            // ── App bar ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
                 children: [
-                  InkWell(
-                    borderRadius: BorderRadius.circular(999),
+                  GestureDetector(
                     onTap: () => Navigator.of(context).maybePop(),
                     child: Container(
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: const Color(0xFFF5F5F7),
                         borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: AppColors.border),
                       ),
                       child: const Icon(
                         Icons.arrow_back_rounded,
                         size: 18,
-                        color: AppColors.textPrimary,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Profile',
-                      style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Account',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      fontFamily: 'Manrope',
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: ListView(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+            ),
+
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  // ── Profile row ───────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Avatar
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: _kNavy,
+                          child: Text(
+                            _initials(_name),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: 'Manrope',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor: const Color(0xFF2F426F),
-                                child: Text(
-                                  _initials(_name),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                              Text(
+                                _name,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black,
+                                  fontFamily: 'Manrope',
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      _name,
-                                      style: const TextStyle(
-                                        fontSize: 31,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _email,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: AppColors.textSecondary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
+                              const SizedBox(height: 2),
+                              Text(
+                                '$_email  ·  Since $_memberSince',
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54,
+                                  fontFamily: 'Manrope',
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              GestureDetector(
+                                onTap: _openEditProfileSheet,
+                                child: const Text(
+                                  'Edit profile →',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: _kNavy,
+                                    fontFamily: 'Manrope',
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Tiny plans. Real people. Right now.',
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatTile(
-                            label: 'Created',
-                            value: '${created.length}',
-                            icon: Icons.bolt_outlined,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _StatTile(
-                            label: 'Joined',
-                            value: '${joined.length}',
-                            icon: Icons.people_outline,
-                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    _StatInfoBar(
-                      createdCount: created.length,
-                      joinedCount: joined.length,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Quick stats row ───────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: _kDivider),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          children: [
+                            _QuickStat(
+                              icon: Icons.bolt_rounded,
+                              label: 'Created',
+                              value: '${created.length}',
+                              isFirst: true,
+                            ),
+                            VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: _kDivider,
+                            ),
+                            _QuickStat(
+                              icon: Icons.people_outline_rounded,
+                              label: 'Joined',
+                              value: '${joined.length}',
+                              isFirst: false,
+                            ),
+                            VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: _kDivider,
+                            ),
+                            _QuickStat(
+                              icon: Icons.local_fire_department_outlined,
+                              label: 'Total',
+                              value: '${created.length + joined.length}',
+                              isFirst: false,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    _ReferralCard(
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Referral banner ───────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _ReferralBanner(
                       referralCode: _referralCode,
                       onShare: _shareInvite,
                       onCopyCode: _copyInviteCode,
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Your Sparks',
-                            style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const ActivityScreen()),
-                            );
-                          },
-                          child: const Text(
-                            'See all',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2F426F),
-                            ),
-                          ),
-                        ),
-                      ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Menu sections ─────────────────────────────────
+                  _SectionLabel('Activity'),
+                  _MenuRow(
+                    icon: Icons.bolt_outlined,
+                    label: 'Your Sparks',
+                    sublabel: recent.isEmpty
+                        ? 'No activity yet'
+                        : '${created.length} created · ${joined.length} joined',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ActivityScreen()),
                     ),
-                    Text(
-                      'Recent joined or created sparks',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (recent.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Text(
-                          'No sparks yet. Join or create a spark to see activity here.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      )
-                    else
-                      ...recent.map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _RecentSparkCard(
-                            title: item.spark.title,
-                            subtitle: '${item.spark.timeLabel} · ${item.spark.location}',
-                            tag: item.tag,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => SparkDetailScreen(spark: item.spark),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 10),
-                    _NotificationPrefs(
-                      startsSoon: notificationPrefs.notifyStartsSoon,
-                      fillingFast: notificationPrefs.notifyFillingFast,
-                      radiusKm: notificationPrefs.radiusKm,
-                      interests: notificationPrefs.interests,
-                      onStartsSoonChanged: (v) => ref
-                          .read(notificationPreferencesProvider.notifier)
-                          .setStartsSoon(v),
-                      onFillingFastChanged: (v) => ref
-                          .read(notificationPreferencesProvider.notifier)
-                          .setFillingFast(v),
-                      onRadiusChanged: (km) => ref
-                          .read(notificationPreferencesProvider.notifier)
-                          .setRadius(km),
-                      onInterestToggle: (category) => ref
-                          .read(notificationPreferencesProvider.notifier)
-                          .toggleInterest(category),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Reminder preferences are available for on-device testing now.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _LegalLinks(
-                      onSosTap: () {
-                        _analytics.track('sos_from_profile_tapped');
-                        _openLegalFlow(_LegalType.safety);
-                      },
-                      onTap: (type) {
-                        _analytics.track('legal_link_opened', properties: {'type': type.name});
-                        _openLegalFlow(type);
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+
+                  const _Divider(),
+                  _SectionLabel('Preferences'),
+                  _MenuRow(
+                    icon: Icons.notifications_outlined,
+                    label: 'Notification alerts',
+                    sublabel: notificationPrefs.notifyStartsSoon ||
+                            notificationPrefs.notifyFillingFast
+                        ? 'Alerts on'
+                        : 'Alerts off',
+                    onTap: () => _showAlertsSheet(context),
+                  ),
+
+                  const _Divider(),
+                  _SectionLabel('Safety & Legal'),
+                  _MenuRow(
+                    icon: Icons.sos_rounded,
+                    label: 'SOS Alert',
+                    labelColor: const Color(0xFFB91C1C),
+                    iconColor: const Color(0xFFB91C1C),
+                    onTap: () {
+                      _analytics.track('sos_from_profile_tapped');
+                      _openLegalFlow(_LegalType.safety);
+                    },
+                  ),
+                  _MenuRow(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Privacy policy',
+                    onTap: () {
+                      _analytics.track('legal_link_opened',
+                          properties: {'type': 'privacy'});
+                      _openLegalFlow(_LegalType.privacy);
+                    },
+                  ),
+                  _MenuRow(
+                    icon: Icons.groups_outlined,
+                    label: 'Community guidelines',
+                    isLast: true,
+                    onTap: () {
+                      _analytics.track('legal_link_opened',
+                          properties: {'type': 'guidelines'});
+                      _openLegalFlow(_LegalType.guidelines);
+                    },
+                  ),
+
+                  const SizedBox(height: 40),
+                ],
               ),
-              const SizedBox(height: 10),
-              PrimaryButton(
-                label: 'EDIT PROFILE',
-                backgroundColor: const Color(0xFF2F426F),
-                onPressed: _openEditProfileSheet,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -292,7 +277,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required List<Spark> created,
     required List<Spark> joined,
   }) {
-    final createdMapped = created.map((spark) => _ProfileRecentItem(spark, 'Created'));
+    final createdMapped =
+        created.map((spark) => _ProfileRecentItem(spark, 'Created'));
     final createdIds = created.map((e) => e.id).toSet();
     final joinedMapped = joined
         .where((spark) => !createdIds.contains(spark.id))
@@ -303,45 +289,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _openLegalFlow(_LegalType type) {
     switch (type) {
       case _LegalType.privacy:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const _LegalDocumentScreen(
-              title: 'Privacy Policy',
-              paragraphs: [
-                'Spark only stores data needed to run real-time nearby coordination.',
-                'Phone login data, spark participation, and safety reports are stored securely.',
-                'We do not expose private personal details inside spark cards or chat lists.',
-                'Location is used only for discovery, sorting, and relevance.',
-              ],
-            ),
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const _LegalDocumentScreen(
+            title: 'Privacy Policy',
+            paragraphs: [
+              'Spark only stores data needed to run real-time nearby coordination.',
+              'Phone login data, spark participation, and safety reports are stored securely.',
+              'We do not expose private personal details inside spark cards or chat lists.',
+              'Location is used only for discovery, sorting, and relevance.',
+            ],
           ),
-        );
+        ));
       case _LegalType.guidelines:
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const _LegalDocumentScreen(
-              title: 'Community Guidelines',
-              paragraphs: [
-                'Create real, time-bound sparks only.',
-                'No harassment, abuse, illegal activity, or misleading posts.',
-                'Respect participant safety and keep location details accurate.',
-                'Repeated violations can lead to account restrictions.',
-              ],
-            ),
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const _LegalDocumentScreen(
+            title: 'Community Guidelines',
+            paragraphs: [
+              'Create real, time-bound sparks only.',
+              'No harassment, abuse, illegal activity, or misleading posts.',
+              'Respect participant safety and keep location details accurate.',
+              'Repeated violations can lead to account restrictions.',
+            ],
           ),
-        );
+        ));
       case _LegalType.safety:
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const _SafetyReportScreen()),
-        );
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const _SafetyReportScreen()));
     }
   }
 
-  String _inviteMessage() {
-    return 'Join me on Spark for real-time plans nearby.\n'
-        'Use my invite code $_referralCode while signing up.\n'
-        'https://spark.app/invite/$_referralCode';
-  }
+  String _inviteMessage() =>
+      'Join me on Spark for real-time plans nearby.\n'
+      'Use my invite code $_referralCode while signing up.\n'
+      'https://spark.app/invite/$_referralCode';
 
   Future<void> _shareInvite() async {
     _analytics.track('referral_share_tapped', properties: {'code': _referralCode});
@@ -365,7 +345,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         behavior: SnackBarBehavior.floating,
         content: Text('Invite code copied'),
         duration: Duration(seconds: 2),
-        backgroundColor: Color(0xFF2F426F),
+        backgroundColor: _kNavy,
       ),
     );
   }
@@ -391,7 +371,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           16,
           8,
           16,
-          MediaQuery.of(context).viewInsets.bottom + 16,
+          MediaQuery.of(context).viewInsets.bottom + 24,
         ),
         child: Form(
           key: formKey,
@@ -401,15 +381,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               const Text(
                 'Edit profile',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Manrope',
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'Your name',
-                ),
+                decoration: const InputDecoration(labelText: 'Name'),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Name is required';
@@ -417,14 +398,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'name@example.com',
-                ),
+                decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) {
                   final text = value?.trim() ?? '';
                   if (text.isEmpty || !text.contains('@')) {
@@ -433,10 +411,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
               PrimaryButton(
                 label: 'SAVE CHANGES',
-                backgroundColor: const Color(0xFF2F426F),
+                backgroundColor: _kNavy,
                 onPressed: () {
                   if (!formKey.currentState!.validate()) return;
                   setState(() {
@@ -445,11 +423,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   });
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(this.context).showSnackBar(
-                    SnackBar(
+                    const SnackBar(
                       behavior: SnackBarBehavior.floating,
-                      content: const Text('Profile updated'),
-                      duration: const Duration(seconds: 2),
-                      backgroundColor: const Color(0xFF2F426F),
+                      content: Text('Profile updated'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: _kNavy,
                     ),
                   );
                 },
@@ -460,133 +438,199 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
-}
 
-enum _LegalType { privacy, guidelines, safety }
-
-class _ProfileRecentItem {
-  const _ProfileRecentItem(this.spark, this.tag);
-  final Spark spark;
-  final String tag;
-}
-
-class _NotificationPrefs extends StatelessWidget {
-  const _NotificationPrefs({
-    required this.startsSoon,
-    required this.fillingFast,
-    required this.radiusKm,
-    required this.interests,
-    required this.onStartsSoonChanged,
-    required this.onFillingFastChanged,
-    required this.onRadiusChanged,
-    required this.onInterestToggle,
-  });
-
-  final bool startsSoon;
-  final bool fillingFast;
-  final int radiusKm;
-  final Set<SparkCategory> interests;
-  final ValueChanged<bool> onStartsSoonChanged;
-  final ValueChanged<bool> onFillingFastChanged;
-  final ValueChanged<int> onRadiusChanged;
-  final ValueChanged<SparkCategory> onInterestToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Notification interests',
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: SparkCategory.values
-                .where((c) => c != SparkCategory.hangout)
-                .map(
-                  (category) => FilterChip(
-                    selected: interests.contains(category),
-                    label: Text(category.label),
-                    onSelected: (_) => onInterestToggle(category),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Notify radius',
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [2, 5, 10]
-                .map(
-                  (km) => ChoiceChip(
-                    label: Text('$km km'),
-                    selected: radiusKm == km,
-                    onSelected: (_) => onRadiusChanged(km),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Notify: starts in 15 min',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-                ),
-              ),
-              Switch(
-                value: startsSoon,
-                onChanged: onStartsSoonChanged,
-                activeThumbColor: const Color(0xFF2F426F),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Notify: filling fast',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-                ),
-              ),
-              Switch(
-                value: fillingFast,
-                onChanged: onFillingFastChanged,
-                activeThumbColor: const Color(0xFF2F426F),
-              ),
-            ],
-          ),
-        ],
+  void _showAlertsSheet(BuildContext ctx) {
+    final container = ProviderScope.containerOf(ctx);
+    showModalBottomSheet<void>(
+      context: ctx,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => UncontrolledProviderScope(
+        container: container,
+        child: const _AlertsSheet(),
       ),
     );
   }
 }
 
-class _ReferralCard extends StatelessWidget {
-  const _ReferralCard({
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick stat cell
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _QuickStat extends StatelessWidget {
+  const _QuickStat({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.isFirst,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isFirst;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: _kNavy),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.black,
+                fontFamily: 'Manrope',
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.black54,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section label
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.black38,
+          letterSpacing: 0.6,
+          fontFamily: 'Manrope',
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Menu row
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    this.sublabel,
+    this.labelColor,
+    this.iconColor,
+    this.isLast = false,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? sublabel;
+  final Color? labelColor;
+  final Color? iconColor;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 22,
+              child: Icon(
+                icon,
+                size: 20,
+                color: iconColor ?? Colors.black54,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: labelColor ?? Colors.black,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                  if (sublabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      sublabel!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black45,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Colors.black26,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Thin divider
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 24, thickness: 4, color: Color(0xFFF5F5F7));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Referral banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ReferralBanner extends StatelessWidget {
+  const _ReferralBanner({
     required this.referralCode,
     required this.onShare,
     required this.onCopyCode,
@@ -599,353 +643,319 @@ class _ReferralCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        color: const Color(0xFFEEF3FF),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          const Text(
-            'Refer Spark',
-            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Grow trusted circles: unlock profile badge, early features, and host boost.',
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+          // Large ghost text watermark
+          Positioned(
+            right: -8,
+            top: -4,
+            child: Text(
+              referralCode,
+              style: TextStyle(
+                fontSize: 52,
+                fontWeight: FontWeight.w900,
+                color: _kNavy.withOpacity(0.06),
+                fontFamily: 'Manrope',
+                letterSpacing: 2,
+              ),
             ),
           ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Code',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    referralCode,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-                  ),
-                ),
-                TextButton(
-                  onPressed: onCopyCode,
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF2F426F),
-                    minimumSize: const Size(0, 0),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text(
-                    'Copy',
-                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onShare,
-              icon: const Icon(Icons.ios_share_rounded, size: 16),
-              label: const Text(
-                'Share invite',
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2F426F),
-                side: const BorderSide(color: Color(0xFF2F426F)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LegalLinks extends StatelessWidget {
-  const _LegalLinks({
-    required this.onTap,
-    required this.onSosTap,
-  });
-
-  final void Function(_LegalType type) onTap;
-  final VoidCallback onSosTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const links = <(_LegalType, String)>[
-      (_LegalType.privacy, 'Privacy policy'),
-      (_LegalType.guidelines, 'Community guidelines'),
-      (_LegalType.safety, 'Report a safety issue'),
-    ];
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Safety & legal',
-            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: onSosTap,
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFB91C1C),
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              icon: const Icon(Icons.sos_rounded, size: 18),
-              label: const Text(
-                'SOS ALERT',
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (final link in links)
-            InkWell(
-              onTap: () => onTap(link.$1),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
+                Row(
                   children: [
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      link.$2,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _kNavy,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'INVITE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.8,
+                          fontFamily: 'Manrope',
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatInfoBar extends StatelessWidget {
-  const _StatInfoBar({
-    required this.createdCount,
-    required this.joinedCount,
-  });
-
-  final int createdCount;
-  final int joinedCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.local_fire_department_outlined, size: 16, color: Color(0xFF2F426F)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$createdCount created · $joinedCount joined',
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D111827),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: const Color(0xFF2F426F)),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RecentSparkCard extends StatelessWidget {
-  const _RecentSparkCard({
-    required this.title,
-    required this.subtitle,
-    required this.tag,
-    required this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final String tag;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7EDF9),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.bolt_rounded, color: Color(0xFF2F426F), size: 18),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Refer friends, unlock\nhost boost & early access',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    height: 1.35,
+                    fontFamily: 'Manrope',
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF0FF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                tag,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2F426F),
                 ),
+                const SizedBox(height: 12),
+                // Code pill + buttons row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: _kNavy.withOpacity(0.15)),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              referralCode,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: _kNavy,
+                                letterSpacing: 1.5,
+                                fontFamily: 'Manrope',
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: onCopyCode,
+                              child: const Icon(
+                                Icons.copy_rounded,
+                                size: 16,
+                                color: _kNavy,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: onShare,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: _kNavy,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Invite →',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Alerts sheet (modal)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AlertsSheet extends ConsumerWidget {
+  const _AlertsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(notificationPreferencesProvider);
+    final notifier = ref.read(notificationPreferencesProvider.notifier);
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Notification alerts',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Manrope',
               ),
             ),
-            const SizedBox(width: 6),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 4),
+            const Text(
+              'Control when Spark notifies you',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.black45,
+                fontFamily: 'Manrope',
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            _SheetToggleRow(
+              icon: Icons.timer_outlined,
+              label: 'Starts in 15 min',
+              value: prefs.notifyStartsSoon,
+              onChanged: notifier.setStartsSoon,
+            ),
+            const Divider(height: 1, color: _kDivider),
+            _SheetToggleRow(
+              icon: Icons.people_outline_rounded,
+              label: 'Filling fast',
+              value: prefs.notifyFillingFast,
+              onChanged: notifier.setFillingFast,
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'NOTIFY RADIUS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.6,
+                fontFamily: 'Manrope',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [2, 5, 10]
+                  .map(
+                    (km) => ChoiceChip(
+                      label: Text('$km km'),
+                      selected: prefs.radiusKm == km,
+                      onSelected: (_) => notifier.setRadius(km),
+                      selectedColor: _kNavyLight,
+                      labelStyle: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: prefs.radiusKm == km ? _kNavy : Colors.black54,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'INTERESTS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.6,
+                fontFamily: 'Manrope',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: SparkCategory.values
+                  .where((c) => c != SparkCategory.hangout)
+                  .map(
+                    (category) => FilterChip(
+                      selected: prefs.interests.contains(category),
+                      label: Text(category.label),
+                      onSelected: (_) => notifier.toggleInterest(category),
+                      selectedColor: _kNavyLight,
+                      labelStyle: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: prefs.interests.contains(category)
+                            ? _kNavy
+                            : Colors.black54,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class _SheetToggleRow extends StatelessWidget {
+  const _SheetToggleRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.black54),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: _kNavy,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Legal & Safety
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum _LegalType { privacy, guidelines, safety }
+
+class _ProfileRecentItem {
+  const _ProfileRecentItem(this.spark, this.tag);
+  final Spark spark;
+  final String tag;
 }
 
 class _LegalDocumentScreen extends StatelessWidget {
@@ -964,20 +974,18 @@ class _LegalDocumentScreen extends StatelessWidget {
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: paragraphs.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              paragraphs[index],
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.45,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Text(
+            paragraphs[index],
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -1010,7 +1018,11 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
           children: [
             const Text(
               'Tell us what happened',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Manrope',
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -1023,11 +1035,12 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
             const SizedBox(height: 14),
             PrimaryButton(
               label: 'SUBMIT REPORT',
-              backgroundColor: const Color(0xFF2F426F),
+              backgroundColor: _kNavy,
               onPressed: () {
                 if (_controller.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please add a short description')),
+                    const SnackBar(
+                        content: Text('Please add a short description')),
                   );
                   return;
                 }
