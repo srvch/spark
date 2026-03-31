@@ -1084,11 +1084,11 @@ class _NearbyCard extends StatelessWidget {
   final String ctaLabel;
 
   static Color _categoryColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF22C55E),
-        SparkCategory.study => const Color(0xFF3B82F6),
-        SparkCategory.ride => const Color(0xFF8B5CF6),
-        SparkCategory.events => const Color(0xFFF97316),
-        SparkCategory.hangout => const Color(0xFFEC4899),
+        SparkCategory.sports => const Color(0xFF86EFAC),
+        SparkCategory.study => const Color(0xFF93C5FD),
+        SparkCategory.ride => const Color(0xFFC4B5FD),
+        SparkCategory.events => const Color(0xFFFDBA74),
+        SparkCategory.hangout => const Color(0xFFF9A8D4),
       };
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
@@ -1131,10 +1131,14 @@ class _NearbyCard extends StatelessWidget {
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: catColor.withValues(alpha: 0.12),
+                            color: const Color(0xFFEEF2FF),
                             borderRadius: BorderRadius.circular(13),
                           ),
-                          child: Icon(icon, color: catColor, size: 22),
+                          child: Icon(
+                            icon,
+                            color: const Color(0xFF3E5E9E),
+                            size: 22,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
