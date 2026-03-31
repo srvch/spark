@@ -427,8 +427,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       child: _NearbyCard(
                         spark: spark,
                         ctaLabel: joinedSparkIds.contains(spark.id)
-                            ? 'Open →'
-                            : 'Join →',
+                            ? 'Chat'
+                            : 'Join',
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -1395,7 +1395,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     final catColor = _categoryColor(spark.category);
     final icon = _categoryIcon(spark.category);
     final isLowSpots = spark.spotsLeft <= 2;
-    final isJoined = widget.ctaLabel.startsWith('Open');
+    final isJoined = widget.ctaLabel == 'Chat';
     final avatars = _avatars();
 
     return InkWell(
@@ -1544,7 +1544,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            isJoined ? 'Open' : 'Join',
+                            widget.ctaLabel,
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
