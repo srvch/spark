@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
@@ -25,19 +26,31 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   String query = '';
   late final ScrollController _scrollController;
   bool _isInfiniteScrolling = false;
-  bool _heroExpanded = true;
+  bool _heroExpanded = false;
   String _timingTab = 'all';
+
+  static const String _heroSeenKey = 'hero_seen_v1';
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _initHeroState();
     Future.microtask(() {
       ref.read(sparkDataControllerProvider).refreshNearby(
         radiusKm: radius.toDouble(),
       );
     });
+  }
+
+  Future<void> _initHeroState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool(_heroSeenKey) ?? false;
+    if (!seen) {
+      if (mounted) setState(() => _heroExpanded = true);
+      await prefs.setBool(_heroSeenKey, true);
+    }
   }
 
   void _onScroll() {
