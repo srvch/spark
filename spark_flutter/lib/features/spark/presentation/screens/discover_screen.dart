@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../../features/profile/presentation/screens/profile_screen.dart';
 import '../../domain/spark.dart';
 import '../controllers/spark_controller.dart';
-import 'activity_screen.dart';
 import 'spark_detail_screen.dart';
+import 'activity_screen.dart';
 import '../widgets/location_picker_sheet.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
@@ -22,12 +21,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   int radius = 5;
   String query = '';
   String timingPref = 'any';
-  ScrollController? _scrollController;
+  late final ScrollController _scrollController;
+  bool _isInfiniteScrolling = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     Future.microtask(() {
       ref.read(sparkDataControllerProvider).refreshNearby(
         radiusKm: radius.toDouble(),
@@ -35,9 +36,34 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     });
   }
 
+  void _onScroll() {
+    if (_isInfiniteScrolling) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      final hasMore = ref.read(nearbyHasMoreProvider);
+      final loadingMore = ref.read(sparksLoadingMoreProvider);
+      if (hasMore && !loadingMore) {
+        setState(() => _isInfiniteScrolling = true);
+        ref
+            .read(sparkDataControllerProvider)
+            .fetchNextNearbyPage(radiusKm: radius.toDouble())
+            .whenComplete(() {
+          if (mounted) setState(() => _isInfiniteScrolling = false);
+        });
+      }
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    await ref.read(sparkDataControllerProvider).refreshNearby(
+      radiusKm: radius.toDouble(),
+    );
+  }
+
   @override
   void dispose() {
-    _scrollController?.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -61,14 +87,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _scrollController ??= ScrollController();
     final sparks = ref.watch(sparksProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
     final selectedLocation = ref.watch(selectedLocationProvider);
     final loading = ref.watch(sparksLoadingProvider);
     final loadingMore = ref.watch(sparksLoadingMoreProvider);
     final loadError = ref.watch(sparksErrorProvider);
-    final hasMoreRemote = ref.watch(nearbyHasMoreProvider);
     final joinedSparkIds = ref.watch(joinedSparkIdsProvider);
     final joinedSparks = ref.watch(joinedSparksProvider);
     final createdSparks = ref.watch(myCreatedSparksProvider);
@@ -80,400 +104,351 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       return !isMineById && !isMineByHost;
     }).toList();
     final filtered = _applyFilters(discoverableSparks);
-    final showLoadMore =
-        filtered.length >= _pageSize && hasMoreRemote && !loadingMore;
+
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'SPARK',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.2,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                'Nearby plans,\nmade easy.',
-                                style: TextStyle(
-                                  fontSize: 23,
-                                  height: 1.05,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 172),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(18),
-                                onTap: () => _showLocationSelector(context),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(color: AppColors.border),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          selectedLocation,
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 1,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      const Icon(Icons.keyboard_arrow_down, size: 16),
-                                    ],
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.accent,
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'SPARK',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.2,
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
-                              ),
+                                SizedBox(height: 6),
+                                Text(
+                                  'Nearby plans,\nmade easy.',
+                                  style: TextStyle(
+                                    fontSize: 23,
+                                    height: 1.05,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            InkWell(
-                              borderRadius: BorderRadius.circular(999),
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const ProfileScreen(),
-                                  ),
-                                );
-                              },
+                          ),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 172),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(18),
+                              onTap: () => _showLocationSelector(context),
                               child: Container(
-                                width: 32,
-                                height: 32,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: AppColors.border),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border:
+                                      Border.all(color: AppColors.border),
                                 ),
-                                child: const Icon(
-                                  Icons.person_outline,
-                                  size: 16,
-                                  color: AppColors.textSecondary,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        selectedLocation,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      size: 16,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const _HeroPanel(),
-                    const SizedBox(height: 12),
-                    if (showMyActivity) ...[
-                      InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const ActivityScreen(),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
                           ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.history_toggle_off,
-                                color: Color(0xFF2F426F),
-                              ),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'My Activity',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                'Open',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF2F426F),
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 14,
-                                color: Color(0xFF2F426F),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                    ] else
-                      const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        const Text(
-                          'Browse sparks',
-                          style: TextStyle(
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const Spacer(),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: () => _showPreferencesSheet(context),
-                          child: const Text(
-                            'Preferences',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    _InlineSearchBar(
-                      initialValue: query,
-                      onChanged: (value) {
-                        setState(() {
-                          query = value.trim().toLowerCase();
-                        });
-                      },
-                      onSubmitted: (value) {
-                        setState(() {
-                          query = value.trim().toLowerCase();
-                        });
-                      },
-                    ),
-                    if (timingPref != 'any') ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        timingPref == '1h'
-                            ? 'Timing: next 1 hour'
-                            : 'Timing: next 2 hours',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 92,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          _CategoryTile(
-                            category: SparkCategory.sports,
-                            labelOverride: 'All',
-                            iconOverride: Icons.apps_outlined,
-                            selected: selectedCategory == null,
-                            onTap: () => setState(() {
-                              selectedCategory = null;
-                            }),
-                          ),
-                          ...SparkCategory.values
-                              .where((c) => c != SparkCategory.hangout)
-                              .map(
-                                (category) => _CategoryTile(
-                                  category: category,
-                                  selected: selectedCategory == category,
-                                  onTap: () => setState(() {
-                                    selectedCategory = category;
-                                  }),
-                                ),
-                              ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (loading)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child: LinearProgressIndicator(minHeight: 2),
-                      ),
-                    if (loadError != null && loadError.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFFCA5A5)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 16,
-                              color: Color(0xFFB91C1C),
+                      const SizedBox(height: 14),
+                      const _HeroPanel(),
+                      const SizedBox(height: 12),
+                      if (showMyActivity) ...[
+                        InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ActivityScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
                             ),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'Could not refresh sparks. Pull to retry from Preferences.',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF7F1D1D),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.history_toggle_off,
+                                  color: Color(0xFF2F426F),
                                 ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'My Activity',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  'Open',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2F426F),
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_ios_rounded,
+                                  size: 14,
+                                  color: Color(0xFF2F426F),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ] else
+                        const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          const Text(
+                            'Browse sparks',
+                            style: TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(999),
+                            onTap: () => _showPreferencesSheet(context),
+                            child: const Text(
+                              'Preferences',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    if (loading) const SizedBox(height: 4),
-                    const Text(
-                      'Happening nearby',
-                      style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 10),
-                    if (filtered.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Text(
-                          'No sparks match these filters yet.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                      const SizedBox(height: 10),
+                      _InlineSearchBar(
+                        initialValue: query,
+                        onChanged: (value) {
+                          setState(() {
+                            query = value.trim().toLowerCase();
+                          });
+                        },
+                        onSubmitted: (value) {
+                          setState(() {
+                            query = value.trim().toLowerCase();
+                          });
+                        },
                       ),
-                  ],
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList.builder(
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final spark = filtered[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _NearbyCard(
-                      spark: spark,
-                      ctaLabel: joinedSparkIds.contains(spark.id) ? 'Open →' : 'Join →',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => SparkDetailScreen(spark: spark),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    if (filtered.isNotEmpty && loadingMore)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8),
-                        child: Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      ),
-                    if (showLoadMore)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size.fromHeight(42),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () {
-                            ref
-                                .read(sparkDataControllerProvider)
-                                .fetchNextNearbyPage(
-                                  radiusKm: radius.toDouble(),
-                                );
-                          },
-                          child: const Text(
-                            'LOAD MORE SPARKS',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                    if (filtered.isNotEmpty && !showLoadMore && !loadingMore)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 10),
-                        child: Text(
-                          'You are all caught up nearby.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
+                      if (timingPref != 'any') ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          timingPref == '1h'
+                              ? 'Timing: next 1 hour'
+                              : 'Timing: next 2 hours',
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
                           ),
                         ),
+                      ],
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 36,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _CategoryChip(
+                              label: 'All',
+                              icon: Icons.apps_outlined,
+                              selected: selectedCategory == null,
+                              onTap: () => setState(() {
+                                selectedCategory = null;
+                              }),
+                            ),
+                            ...SparkCategory.values
+                                .where((c) => c != SparkCategory.hangout)
+                                .map(
+                                  (category) => _CategoryChip(
+                                    label: category.label,
+                                    icon: category.icon,
+                                    selected: selectedCategory == category,
+                                    onTap: () => setState(() {
+                                      selectedCategory = category;
+                                    }),
+                                  ),
+                                ),
+                          ],
+                        ),
                       ),
-                    const _WhySection(),
-                  ],
+                      const SizedBox(height: 12),
+                      if (loading)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: LinearProgressIndicator(minHeight: 2),
+                        ),
+                      if (loadError != null && loadError.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFFCA5A5),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 16,
+                                color: Color(0xFFB91C1C),
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Could not refresh sparks. Pull down to retry.',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF7F1D1D),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (loading) const SizedBox(height: 4),
+                      const Text(
+                        'Happening nearby',
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (filtered.isEmpty && !loading)
+                        const _EmptyState(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final spark = filtered[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _NearbyCard(
+                        spark: spark,
+                        ctaLabel: joinedSparkIds.contains(spark.id)
+                            ? 'Open →'
+                            : 'Join →',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  SparkDetailScreen(spark: spark),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      if (loadingMore)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (filtered.isNotEmpty && !loadingMore)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            'You\'re all caught up nearby.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      const _WhySection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -571,8 +546,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         (category) => ChoiceChip(
                           label: Text(category.label),
                           selected: draftCategory == category,
-                          onSelected: (_) =>
-                              setSheetState(() => draftCategory = category),
+                          onSelected: (_) => setSheetState(
+                            () => draftCategory = category,
+                          ),
                         ),
                       ),
                 ],
@@ -589,17 +565,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ChoiceChip(
                     label: const Text('Any time'),
                     selected: draftTiming == 'any',
-                    onSelected: (_) => setSheetState(() => draftTiming = 'any'),
+                    onSelected: (_) =>
+                        setSheetState(() => draftTiming = 'any'),
                   ),
                   ChoiceChip(
                     label: const Text('Next 1 hour'),
                     selected: draftTiming == '1h',
-                    onSelected: (_) => setSheetState(() => draftTiming = '1h'),
+                    onSelected: (_) =>
+                        setSheetState(() => draftTiming = '1h'),
                   ),
                   ChoiceChip(
                     label: const Text('Next 2 hours'),
                     selected: draftTiming == '2h',
-                    onSelected: (_) => setSheetState(() => draftTiming = '2h'),
+                    onSelected: (_) =>
+                        setSheetState(() => draftTiming = '2h'),
                   ),
                 ],
               ),
@@ -635,7 +614,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       ),
     );
   }
-
 }
 
 class _InlineSearchBar extends StatefulWidget {
@@ -889,56 +867,129 @@ class _MiniSpark extends StatelessWidget {
   }
 }
 
-class _CategoryTile extends StatelessWidget {
-  const _CategoryTile({
-    required this.category,
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
+    required this.label,
+    required this.icon,
     required this.selected,
     required this.onTap,
-    this.labelOverride,
-    this.iconOverride,
   });
 
-  final SparkCategory category;
+  final String label;
+  final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-  final String? labelOverride;
-  final IconData? iconOverride;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          width: 74,
-          padding: const EdgeInsets.fromLTRB(8, 10, 8, 9),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFF2F426F) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                iconOverride ?? category.icon,
-                size: 18,
-                color: selected ? Colors.white : AppColors.textSecondary,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: selected
+                  ? const Color(0xFF2F426F)
+                  : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? const Color(0xFF2F426F)
+                    : AppColors.border,
               ),
-              const SizedBox(height: 8),
-              Text(
-                labelOverride ?? category.label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : AppColors.textPrimary,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 14,
+                  color: selected ? Colors.white : AppColors.textSecondary,
                 ),
-              ),
-            ],
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color:
+                        selected ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE4EBFA),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.explore_off_outlined,
+              size: 30,
+              color: Color(0xFF3E5E9E),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No sparks nearby yet',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Try widening your radius or\nchecking back in a bit.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: null,
+            icon: const Icon(Icons.add_circle_outline, size: 16),
+            label: const Text('Be the first — create one'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.accent,
+              side: const BorderSide(color: AppColors.accent),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

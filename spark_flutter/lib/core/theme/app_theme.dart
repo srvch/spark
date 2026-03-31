@@ -10,6 +10,14 @@ class AppColors {
   static const textSecondary = Color(0xFF6B7280);
   static const accent = Color(0xFF2F426F);
   static const success = Color(0xFF22C55E);
+
+  static const darkBackground = Color(0xFF0D1117);
+  static const darkSurface = Color(0xFF161B22);
+  static const darkBorder = Color(0xFF2D333B);
+  static const darkBorderStrong = Color(0xFF444C56);
+  static const darkTextPrimary = Color(0xFFE6EDF3);
+  static const darkTextSecondary = Color(0xFF8B949E);
+  static const darkAccent = Color(0xFF4A6FBF);
 }
 
 class AppTheme {
@@ -130,6 +138,129 @@ class AppTheme {
         selectedColor: AppColors.accent.withValues(alpha: 0.12),
         labelStyle: const TextStyle(
           color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    );
+  }
+
+  static ThemeData get dark {
+    const colorScheme = ColorScheme.dark(
+      primary: AppColors.darkAccent,
+      surface: AppColors.darkSurface,
+      onSurface: AppColors.darkTextPrimary,
+    );
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: AppColors.darkBackground,
+      appBarTheme: const AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: AppColors.darkBackground,
+        foregroundColor: AppColors.darkTextPrimary,
+      ),
+      cardTheme: const CardThemeData(
+        color: AppColors.darkSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+          side: BorderSide(color: AppColors.darkBorder),
+        ),
+      ),
+      textTheme: GoogleFonts.manropeTextTheme(
+        const TextTheme(
+          titleLarge: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkTextPrimary,
+          ),
+          titleMedium: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkTextPrimary,
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkTextPrimary,
+          ),
+          bodySmall: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.darkTextSecondary,
+          ),
+          labelSmall: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+            color: AppColors.darkTextSecondary,
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.darkSurface,
+        hintStyle: const TextStyle(color: AppColors.darkTextSecondary),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 13,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.darkAccent),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.darkAccent,
+          foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(50),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: GoogleFonts.manrope(
+            fontSize: 15.5,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.darkAccent,
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.darkAccent,
+          side: const BorderSide(color: AppColors.darkAccent),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+      sliderTheme: const SliderThemeData(
+        trackHeight: 3,
+        thumbShape: RoundSliderThumbShape(enabledThumbRadius: 7),
+      ),
+      chipTheme: ChipThemeData(
+        side: const BorderSide(color: AppColors.darkBorder),
+        backgroundColor: AppColors.darkSurface,
+        selectedColor: AppColors.darkAccent.withValues(alpha: 0.25),
+        labelStyle: const TextStyle(
+          color: AppColors.darkTextPrimary,
           fontWeight: FontWeight.w600,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
