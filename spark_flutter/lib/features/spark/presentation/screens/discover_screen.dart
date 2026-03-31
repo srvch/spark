@@ -1290,11 +1290,11 @@ class _LiveHeaderState extends State<_LiveHeader>
   }
 }
 
-class _CreateNudge extends StatelessWidget {
+class _CreateNudge extends ConsumerWidget {
   const _CreateNudge();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8, bottom: 8),
@@ -1328,29 +1328,34 @@ class _CreateNudge extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add, size: 14, color: Colors.white),
-                    SizedBox(width: 5),
-                    Text(
-                      'Create a spark',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+              GestureDetector(
+                onTap: () {
+                  ref.read(bottomTabProvider.notifier).state = 1;
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, size: 14, color: Colors.white),
+                      SizedBox(width: 5),
+                      Text(
+                        'Create a spark',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
