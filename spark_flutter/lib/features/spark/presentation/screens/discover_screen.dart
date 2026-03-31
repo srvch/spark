@@ -1447,66 +1447,86 @@ class _NearbyCardState extends State<_NearbyCard> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                '${spark.location}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 3,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isLowSpots
-                                          ? const Color(0xFFFEE2E2)
-                                          : const Color(0xFFDCFCE7),
-                                      borderRadius:
-                                          BorderRadius.circular(999),
-                                    ),
-                                    child: Text(
-                                      _countdown(),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                        color: isLowSpots
-                                            ? const Color(0xFFDC2626)
-                                            : const Color(0xFF16A34A),
-                                      ),
-                                    ),
+                                  const Icon(
+                                    Icons.schedule_rounded,
+                                    size: 12,
+                                    color: AppColors.textSecondary,
                                   ),
-                                  const SizedBox(width: 6),
-                                  _AvatarStack(avatars: avatars),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: 3),
                                   Text(
-                                    '${avatars.length} joining',
+                                    _countdown(),
                                     style: const TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.textSecondary,
                                     ),
                                   ),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 5),
+                                    child: Text(
+                                      '·',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.near_me_rounded,
+                                    size: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Flexible(
+                                    child: Text(
+                                      spark.distanceLabel,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isLowSpots
-                                    ? '${spark.spotsLeft} spots left · ${spark.distanceLabel}'
-                                    : spark.distanceLabel,
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: isLowSpots
-                                      ? const Color(0xFFDC2626)
-                                      : AppColors.textSecondary,
-                                ),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  _AvatarStack(avatars: avatars),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    '${spark.participants.length} joining',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  if (isLowSpots) ...[
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 5),
+                                      child: Text(
+                                        '·',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${spark.spotsLeft} left',
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFFDC2626),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
