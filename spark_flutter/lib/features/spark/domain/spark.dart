@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 enum SparkCategory {
-  sports('Sports', Icons.sports_soccer),
-  study('Study', Icons.menu_book_outlined),
-  ride('Ride', Icons.directions_car_filled_outlined),
-  events('Events', Icons.event_outlined),
-  hangout('Hangout', Icons.groups_2_outlined);
+  sports('Sports', Icons.directions_run_rounded),
+  study('Study', Icons.auto_stories_rounded),
+  ride('Ride', Icons.drive_eta_rounded),
+  events('Events', Icons.confirmation_number_outlined),
+  hangout('Hangout', Icons.coffee_outlined);
 
   const SparkCategory(this.label, this.icon);
   final String label;

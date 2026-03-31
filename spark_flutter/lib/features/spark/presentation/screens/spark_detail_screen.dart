@@ -88,10 +88,16 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              0,
+              20,
+              24 + MediaQuery.viewInsetsOf(ctx).bottom,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -260,11 +266,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       rawLocation: spark.location,
       selectedLocation: selectedLocation,
     );
-    final spotsColor = spark.spotsLeft <= 1
-        ? const Color(0xFFDC2626)
-        : spark.spotsLeft <= 2
-        ? const Color(0xFFF59E0B)
-        : const Color(0xFF16A34A);
     final fillRatio = ((spark.maxSpots - spark.spotsLeft) / spark.maxSpots).clamp(
       0.0,
       1.0,
@@ -273,20 +274,9 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(color: catColor, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 7),
-            Text(
-              spark.category.label,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-            ),
-          ],
+        title: Text(
+          spark.category.label,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
         actions: [
           IconButton(
@@ -420,8 +410,8 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         _StatPill(
                           icon: Icons.near_me_rounded,
                           text: spark.distanceLabel,
-                          color: const Color(0xFF059669),
-                          bg: const Color(0xFFBBF0D8),
+                          color: const Color(0xFF2F426F),
+                          bg: const Color(0xFFD5DCF5),
                         ),
                       ],
                     ),
@@ -623,7 +613,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           value: fillRatio,
                           minHeight: 7,
                           backgroundColor: const Color(0xFFE2E8F0),
-                          valueColor: AlwaysStoppedAnimation<Color>(spotsColor),
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2F426F)),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -647,20 +637,12 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               ),
                             ),
                           ),
-                          if (spark.spotsLeft <= 1) ...[
-                            const Icon(
-                              Icons.bolt_rounded,
-                              size: 12,
-                              color: Color(0xFFDC2626),
-                            ),
-                            const SizedBox(width: 2),
-                          ],
                           Text(
                             '${spark.spotsLeft} ${spark.spotsLeft == 1 ? 'spot' : 'spots'} left',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: spotsColor,
+                              color: Color(0xFF2F426F),
                             ),
                           ),
                         ],
@@ -781,15 +763,19 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size.fromHeight(46),
+                                foregroundColor: Colors.black54,
+                                side: const BorderSide(
+                                    color: Color(0xFFDDE1E9)),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               onPressed: () => _leaveSpark(),
-                              child: Text(
+                              child: const Text(
                                 'LEAVE',
                                 style: TextStyle(
-                                  color: const Color(0xFFDC2626),
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.4,
                                 ),
                               ),
                             ),
