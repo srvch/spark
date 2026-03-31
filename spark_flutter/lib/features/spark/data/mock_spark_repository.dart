@@ -1,0 +1,80 @@
+import '../domain/spark.dart';
+
+class MockSparkRepository {
+  const MockSparkRepository();
+
+  List<Spark> fetchNearbySparks() {
+    return const [
+      Spark(
+        id: 's1',
+        category: SparkCategory.sports,
+        title: 'Cricket match at central park',
+        startsInMinutes: 20,
+        timeLabel: 'Starts in 20 min',
+        distanceKm: 0.2,
+        distanceLabel: '200m away',
+        spotsLeft: 2,
+        maxSpots: 8,
+        location: 'Sector 12',
+        createdBy: 'Rahul',
+        participants: ['AA', 'RK', 'SN', 'VK', 'TJ'],
+      ),
+      Spark(
+        id: 's2',
+        category: SparkCategory.study,
+        title: 'DSA sprint at city library',
+        startsInMinutes: 15,
+        timeLabel: 'Starts in 15 min',
+        distanceKm: 0.45,
+        distanceLabel: '450m away',
+        spotsLeft: 4,
+        maxSpots: 10,
+        location: 'Library Circle',
+        createdBy: 'Priya',
+        participants: ['PS', 'MD', 'AN'],
+      ),
+      Spark(
+        id: 's3',
+        category: SparkCategory.ride,
+        title: 'Ride share to airport T3',
+        startsInMinutes: 45,
+        timeLabel: 'Starts in 45 min',
+        distanceKm: 1.2,
+        distanceLabel: '1.2km away',
+        spotsLeft: 1,
+        maxSpots: 4,
+        location: 'Metro Exit Gate',
+        createdBy: 'Arjun',
+        participants: ['MJ', 'AK', 'TR'],
+      ),
+      Spark(
+        id: 's4',
+        category: SparkCategory.events,
+        title: 'Open mic at riverside cafe',
+        timeLabel: 'Starts in 30 min',
+        startsInMinutes: 30,
+        distanceKm: 0.7,
+        distanceLabel: '700m away',
+        spotsLeft: 3,
+        maxSpots: 12,
+        location: 'Riverside',
+        createdBy: 'Nisha',
+        participants: ['VG', 'HB', 'LK', 'RR'],
+      ),
+      Spark(
+        id: 's5',
+        category: SparkCategory.hangout,
+        title: 'Coffee walk and catch-up',
+        timeLabel: 'Starts in 25 min',
+        startsInMinutes: 25,
+        distanceKm: 0.9,
+        distanceLabel: '900m away',
+        spotsLeft: 2,
+        maxSpots: 6,
+        location: 'Old Town',
+        createdBy: 'Sam',
+        participants: ['SM', 'AK', 'LR', 'PT'],
+      ),
+    ];
+  }
+}

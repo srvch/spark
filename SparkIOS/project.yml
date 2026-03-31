@@ -1,0 +1,30 @@
+name: SparkIOS
+options:
+  deploymentTarget:
+    iOS: "17.0"
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: com.spark.app
+    SWIFT_VERSION: 5.0
+    DEVELOPMENT_TEAM: ""
+targets:
+  SparkIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: SparkIOS
+    settings:
+      base:
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Spark
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Spark uses your location to surface nearby sparks and radius based matches.
+        PRODUCT_NAME: Spark
+    info:
+      path: SparkIOS/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+    scheme:
+      testTargets: []
