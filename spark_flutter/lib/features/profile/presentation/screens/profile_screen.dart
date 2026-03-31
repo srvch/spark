@@ -14,6 +14,7 @@ import '../controllers/profile_preferences_controller.dart';
 
 const _kNavy = Color(0xFF2F426F);
 const _kNavyLight = Color(0xFFEAF0FF);
+const _kDivider = Color(0xFFF0F1F5);
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -25,8 +26,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _name = 'Saurav';
   String _email = 'spark@saurav.app';
-  final String _location = 'Indiranagar, Bengaluru';
-  final String _memberSince = 'March 2026';
+  final String _memberSince = "Mar '26";
   final String _referralCode = 'SAURAV10';
   final AnalyticsService _analytics = AnalyticsService();
 
@@ -38,124 +38,232 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final recent = _recentItems(created: created, joined: joined);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor: Colors.white,
       body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
           children: [
-            // ── Header ───────────────────────────────────────────────
-            _ProfileHeader(
-              name: _name,
-              email: _email,
-              location: _location,
-              memberSince: _memberSince,
-              createdCount: created.length,
-              joinedCount: joined.length,
-              onEditTap: _openEditProfileSheet,
-            ),
-
+            // ── App bar ───────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Row(
                 children: [
-                  // ── Your Sparks ──────────────────────────────────
-                  _SectionHeader(
-                    title: 'Your Sparks',
-                    trailing: TextButton(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const ActivityScreen()),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).maybePop(),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F7),
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: _kNavy,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text(
-                        'See all',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        size: 18,
+                        color: Colors.black87,
                       ),
                     ),
-                    subtitle: 'Recent joined & created sparks',
                   ),
-                  const SizedBox(height: 10),
-                  if (recent.isEmpty)
-                    _EmptyCard(
-                      icon: Icons.bolt_rounded,
-                      message: 'No sparks yet. Join or create one to see activity here.',
-                    )
-                  else
-                    ...recent.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _RecentSparkCard(
-                          title: item.spark.title,
-                          subtitle: '${item.spark.timeLabel} · ${item.spark.location}',
-                          tag: item.tag,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => SparkDetailScreen(spark: item.spark),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Account',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  // ── Profile row ───────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Avatar
+                        CircleAvatar(
+                          radius: 30,
+                          backgroundColor: _kNavy,
+                          child: Text(
+                            _initials(_name),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: 'Manrope',
                             ),
                           ),
                         ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _name,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.black,
+                                  fontFamily: 'Manrope',
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '$_email  ·  Since $_memberSince',
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54,
+                                  fontFamily: 'Manrope',
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              GestureDetector(
+                                onTap: _openEditProfileSheet,
+                                child: const Text(
+                                  'Edit profile →',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: _kNavy,
+                                    fontFamily: 'Manrope',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Quick stats row ───────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: _kDivider),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          children: [
+                            _QuickStat(
+                              icon: Icons.bolt_rounded,
+                              label: 'Created',
+                              value: '${created.length}',
+                              isFirst: true,
+                            ),
+                            VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: _kDivider,
+                            ),
+                            _QuickStat(
+                              icon: Icons.people_outline_rounded,
+                              label: 'Joined',
+                              value: '${joined.length}',
+                              isFirst: false,
+                            ),
+                            VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: _kDivider,
+                            ),
+                            _QuickStat(
+                              icon: Icons.local_fire_department_outlined,
+                              label: 'Total',
+                              value: '${created.length + joined.length}',
+                              isFirst: false,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  // ── Referral ─────────────────────────────────────
-                  _ReferralCard(
-                    referralCode: _referralCode,
-                    onShare: _shareInvite,
-                    onCopyCode: _copyInviteCode,
+                  // ── Referral banner ───────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _ReferralBanner(
+                      referralCode: _referralCode,
+                      onShare: _shareInvite,
+                      onCopyCode: _copyInviteCode,
+                    ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // ── Alerts ───────────────────────────────────────
-                  _SectionHeader(
-                    title: 'Alerts',
-                    subtitle: 'Control when Spark notifies you',
-                  ),
-                  const SizedBox(height: 10),
-                  _AlertsCard(
-                    startsSoon: notificationPrefs.notifyStartsSoon,
-                    fillingFast: notificationPrefs.notifyFillingFast,
-                    radiusKm: notificationPrefs.radiusKm,
-                    interests: notificationPrefs.interests,
-                    onStartsSoonChanged: (v) => ref
-                        .read(notificationPreferencesProvider.notifier)
-                        .setStartsSoon(v),
-                    onFillingFastChanged: (v) => ref
-                        .read(notificationPreferencesProvider.notifier)
-                        .setFillingFast(v),
-                    onRadiusChanged: (km) => ref
-                        .read(notificationPreferencesProvider.notifier)
-                        .setRadius(km),
-                    onInterestToggle: (category) => ref
-                        .read(notificationPreferencesProvider.notifier)
-                        .toggleInterest(category),
+                  // ── Menu sections ─────────────────────────────────
+                  _SectionLabel('Activity'),
+                  _MenuRow(
+                    icon: Icons.bolt_outlined,
+                    label: 'Your Sparks',
+                    sublabel: recent.isEmpty
+                        ? 'No activity yet'
+                        : '${created.length} created · ${joined.length} joined',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ActivityScreen()),
+                    ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const _Divider(),
+                  _SectionLabel('Preferences'),
+                  _MenuRow(
+                    icon: Icons.notifications_outlined,
+                    label: 'Notification alerts',
+                    sublabel: notificationPrefs.notifyStartsSoon ||
+                            notificationPrefs.notifyFillingFast
+                        ? 'Alerts on'
+                        : 'Alerts off',
+                    onTap: () => _showAlertsSheet(context),
+                  ),
 
-                  // ── Safety & Legal ───────────────────────────────
-                  _SectionHeader(title: 'Safety & Legal'),
-                  const SizedBox(height: 10),
-                  _LegalLinks(
-                    onSosTap: () {
+                  const _Divider(),
+                  _SectionLabel('Safety & Legal'),
+                  _MenuRow(
+                    icon: Icons.sos_rounded,
+                    label: 'SOS Alert',
+                    labelColor: const Color(0xFFB91C1C),
+                    iconColor: const Color(0xFFB91C1C),
+                    onTap: () {
                       _analytics.track('sos_from_profile_tapped');
                       _openLegalFlow(_LegalType.safety);
                     },
-                    onTap: (type) {
+                  ),
+                  _MenuRow(
+                    icon: Icons.lock_outline_rounded,
+                    label: 'Privacy policy',
+                    onTap: () {
                       _analytics.track('legal_link_opened',
-                          properties: {'type': type.name});
-                      _openLegalFlow(type);
+                          properties: {'type': 'privacy'});
+                      _openLegalFlow(_LegalType.privacy);
+                    },
+                  ),
+                  _MenuRow(
+                    icon: Icons.groups_outlined,
+                    label: 'Community guidelines',
+                    isLast: true,
+                    onTap: () {
+                      _analytics.track('legal_link_opened',
+                          properties: {'type': 'guidelines'});
+                      _openLegalFlow(_LegalType.guidelines);
                     },
                   ),
 
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -242,6 +350,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  String _initials(String fullName) {
+    final parts = fullName.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return 'SV';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
+  }
+
   Future<void> _openEditProfileSheet() async {
     final nameController = TextEditingController(text: _name);
     final emailController = TextEditingController(text: _email);
@@ -266,15 +381,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               const Text(
                 'Edit profile',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Manrope',
+                ),
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'Your name',
-                ),
+                decoration: const InputDecoration(labelText: 'Name'),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Name is required';
@@ -286,10 +402,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               TextFormField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'name@example.com',
-                ),
+                decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) {
                   final text = value?.trim() ?? '';
                   if (text.isEmpty || !text.contains('@')) {
@@ -325,329 +438,65 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Profile Header
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({
-    required this.name,
-    required this.email,
-    required this.location,
-    required this.memberSince,
-    required this.createdCount,
-    required this.joinedCount,
-    required this.onEditTap,
-  });
-
-  final String name;
-  final String email;
-  final String location;
-  final String memberSince;
-  final int createdCount;
-  final int joinedCount;
-  final VoidCallback onEditTap;
-
-  String _initials(String fullName) {
-    final parts = fullName.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty) return 'SV';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Cover band
-        Container(
-          height: 120,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1E2E50), Color(0xFF2F426F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Subtle pattern dots
-              Positioned(
-                right: -10,
-                top: -10,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.04),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 30,
-                bottom: -30,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.04),
-                  ),
-                ),
-              ),
-              // Back button
-              Positioned(
-                left: 12,
-                top: 12,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).maybePop(),
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back_rounded,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              // Edit button
-              Positioned(
-                right: 12,
-                top: 12,
-                child: GestureDetector(
-                  onTap: onEditTap,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.edit_outlined, size: 13, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text(
-                          'Edit',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // White card below cover
-        Padding(
-          padding: const EdgeInsets.only(top: 80),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0D111827),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                // Avatar + name area
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 36, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.place_outlined,
-                            size: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            location,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            'Since $memberSince',
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        email,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Divider
-                Container(
-                  height: 1,
-                  color: AppColors.border,
-                ),
-
-                // Stats row
-                IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      _StatCell(
-                        value: '$createdCount',
-                        label: 'Created',
-                        icon: Icons.bolt_rounded,
-                      ),
-                      VerticalDivider(
-                        width: 1,
-                        thickness: 1,
-                        color: AppColors.border,
-                      ),
-                      _StatCell(
-                        value: '$joinedCount',
-                        label: 'Joined',
-                        icon: Icons.people_outline_rounded,
-                      ),
-                      VerticalDivider(
-                        width: 1,
-                        thickness: 1,
-                        color: AppColors.border,
-                      ),
-                      _StatCell(
-                        value: '${createdCount + joinedCount}',
-                        label: 'Total',
-                        icon: Icons.local_fire_department_outlined,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Avatar overlapping cover + card
-        Positioned(
-          left: 32,
-          top: 60,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x22111827),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: CircleAvatar(
-              radius: 32,
-              backgroundColor: _kNavy,
-              child: Text(
-                _initials(name),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+  void _showAlertsSheet(BuildContext ctx) {
+    final container = ProviderScope.containerOf(ctx);
+    showModalBottomSheet<void>(
+      context: ctx,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => UncontrolledProviderScope(
+        container: container,
+        child: const _AlertsSheet(),
+      ),
     );
   }
 }
 
-class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.value,
-    required this.label,
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick stat cell
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _QuickStat extends StatelessWidget {
+  const _QuickStat({
     required this.icon,
+    required this.label,
+    required this.value,
+    required this.isFirst,
   });
 
-  final String value;
-  final String label;
   final IconData icon;
+  final String label;
+  final String value;
+  final bool isFirst;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: _kNavy),
-            const SizedBox(height: 5),
+            Icon(icon, size: 18, color: _kNavy),
+            const SizedBox(height: 6),
             Text(
               value,
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                color: Colors.black,
+                fontFamily: 'Manrope',
               ),
             ),
             const SizedBox(height: 2),
             Text(
               label,
               style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.black54,
+                fontFamily: 'Manrope',
               ),
             ),
           ],
@@ -658,184 +507,104 @@ class _StatCell extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section header
+// Section label
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    this.subtitle,
-    this.trailing,
-  });
-
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ],
-          ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Colors.black38,
+          letterSpacing: 0.6,
+          fontFamily: 'Manrope',
         ),
-        if (trailing != null) trailing!,
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty state card
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.icon, required this.message});
-
-  final IconData icon;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.textSecondary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Recent Spark Card
+// Menu row
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ProfileRecentItem {
-  const _ProfileRecentItem(this.spark, this.tag);
-  final Spark spark;
-  final String tag;
-}
-
-class _RecentSparkCard extends StatelessWidget {
-  const _RecentSparkCard({
-    required this.title,
-    required this.subtitle,
-    required this.tag,
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({
+    required this.icon,
+    required this.label,
+    this.sublabel,
+    this.labelColor,
+    this.iconColor,
+    this.isLast = false,
     required this.onTap,
   });
 
-  final String title;
-  final String subtitle;
-  final String tag;
+  final IconData icon;
+  final String label;
+  final String? sublabel;
+  final Color? labelColor;
+  final Color? iconColor;
+  final bool isLast;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14),
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: _kNavyLight,
-                borderRadius: BorderRadius.circular(10),
+            SizedBox(
+              width: 22,
+              child: Icon(
+                icon,
+                size: 20,
+                color: iconColor ?? Colors.black54,
               ),
-              child: const Icon(Icons.bolt_rounded, color: _kNavy, size: 18),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: labelColor ?? Colors.black,
+                      fontFamily: 'Manrope',
                     ),
                   ),
+                  if (sublabel != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      sublabel!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black45,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _kNavyLight,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                tag,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: _kNavy,
-                ),
-              ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Colors.black26,
             ),
-            const SizedBox(width: 6),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
           ],
         ),
       ),
@@ -844,11 +613,24 @@ class _RecentSparkCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Referral Card
+// Thin divider
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ReferralCard extends StatelessWidget {
-  const _ReferralCard({
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 24, thickness: 4, color: Color(0xFFF5F5F7));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Referral banner
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ReferralBanner extends StatelessWidget {
+  const _ReferralBanner({
     required this.referralCode,
     required this.onShare,
     required this.onCopyCode,
@@ -862,138 +644,125 @@ class _ReferralCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFEEF3FF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Top accent bar
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1E2E50), Color(0xFF3B5490)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // Large ghost text watermark
+          Positioned(
+            right: -8,
+            top: -4,
+            child: Text(
+              referralCode,
+              style: TextStyle(
+                fontSize: 52,
+                fontWeight: FontWeight.w900,
+                color: _kNavy.withOpacity(0.06),
+                fontFamily: 'Manrope',
+                letterSpacing: 2,
               ),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
             ),
-            child: Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 18),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Invite friends to Spark',
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _kNavy,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'INVITE',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 10,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
+                          letterSpacing: 0.8,
+                          fontFamily: 'Manrope',
                         ),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Unlock badges, early features & host boost',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Refer friends, unlock\nhost boost & early access',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black,
+                    height: 1.35,
+                    fontFamily: 'Manrope',
                   ),
                 ),
-              ],
-            ),
-          ),
-          // Code row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F8FC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Your code',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                const SizedBox(height: 12),
+                // Code pill + buttons row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: _kNavy.withOpacity(0.15)),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          referralCode,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: _kNavy,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: onCopyCode,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: _kNavyLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Copy',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: _kNavy,
+                        child: Row(
+                          children: [
+                            Text(
+                              referralCode,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: _kNavy,
+                                letterSpacing: 1.5,
+                                fontFamily: 'Manrope',
+                              ),
                             ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: onCopyCode,
+                              child: const Icon(
+                                Icons.copy_rounded,
+                                size: 16,
+                                color: _kNavy,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: onShare,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: _kNavy,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Invite →',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            fontFamily: 'Manrope',
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: onShare,
-                    icon: const Icon(Icons.ios_share_rounded, size: 15),
-                    label: const Text(
-                      'Share invite link',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                     ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _kNavy,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -1005,200 +774,164 @@ class _ReferralCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Alerts Card
+// Alerts sheet (modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _AlertsCard extends StatelessWidget {
-  const _AlertsCard({
-    required this.startsSoon,
-    required this.fillingFast,
-    required this.radiusKm,
-    required this.interests,
-    required this.onStartsSoonChanged,
-    required this.onFillingFastChanged,
-    required this.onRadiusChanged,
-    required this.onInterestToggle,
-  });
-
-  final bool startsSoon;
-  final bool fillingFast;
-  final int radiusKm;
-  final Set<SparkCategory> interests;
-  final ValueChanged<bool> onStartsSoonChanged;
-  final ValueChanged<bool> onFillingFastChanged;
-  final ValueChanged<int> onRadiusChanged;
-  final ValueChanged<SparkCategory> onInterestToggle;
+class _AlertsSheet extends ConsumerWidget {
+  const _AlertsSheet();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Toggle rows
-          _AlertToggleRow(
-            icon: Icons.timer_outlined,
-            label: 'Starts in 15 min',
-            sublabel: 'Alert before a nearby spark begins',
-            value: startsSoon,
-            onChanged: onStartsSoonChanged,
-            isFirst: true,
-          ),
-          Divider(height: 1, thickness: 1, color: AppColors.border),
-          _AlertToggleRow(
-            icon: Icons.people_outline_rounded,
-            label: 'Filling fast',
-            sublabel: 'Alert when spots are almost gone',
-            value: fillingFast,
-            onChanged: onFillingFastChanged,
-            isFirst: false,
-          ),
-          Divider(height: 1, thickness: 1, color: AppColors.border),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(notificationPreferencesProvider);
+    final notifier = ref.read(notificationPreferencesProvider.notifier);
 
-          // Radius
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.radar_rounded, size: 15, color: _kNavy),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Notify radius',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: [2, 5, 10]
-                      .map(
-                        (km) => ChoiceChip(
-                          label: Text('$km km'),
-                          selected: radiusKm == km,
-                          onSelected: (_) => onRadiusChanged(km),
-                          selectedColor: _kNavyLight,
-                          labelStyle: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: radiusKm == km ? _kNavy : AppColors.textSecondary,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Notification alerts',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Manrope',
+              ),
             ),
-          ),
-
-          Divider(height: 1, thickness: 1, color: AppColors.border),
-
-          // Interests
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.interests_outlined, size: 15, color: _kNavy),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Interests',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: SparkCategory.values
-                      .where((c) => c != SparkCategory.hangout)
-                      .map(
-                        (category) => FilterChip(
-                          selected: interests.contains(category),
-                          label: Text(category.label),
-                          onSelected: (_) => onInterestToggle(category),
-                          selectedColor: _kNavyLight,
-                          labelStyle: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: interests.contains(category)
-                                ? _kNavy
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
+            const SizedBox(height: 4),
+            const Text(
+              'Control when Spark notifies you',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.black45,
+                fontFamily: 'Manrope',
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+
+            _SheetToggleRow(
+              icon: Icons.timer_outlined,
+              label: 'Starts in 15 min',
+              value: prefs.notifyStartsSoon,
+              onChanged: notifier.setStartsSoon,
+            ),
+            const Divider(height: 1, color: _kDivider),
+            _SheetToggleRow(
+              icon: Icons.people_outline_rounded,
+              label: 'Filling fast',
+              value: prefs.notifyFillingFast,
+              onChanged: notifier.setFillingFast,
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'NOTIFY RADIUS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.6,
+                fontFamily: 'Manrope',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [2, 5, 10]
+                  .map(
+                    (km) => ChoiceChip(
+                      label: Text('$km km'),
+                      selected: prefs.radiusKm == km,
+                      onSelected: (_) => notifier.setRadius(km),
+                      selectedColor: _kNavyLight,
+                      labelStyle: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: prefs.radiusKm == km ? _kNavy : Colors.black54,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'INTERESTS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Colors.black38,
+                letterSpacing: 0.6,
+                fontFamily: 'Manrope',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: SparkCategory.values
+                  .where((c) => c != SparkCategory.hangout)
+                  .map(
+                    (category) => FilterChip(
+                      selected: prefs.interests.contains(category),
+                      label: Text(category.label),
+                      onSelected: (_) => notifier.toggleInterest(category),
+                      selectedColor: _kNavyLight,
+                      labelStyle: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: prefs.interests.contains(category)
+                            ? _kNavy
+                            : Colors.black54,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _AlertToggleRow extends StatelessWidget {
-  const _AlertToggleRow({
+class _SheetToggleRow extends StatelessWidget {
+  const _SheetToggleRow({
     required this.icon,
     required this.label,
-    required this.sublabel,
     required this.value,
     required this.onChanged,
-    required this.isFirst,
   });
 
   final IconData icon;
   final String label;
-  final String sublabel;
   final bool value;
   final ValueChanged<bool> onChanged;
-  final bool isFirst;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(14, isFirst ? 14 : 12, 8, 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: _kNavyLight,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 15, color: _kNavy),
-          ),
-          const SizedBox(width: 10),
+          Icon(icon, size: 18, color: Colors.black54),
+          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  sublabel,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                fontFamily: 'Manrope',
+              ),
             ),
           ),
           Switch(
@@ -1214,103 +947,16 @@ class _AlertToggleRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Legal Links
+// Legal & Safety
 // ─────────────────────────────────────────────────────────────────────────────
 
 enum _LegalType { privacy, guidelines, safety }
 
-class _LegalLinks extends StatelessWidget {
-  const _LegalLinks({
-    required this.onTap,
-    required this.onSosTap,
-  });
-
-  final void Function(_LegalType type) onTap;
-  final VoidCallback onSosTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const links = <(_LegalType, String, IconData)>[
-      (_LegalType.privacy, 'Privacy policy', Icons.lock_outline_rounded),
-      (_LegalType.guidelines, 'Community guidelines', Icons.groups_outlined),
-      (_LegalType.safety, 'Report a safety issue', Icons.flag_outlined),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // SOS button
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onSosTap,
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFB91C1C),
-                  minimumSize: const Size.fromHeight(44),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.sos_rounded, size: 17),
-                label: const Text(
-                  'SOS ALERT',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
-          ),
-          Divider(height: 1, thickness: 1, color: AppColors.border),
-          // Link rows
-          for (final (i, link) in links.indexed) ...[
-            if (i > 0) Divider(height: 1, thickness: 1, indent: 46, color: AppColors.border),
-            InkWell(
-              onTap: () => onTap(link.$1),
-              borderRadius: i == links.length - 1
-                  ? const BorderRadius.vertical(bottom: Radius.circular(15))
-                  : BorderRadius.zero,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                child: Row(
-                  children: [
-                    Icon(link.$3, size: 16, color: _kNavy),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        link.$2,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+class _ProfileRecentItem {
+  const _ProfileRecentItem(this.spark, this.tag);
+  final Spark spark;
+  final String tag;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Legal document screen
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _LegalDocumentScreen extends StatelessWidget {
   const _LegalDocumentScreen({
@@ -1328,28 +974,22 @@ class _LegalDocumentScreen extends StatelessWidget {
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: paragraphs.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              paragraphs[index],
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.5,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-              ),
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Text(
+            paragraphs[index],
+            style: const TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w500,
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Safety report screen
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _SafetyReportScreen extends StatefulWidget {
   const _SafetyReportScreen();
@@ -1378,7 +1018,11 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
           children: [
             const Text(
               'Tell us what happened',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Manrope',
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -1395,7 +1039,8 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
               onPressed: () {
                 if (_controller.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please add a short description')),
+                    const SnackBar(
+                        content: Text('Please add a short description')),
                   );
                   return;
                 }
