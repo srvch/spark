@@ -230,90 +230,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      if (showMyActivity) ...[
-                        InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const ActivityScreen(),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(
-                                  Icons.history_toggle_off,
-                                  color: Color(0xFF2F426F),
-                                ),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'My Activity',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  'Open',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF2F426F),
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  size: 14,
-                                  color: Color(0xFF2F426F),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                      ] else
-                        const SizedBox(height: 14),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'What\'s happening',
-                            style: TextStyle(
-                              fontSize: 15.5,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const Spacer(),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(999),
-                            onTap: () => _showPreferencesSheet(context),
-                            child: const Padding(
-                              padding: EdgeInsets.all(4),
-                              child: Icon(
-                                Icons.tune_rounded,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
+                      // ── Search + section header row ───────────────
                       _InlineSearchBar(
                         initialValue: query,
                         onChanged: (value) {
@@ -327,64 +245,98 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           });
                         },
                       ),
-                      const SizedBox(height: 10),
-                      SizedBox(
-                        height: 32,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            for (final tab in [
-                              ('all', 'All'),
-                              ('now', 'Now'),
-                              ('soon', 'Soon'),
-                              ('tonight', 'Tonight'),
-                            ])
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: _TimingTab(
-                                  label: tab.$2,
-                                  selected: _timingTab == tab.$1,
-                                  onTap: () => setState(
-                                    () => _timingTab = tab.$1,
+                      const SizedBox(height: 12),
+                      // ── Category chips + activity pill ────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 34,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                children: [
+                                  _CategoryChip(
+                                    label: 'All',
+                                    icon: Icons.apps_outlined,
+                                    selected: selectedCategory == null,
+                                    onTap: () => setState(() {
+                                      selectedCategory = null;
+                                    }),
+                                  ),
+                                  ...SparkCategory.values
+                                      .where((c) => c != SparkCategory.hangout)
+                                      .map(
+                                        (category) => _CategoryChip(
+                                          label: category.label,
+                                          icon: category.icon,
+                                          selected: selectedCategory == category,
+                                          onTap: () => setState(() {
+                                            selectedCategory = category;
+                                          }),
+                                        ),
+                                      ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => _showPreferencesSheet(context),
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F7),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.tune_rounded,
+                                size: 16,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // ── Section header ────────────────────────────
+                      Row(
+                        children: [
+                          const _LiveHeader(),
+                          if (showMyActivity) ...[
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ActivityScreen(),
+                                ),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAF0FF),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: const Text(
+                                  'My activity →',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2F426F),
                                   ),
                                 ),
                               ),
+                            ),
                           ],
-                        ),
+                        ],
                       ),
                       const SizedBox(height: 10),
-                      SizedBox(
-                        height: 36,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            _CategoryChip(
-                              label: 'All',
-                              icon: Icons.apps_outlined,
-                              selected: selectedCategory == null,
-                              onTap: () => setState(() {
-                                selectedCategory = null;
-                              }),
-                            ),
-                            ...SparkCategory.values
-                                .where((c) => c != SparkCategory.hangout)
-                                .map(
-                                  (category) => _CategoryChip(
-                                    label: category.label,
-                                    icon: category.icon,
-                                    selected: selectedCategory == category,
-                                    onTap: () => setState(() {
-                                      selectedCategory = category;
-                                    }),
-                                  ),
-                                ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
                       if (loading)
                         const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
+                          padding: EdgeInsets.only(bottom: 8),
                           child: LinearProgressIndicator(minHeight: 2),
                         ),
                       if (loadError != null && loadError.isNotEmpty)
@@ -420,9 +372,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ],
                           ),
                         ),
-                      if (loading) const SizedBox(height: 4),
-                      const _LiveHeader(),
-                      const SizedBox(height: 10),
                       if (filtered.isEmpty && !loading)
                         const _EmptyState(),
                     ],
@@ -436,7 +385,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   itemBuilder: (context, index) {
                     final spark = filtered[index];
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: _NearbyCard(
                         spark: spark,
                         ctaLabel: joinedSparkIds.contains(spark.id)
@@ -664,41 +613,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
             ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TimingTab extends StatelessWidget {
-  const _TimingTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF2F426F) : const Color(0xFFF1F4FB),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : const Color(0xFF6B7280),
           ),
         ),
       ),
@@ -1220,45 +1134,36 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: selected
-                  ? const Color(0xFF2F426F)
-                  : const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(
-                color: selected
-                    ? const Color(0xFF2F426F)
-                    : AppColors.border,
+      padding: const EdgeInsets.only(right: 7),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFF2F426F)
+                : const Color(0xFFF0F1F5),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 13,
+                color: selected ? Colors.white : Colors.black45,
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 14,
-                  color: selected ? Colors.white : AppColors.textSecondary,
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : Colors.black54,
                 ),
-                const SizedBox(width: 5),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color:
-                        selected ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1378,6 +1283,14 @@ class _NearbyCardState extends State<_NearbyCard> {
         SparkCategory.hangout => const Color(0xFFF9A8D4),
       };
 
+  static Color _categoryDarkColor(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => const Color(0xFF15803D),
+        SparkCategory.study => const Color(0xFF1D4ED8),
+        SparkCategory.ride => const Color(0xFF6D28D9),
+        SparkCategory.events => const Color(0xFFC2410C),
+        SparkCategory.hangout => const Color(0xFFBE185D),
+      };
+
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
         SparkCategory.sports => Icons.sports_soccer,
         SparkCategory.study => Icons.menu_book_outlined,
@@ -1409,44 +1322,51 @@ class _NearbyCardState extends State<_NearbyCard> {
   Widget build(BuildContext context) {
     final spark = widget.spark;
     final catColor = _categoryColor(spark.category);
+    final catDarkColor = _categoryDarkColor(spark.category);
     final icon = _categoryIcon(spark.category);
     final isLowSpots = spark.spotsLeft <= 2;
     final isJoined = widget.ctaLabel == 'Chat';
     final avatars = _avatars();
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F000000),
+              blurRadius: 12,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(width: 4, color: catColor),
+                Container(width: 5, color: catColor),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 12, 12, 12),
+                    padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
-                            borderRadius: BorderRadius.circular(13),
+                            color: catColor.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
                             icon,
-                            color: const Color(0xFF3E5E9E),
-                            size: 22,
+                            color: catDarkColor,
+                            size: 20,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1653,17 +1573,23 @@ class _LiveHeaderState extends State<_LiveHeader>
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         const Text(
           'Happening nearby',
-          style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: Colors.black,
+            fontFamily: 'Manrope',
+          ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 7),
         FadeTransition(
           opacity: _pulse,
           child: Container(
-            width: 8,
-            height: 8,
+            width: 7,
+            height: 7,
             decoration: const BoxDecoration(
               color: Color(0xFF22C55E),
               shape: BoxShape.circle,
