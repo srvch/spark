@@ -8,8 +8,8 @@ import '../../domain/spark.dart';
 import 'spark_detail_screen.dart';
 
 const _kNavy = AppColors.accent;
-const _kNavyLight = Color(0xFFEAF0FF);
-const _kSurface = Color(0xFFF7F8FC);
+const _kNavyLight = AppColors.accentSurface;
+const _kSurface = AppColors.surfaceSubtle;
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -51,7 +51,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF0F1F5)),
+          child: Container(height: 1, color: AppColors.cardDivider),
         ),
       ),
       body: SafeArea(
@@ -72,7 +72,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
             ),
             const SizedBox(height: 16),
             // ── Thick divider ──────────────────────────────────────
-            Container(height: 4, color: const Color(0xFFF5F5F7)),
+            Container(height: 4, color: AppColors.pillSurface),
             // ── List or empty ──────────────────────────────────────
             Expanded(
               child: items.isEmpty
@@ -184,7 +184,7 @@ class _SegmentedTabs extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     fontFamily: 'Manrope',
-                    color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                    color: isSelected ? Colors.white : AppColors.textMuted,
                   ),
                 ),
               ),
@@ -242,7 +242,7 @@ class _EmptyState extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF9CA3AF),
+              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -270,36 +270,6 @@ class _ActivityCard extends StatelessWidget {
   final VoidCallback onLeave;
   final VoidCallback onDelete;
 
-  Color get _accentColor {
-    switch (spark.category) {
-      case SparkCategory.sports:
-        return const Color(0xFF86EFAC);
-      case SparkCategory.study:
-        return const Color(0xFF93C5FD);
-      case SparkCategory.ride:
-        return const Color(0xFFC4B5FD);
-      case SparkCategory.events:
-        return const Color(0xFFFDBA74);
-      case SparkCategory.hangout:
-        return const Color(0xFFF9A8D4);
-    }
-  }
-
-  Color get _darkColor {
-    switch (spark.category) {
-      case SparkCategory.sports:
-        return const Color(0xFF15803D);
-      case SparkCategory.study:
-        return const Color(0xFF1D4ED8);
-      case SparkCategory.ride:
-        return const Color(0xFF6D28D9);
-      case SparkCategory.events:
-        return const Color(0xFFC2410C);
-      case SparkCategory.hangout:
-        return const Color(0xFFBE185D);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -308,7 +278,7 @@ class _ActivityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppColors.cardShadow,
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -321,7 +291,7 @@ class _ActivityCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Left accent bar
-              Container(width: 5, color: _accentColor),
+              Container(width: 4, color: AppColors.accentSurface),
               // Content
               Expanded(
                 child: Padding(
@@ -348,14 +318,15 @@ class _ActivityCard extends StatelessWidget {
                           Container(
                             width: 32,
                             height: 32,
-                            decoration: BoxDecoration(
-                              color: _accentColor.withValues(alpha: 0.18),
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: AppColors.iconBg,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               spark.category.icon,
-                              size: 16,
-                              color: _darkColor,
+                              size: 15,
+                              color: AppColors.accent,
                             ),
                           ),
                         ],
@@ -363,34 +334,33 @@ class _ActivityCard extends StatelessWidget {
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          Icon(Icons.schedule_rounded,
-                              size: 13, color: Colors.black38),
+                          const Icon(Icons.schedule_rounded,
+                              size: 13, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             spark.timeLabel,
                             style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           const SizedBox(width: 10),
-                          Icon(Icons.location_on_outlined,
-                              size: 13, color: Colors.black38),
+                          const Icon(Icons.location_on_outlined,
+                              size: 13, color: AppColors.textMuted),
                           const SizedBox(width: 3),
                           Text(
                             spark.distanceLabel,
                             style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Container(
-                          height: 1, color: const Color(0xFFF0F1F5)),
+                      Container(height: 1, color: AppColors.cardDivider),
                       // Action row
                       IntrinsicHeight(
                         child: Row(
@@ -410,14 +380,14 @@ class _ActivityCard extends StatelessWidget {
                               _Divider(),
                               _ActionButton(
                                 label: 'Leave',
-                                color: const Color(0xFFDC2626),
+                                color: AppColors.errorText,
                                 onTap: onLeave,
                               ),
                             ] else ...[
                               _Divider(),
                               _ActionButton(
                                 label: 'Delete',
-                                color: const Color(0xFFDC2626),
+                                color: AppColors.errorText,
                                 onTap: onDelete,
                               ),
                             ],
@@ -477,7 +447,7 @@ class _Divider extends StatelessWidget {
     return Container(
       width: 1,
       margin: const EdgeInsets.symmetric(vertical: 8),
-      color: const Color(0xFFF0F1F5),
+      color: AppColors.cardDivider,
     );
   }
 }

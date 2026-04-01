@@ -443,12 +443,21 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.person_outline,
-                            size: 16,
-                            color: AppColors.textSecondary,
+                          Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: AppColors.iconBg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.person_outline,
+                              size: 15,
+                              color: AppColors.accent,
+                            ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Created by $creatorLabel',
@@ -491,12 +500,21 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.phone_outlined,
-                              size: 16,
-                              color: AppColors.textSecondary,
+                            Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: AppColors.iconBg,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.phone_outlined,
+                                size: 15,
+                                color: AppColors.accent,
+                              ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 spark.hostPhoneNumber!,
@@ -532,12 +550,21 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 16,
-                            color: AppColors.textSecondary,
+                          Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: AppColors.iconBg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.location_on_outlined,
+                              size: 15,
+                              color: AppColors.accent,
+                            ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               locationLabel,
@@ -563,7 +590,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Divider(height: 1, color: AppColors.border),
+                    const Divider(height: 1, color: AppColors.cardDivider),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -1206,12 +1233,12 @@ class _JoinedActionTile extends StatelessWidget {
             Container(
               width: 38,
               height: 38,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.border),
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.iconBg,
+                shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 19, color: AppColors.accent),
+              child: Icon(icon, size: 18, color: AppColors.accent),
             ),
             const SizedBox(width: 12),
             Expanded(

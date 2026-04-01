@@ -560,18 +560,24 @@ class _MenuRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Row(
           children: [
-            SizedBox(
-              width: 22,
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.iconBg,
+                shape: BoxShape.circle,
+              ),
               child: Icon(
                 icon,
-                size: 20,
+                size: 17,
                 color: iconColor ?? AppColors.onSurfaceStrong,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -921,7 +927,16 @@ class _SheetToggleRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.onSurfaceStrong),
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.iconBg,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 15, color: AppColors.onSurfaceStrong),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
