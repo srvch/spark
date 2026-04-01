@@ -535,7 +535,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 }
 
 // ── Heights must match the measured content inside each state ──────────────
-const double _kExpandedHeight = 212.0;
+const double _kExpandedHeight = 220.0;
 const double _kCollapsedHeight = 96.0;
 
 class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
