@@ -1571,15 +1571,15 @@ class _NearbyCardState extends State<_NearbyCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: isJoined ? AppColors.pillSurface : AppColors.accentSurface,
+                color: AppColors.accentSurface,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 widget.ctaLabel,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: isJoined ? AppColors.textMuted : AppColors.accent,
+                  color: AppColors.accent,
                 ),
               ),
             ),

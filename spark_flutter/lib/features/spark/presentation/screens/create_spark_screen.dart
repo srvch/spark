@@ -159,7 +159,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   child: _SectionCard(
-                    accentColor: _categoryAccentColor(_manualCategory),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -517,13 +516,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     );
   }
 
-  static Color _categoryAccentColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => AppColors.catSports,
-        SparkCategory.study => AppColors.catStudy,
-        SparkCategory.ride => AppColors.catRide,
-        SparkCategory.events => AppColors.catEvents,
-        SparkCategory.hangout => AppColors.catHangout,
-      };
+  static Color _categoryAccentColor(SparkCategory cat) => AppColors.neutralSurface;
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
         SparkCategory.sports => Icons.directions_run_rounded,
@@ -2031,13 +2024,7 @@ class _CreateScreenHeader extends StatelessWidget {
   const _CreateScreenHeader({required this.category});
   final SparkCategory category;
 
-  static Color _accentColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => AppColors.catSports,
-        SparkCategory.study => AppColors.catStudy,
-        SparkCategory.ride => AppColors.catRide,
-        SparkCategory.events => AppColors.catEvents,
-        SparkCategory.hangout => AppColors.catHangout,
-      };
+  static Color _accentColor(SparkCategory cat) => AppColors.accent;
 
   static IconData _icon(SparkCategory cat) => switch (cat) {
         SparkCategory.sports => Icons.directions_run_rounded,
@@ -2091,15 +2078,7 @@ class _CreateScreenHeader extends StatelessWidget {
             child: Icon(
               _icon(category),
               key: ValueKey(category),
-              color: accent == AppColors.catSports
-                  ? AppColors.catSportsFg
-                  : accent == AppColors.catStudy
-                      ? AppColors.catStudyFg
-                      : accent == AppColors.catRide
-                          ? AppColors.catRideFg
-                          : accent == AppColors.catEvents
-                              ? AppColors.catEventsFg
-                              : AppColors.catHangoutFg,
+              color: Colors.white,
               size: 20,
             ),
           ),
@@ -2110,10 +2089,9 @@ class _CreateScreenHeader extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.child, this.accentColor});
+  const _SectionCard({required this.child});
 
   final Widget child;
-  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
