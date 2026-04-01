@@ -1414,13 +1414,8 @@ class _NearbyCardState extends State<_NearbyCard> {
 
   static const _avatarInitials = ['A', 'J', 'S', 'M', 'R', 'K', 'P', 'D'];
 
-  static const _categoryColors = <SparkCategory, (Color, Color)>{
-    SparkCategory.sports: (Color(0xFF10B981), Color(0xFFECFDF5)),
-    SparkCategory.study: (Color(0xFF6366F1), Color(0xFFEEF2FF)),
-    SparkCategory.ride: (Color(0xFFF59E0B), Color(0xFFFFFBEB)),
-    SparkCategory.events: (Color(0xFFEC4899), Color(0xFFFDF2F8)),
-    SparkCategory.hangout: (Color(0xFF8B5CF6), Color(0xFFF5F3FF)),
-  };
+  static const _iconBg = Color(0xFFF2F4F8);
+  static const _iconFg = Color(0xFF3D5070);
 
   @override
   void initState() {
@@ -1458,8 +1453,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     final count = 2 + (seed % 2);
     return List.generate(count, (i) {
       final ii = (seed + i * 13) % _avatarInitials.length;
-      final colors = _categoryColors[widget.spark.category]!;
-      return (colors.$2, _avatarInitials[ii]);
+      return (const Color(0xFFE8ECF5), _avatarInitials[ii]);
     });
   }
 
@@ -1470,212 +1464,172 @@ class _NearbyCardState extends State<_NearbyCard> {
     final isLowSpots = spark.spotsLeft <= 2;
     final isJoined = widget.ctaLabel == 'Chat';
     final avatars = _avatars();
-    final catColors = _categoryColors[spark.category]!;
-    final accentColor = catColors.$1;
-    final bgColor = catColors.$2;
+    final isNow = spark.startsInMinutes <= 0;
 
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: AppColors.border.withValues(alpha: 0.5),
+            color: const Color(0xFFECEFF5),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: accentColor.withValues(alpha: 0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 5,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        accentColor,
-                        accentColor.withValues(alpha: 0.5),
-                      ],
-                    ),
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _iconBg,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                child: Icon(
+                  icon,
+                  color: _iconFg,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      spark.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            icon,
-                            color: accentColor,
-                            size: 22,
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 11,
+                          color: isNow
+                              ? AppColors.success
+                              : const Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          _countdown(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isNow
+                                ? AppColors.success
+                                : const Color(0xFF94A3B8),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                spark.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.schedule_rounded,
-                                    size: 12,
-                                    color: accentColor.withValues(alpha: 0.7),
-                                  ),
-                                  const SizedBox(width: 3),
-                                  Text(
-                                    _countdown(),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: spark.startsInMinutes <= 0
-                                          ? AppColors.success
-                                          : AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 5),
-                                    child: Text(
-                                      '·',
-                                      style: TextStyle(
-                                        color: AppColors.textSecondary,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.near_me_rounded,
-                                    size: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 3),
-                                  Flexible(
-                                    child: Text(
-                                      spark.distanceLabel,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  _AvatarStack(avatars: avatars),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    '${spark.participants.length} joining',
-                                    style: const TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  if (isLowSpots) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFEF2F2),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '${spark.spotsLeft} left',
-                                        style: const TextStyle(
-                                          fontSize: 10.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFEF4444),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 9,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isJoined
-                                ? AppColors.accent.withValues(alpha: 0.08)
-                                : AppColors.accent,
-                            borderRadius: BorderRadius.circular(999),
-                            boxShadow: isJoined
-                                ? []
-                                : [
-                                    BoxShadow(
-                                      color: AppColors.accent.withValues(alpha: 0.25),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                          ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Text(
-                            widget.ctaLabel,
+                            '·',
                             style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w800,
-                              color: isJoined
-                                  ? AppColors.accent
-                                  : Colors.white,
+                              color: Color(0xFFCBD5E1),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.near_me_rounded,
+                          size: 11,
+                          color: const Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            spark.distanceLabel,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94A3B8),
                             ),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        _AvatarStack(avatars: avatars),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${spark.participants.length} joining',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                        if (isLowSpots) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              '${spark.spotsLeft} left',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFEF4444),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isJoined
+                      ? const Color(0xFFF2F4F8)
+                      : AppColors.accent,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  widget.ctaLabel,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isJoined ? AppColors.accent : Colors.white,
+                    letterSpacing: 0.1,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1713,7 +1667,7 @@ class _AvatarStack extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF3D5070),
                   ),
                 ),
               ),
