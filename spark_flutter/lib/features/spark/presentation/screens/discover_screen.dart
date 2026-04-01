@@ -586,6 +586,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
 
 class _HeroPanel extends StatelessWidget {
   const _HeroPanel({
+    super.key,
     required this.selectedLocation,
     required this.radius,
     required this.onLocationTap,
@@ -815,6 +816,7 @@ class _HeroBannerSearchState extends State<_HeroBannerSearch> {
 
 class _HeroCollapsed extends StatelessWidget {
   const _HeroCollapsed({
+    super.key,
     required this.selectedLocation,
     required this.searchQuery,
     required this.onSearchChanged,
