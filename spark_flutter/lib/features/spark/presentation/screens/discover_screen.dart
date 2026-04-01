@@ -172,7 +172,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          Container(
+                            width: 1,
+                            height: 20,
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            color: const Color(0xFFDDE3F0),
+                          ),
                           GestureDetector(
                             onTap: () => _showPreferencesSheet(context),
                             child: Container(
@@ -558,28 +563,35 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
         (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
     final collapsed = t > 0.55;
 
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 220),
-      transitionBuilder: (child, animation) =>
-          FadeTransition(opacity: animation, child: child),
-      child: collapsed
-          ? _HeroCollapsed(
-              key: const ValueKey('c'),
-              selectedLocation: selectedLocation,
-              searchQuery: searchQuery,
-              onSearchChanged: onSearchChanged,
-              onSearchSubmitted: onSearchSubmitted,
-            )
-          : _HeroPanel(
-              key: const ValueKey('e'),
-              selectedLocation: selectedLocation,
-              radius: radius,
-              onLocationTap: onLocationTap,
-              onRadiusTap: onRadiusTap,
-              searchQuery: searchQuery,
-              onSearchChanged: onSearchChanged,
-              onSearchSubmitted: onSearchSubmitted,
-            ),
+    // ClipRect + fixed SizedBox ensures the Column never overflows the
+    // pinned header as shrinkOffset reduces the available height.
+    return ClipRect(
+      child: SizedBox(
+        height: maxExtent,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          transitionBuilder: (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+          child: collapsed
+              ? _HeroCollapsed(
+                  key: const ValueKey('c'),
+                  selectedLocation: selectedLocation,
+                  searchQuery: searchQuery,
+                  onSearchChanged: onSearchChanged,
+                  onSearchSubmitted: onSearchSubmitted,
+                )
+              : _HeroPanel(
+                  key: const ValueKey('e'),
+                  selectedLocation: selectedLocation,
+                  radius: radius,
+                  onLocationTap: onLocationTap,
+                  onRadiusTap: onRadiusTap,
+                  searchQuery: searchQuery,
+                  onSearchChanged: onSearchChanged,
+                  onSearchSubmitted: onSearchSubmitted,
+                ),
+        ),
+      ),
     );
   }
 }
