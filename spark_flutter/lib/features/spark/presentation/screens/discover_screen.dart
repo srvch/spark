@@ -747,9 +747,11 @@ class _HeroPanel extends StatelessWidget {
             const SizedBox(height: 16),
             // ── Row 4: search bar (white, inside navy) ──────────────
             _HeroBannerSearch(
-              initialValue: searchQuery,
-              onChanged: onSearchChanged,
-              onSubmitted: onSearchSubmitted,
+              currentQuery: searchQuery,
+              onQueryChanged: (v) {
+                onSearchChanged(v);
+                onSearchSubmitted(v);
+              },
             ),
           ],
         ),
@@ -758,87 +760,251 @@ class _HeroPanel extends StatelessWidget {
   }
 }
 
-class _HeroBannerSearch extends StatefulWidget {
+/// Visual-only search bar. Tapping opens [_SearchModal] — a proper full-screen
+/// TextField free from SliverPersistentHeader coordinate issues on iOS.
+class _HeroBannerSearch extends StatelessWidget {
   const _HeroBannerSearch({
-    required this.initialValue,
-    required this.onChanged,
-    required this.onSubmitted,
+    required this.currentQuery,
+    required this.onQueryChanged,
   });
 
-  final String initialValue;
-  final ValueChanged<String> onChanged;
-  final ValueChanged<String> onSubmitted;
+  final String currentQuery;
+  final ValueChanged<String> onQueryChanged;
 
-  @override
-  State<_HeroBannerSearch> createState() => _HeroBannerSearchState();
-}
-
-class _HeroBannerSearchState extends State<_HeroBannerSearch> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialValue);
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
+  Future<void> _openSearch(BuildContext context) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SearchModal(initialQuery: currentQuery),
+    );
+    if (result != null) onQueryChanged(result);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Icon(
-            Icons.search_rounded,
-            size: 16,
-            color: Colors.black.withValues(alpha: 0.28),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              focusNode: _focusNode,
-              textInputAction: TextInputAction.search,
-              autocorrect: false,
-              enableSuggestions: false,
-              contextMenuBuilder: null,
-              onChanged: widget.onChanged,
-              onSubmitted: widget.onSubmitted,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary.withValues(alpha: 0.9),
-                height: 1.2,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search plans, sports, study, ride…',
-                hintStyle: TextStyle(
+    final hasQuery = currentQuery.isNotEmpty;
+    return GestureDetector(
+      onTap: () => _openSearch(context),
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            Icon(
+              Icons.search_rounded,
+              size: 16,
+              color: Colors.black.withValues(alpha: hasQuery ? 0.55 : 0.28),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                hasQuery ? currentQuery : 'Search plans, sports, study, ride…',
+                style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black.withValues(alpha: 0.28),
+                  fontWeight: hasQuery ? FontWeight.w600 : FontWeight.w400,
+                  color: Colors.black.withValues(
+                    alpha: hasQuery ? 0.75 : 0.28,
+                  ),
                 ),
-                border: InputBorder.none,
-                isDense: true,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (hasQuery)
+              GestureDetector(
+                onTap: () => onQueryChanged(''),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 15,
+                    color: Colors.black.withValues(alpha: 0.4),
+                  ),
+                ),
+              )
+            else
+              const SizedBox(width: 10),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Full-screen search modal — safe to use autofocus here ──────────────────
+class _SearchModal extends StatefulWidget {
+  const _SearchModal({required this.initialQuery});
+  final String initialQuery;
+
+  @override
+  State<_SearchModal> createState() => _SearchModalState();
+}
+
+class _SearchModalState extends State<_SearchModal> {
+  late final TextEditingController _ctrl =
+      TextEditingController(text: widget.initialQuery);
+
+  static const _quickTags = [
+    'Cricket', 'Coffee', 'Study', 'Cycling', 'Drive', 'Badminton',
+  ];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _submit(String value) {
+    Navigator.of(context).pop(value.trim().toLowerCase());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
           ),
-          const SizedBox(width: 10),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Search input row ──────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F7FC),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.search_rounded,
+                            size: 18,
+                            color: AppColors.accent,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: _ctrl,
+                              autofocus: true,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              contextMenuBuilder: null,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: _submit,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textPrimary,
+                                height: 1.2,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isCollapsed: true,
+                                hintText: 'Search plans, sports, study, ride…',
+                                hintStyle: TextStyle(
+                                  fontSize: 15,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(null),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // ── Quick tags ────────────────────────────────────────
+              const Text(
+                'Quick search',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _quickTags
+                    .map(
+                      (tag) => GestureDetector(
+                        onTap: () => _submit(tag),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            tag,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -908,9 +1074,11 @@ class _HeroCollapsed extends StatelessWidget {
           const SizedBox(height: 8),
           // ── Sticky search bar ────────────────────────────────────
           _HeroBannerSearch(
-            initialValue: searchQuery,
-            onChanged: onSearchChanged,
-            onSubmitted: onSearchSubmitted,
+            currentQuery: searchQuery,
+            onQueryChanged: (v) {
+              onSearchChanged(v);
+              onSearchSubmitted(v);
+            },
           ),
         ],
       ),
