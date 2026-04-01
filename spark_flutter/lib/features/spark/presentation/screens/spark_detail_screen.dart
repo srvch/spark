@@ -171,10 +171,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     );
                   },
                   icon: const Icon(Icons.chat_bubble_rounded, size: 18),
-                  label: const Text(
-                    'OPEN CHAT',
-                    style: TextStyle(letterSpacing: 0.6),
-                  ),
+                  label: const Text('Open Chat'),
                 ),
                 const SizedBox(height: 12),
                 _JoinedActionTile(
@@ -727,19 +724,48 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeIn,
                 child: (!joined && !isCreator)
-                    ? PrimaryButton(
-                        key: const ValueKey('join-btn'),
-                        label: 'JOIN SPARK',
-                        backgroundColor: AppColors.accent,
-                        onPressed: _joinSpark,
-                      )
+                    ? (spark.spotsLeft == 0
+                        ? SizedBox(
+                            key: const ValueKey('full-btn'),
+                            height: 50,
+                            width: double.infinity,
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.pillSurface,
+                                foregroundColor: AppColors.textMuted,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: null,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.lock_outline_rounded, size: 16),
+                                  SizedBox(width: 7),
+                                  Text('Spark Full',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15)),
+                                ],
+                              ),
+                            ),
+                          )
+                        : PrimaryButton(
+                            key: const ValueKey('join-btn'),
+                            label: 'Join Spark',
+                            backgroundColor: AppColors.accent,
+                            onPressed: _joinSpark,
+                          ))
                     : (isCreator
                         ? Row(
                             key: const ValueKey('creator-actions'),
                             children: [
                               Expanded(
                                 child: PrimaryButton(
-                                  label: 'OPEN HOST CHAT',
+                                  label: 'Open Host Chat',
                                   compact: true,
                                   backgroundColor: AppColors.accent,
                                   onPressed: () {
@@ -772,7 +798,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                     );
                                   },
                                   child: const Text(
-                                    'SHARE INVITE',
+                                    'Share Invite',
                                     style: TextStyle(
                                       color: AppColors.accent,
                                       fontWeight: FontWeight.w700,
@@ -787,7 +813,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         children: [
                           Expanded(
                             child: PrimaryButton(
-                              label: 'OPEN CHAT',
+                              label: 'Open Chat',
                               compact: true,
                               backgroundColor: AppColors.accent,
                               onPressed: () {
@@ -817,10 +843,9 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               ),
                               onPressed: () => _leaveSpark(),
                               child: const Text(
-                                'LEAVE',
+                                'Leave',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.4,
                                 ),
                               ),
                             ),

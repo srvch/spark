@@ -664,7 +664,7 @@ class _ReferralBanner extends StatelessWidget {
               style: TextStyle(
                 fontSize: 52,
                 fontWeight: FontWeight.w900,
-                color: _kNavy.withOpacity(0.06),
+                color: _kNavy.withValues(alpha: 0.06),
                 fontFamily: 'Manrope',
                 letterSpacing: 2,
               ),
@@ -720,7 +720,7 @@ class _ReferralBanner extends StatelessWidget {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: _kNavy.withOpacity(0.15)),
+                              color: _kNavy.withValues(alpha: 0.15)),
                         ),
                         child: Row(
                           children: [

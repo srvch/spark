@@ -1730,7 +1730,17 @@ class _ManualForm extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.place_outlined, size: 15, color: AppColors.textSecondary),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: AppColors.iconBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.place_outlined,
+                        size: 13, color: AppColors.accent),
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1763,13 +1773,47 @@ class _ManualForm extends StatelessWidget {
                 .map(
                   (c) => Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(c.label),
-                      showCheckmark: false,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      selected: c == category,
-                      onSelected: (_) => onCategoryChanged(c),
+                    child: GestureDetector(
+                      onTap: () => onCategoryChanged(c),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: c == category
+                              ? AppColors.accent
+                              : AppColors.surfaceSubtle,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: c == category
+                                ? AppColors.accent
+                                : AppColors.chipBorder,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              c.icon,
+                              size: 13,
+                              color: c == category
+                                  ? Colors.white
+                                  : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              c.label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: c == category
+                                    ? Colors.white
+                                    : AppColors.chipText,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 )

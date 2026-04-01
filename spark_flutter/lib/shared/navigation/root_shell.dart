@@ -52,10 +52,7 @@ class RootShell extends ConsumerWidget {
                   onTap: () =>
                       ref.read(bottomTabProvider.notifier).state = 0,
                 ),
-                _NavItem(
-                  label: 'Create',
-                  icon: Icons.add_circle_outline_rounded,
-                  activeIcon: Icons.add_circle_rounded,
+                _CreateNavItem(
                   selected: tab == 1,
                   onTap: () =>
                       ref.read(bottomTabProvider.notifier).state = 1,
@@ -79,6 +76,60 @@ class RootShell extends ConsumerWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CreateNavItem extends StatelessWidget {
+  const _CreateNavItem({required this.selected, required this.onTap});
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const activeColor = AppColors.accent;
+    const inactiveColor = AppColors.darkTextSecondary;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.accent
+                    : AppColors.accent.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.add_rounded,
+                size: 22,
+                color: selected ? Colors.white : activeColor,
+              ),
+            ),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                color: selected ? activeColor : inactiveColor,
+                letterSpacing: selected ? 0.2 : 0,
+              ),
+              child: const Text('Create'),
+            ),
+          ],
         ),
       ),
     );
