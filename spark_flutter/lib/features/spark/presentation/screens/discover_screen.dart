@@ -670,52 +670,67 @@ class _HeroPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            // ── Row 2: location · radius ────────────────────────────
-            GestureDetector(
-              onTap: onLocationTap,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.location_on_rounded,
-                    size: 12,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    selectedLocation,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.65),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: Text(
-                      '·',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.35),
-                        fontSize: 12,
+            // ── Row 2: location (tappable) · radius (tappable) ─────
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 📍 location tap → location selector
+                GestureDetector(
+                  onTap: onLocationTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 12,
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
-                    ),
+                      const SizedBox(width: 3),
+                      Text(
+                        selectedLocation,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${radius}km',
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: Text(
+                    '·',
                     style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.35),
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.65),
                     ),
                   ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 14,
-                    color: Colors.white.withValues(alpha: 0.45),
+                ),
+                // radius tap → preferences sheet
+                GestureDetector(
+                  onTap: onRadiusTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${radius}km',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.65),
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.45),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             // ── Row 3: headline ─────────────────────────────────────
