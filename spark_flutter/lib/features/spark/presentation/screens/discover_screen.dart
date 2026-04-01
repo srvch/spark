@@ -909,67 +909,70 @@ class _SearchScreenState extends State<_SearchScreen> {
                   ),
                   // search field
                   Expanded(
-                    child: Container(
-                      height: 46,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F7FC),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: const Color(0xFFDDE3F0),
-                          width: 1.5,
-                        ),
+                    child: TextField(
+                      controller: _ctrl,
+                      autofocus: true,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      contextMenuBuilder: null,
+                      textInputAction: TextInputAction.search,
+                      onChanged: (v) =>
+                          setState(() => _query = v.trim()),
+                      onSubmitted: _submit,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search_rounded,
-                            size: 18,
-                            color: AppColors.accent,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _ctrl,
-                              autofocus: true,
-                              autocorrect: false,
-                              enableSuggestions: false,
-                              contextMenuBuilder: null,
-                              textInputAction: TextInputAction.search,
-                              onChanged: (v) =>
-                                  setState(() => _query = v.trim()),
-                              onSubmitted: _submit,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary,
-                                height: 1.2,
-                              ),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                isCollapsed: true,
-                                hintText:
-                                    'Search plans, sports, study, ride…',
-                                hintStyle: TextStyle(
-                                  fontSize: 15,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: const Color(0xFFF5F7FC),
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          size: 20,
+                          color: AppColors.accent,
+                        ),
+                        suffixIcon: _query.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () {
+                                  _ctrl.clear();
+                                  setState(() => _query = '');
+                                },
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  size: 18,
                                   color: AppColors.textSecondary,
                                 ),
-                              ),
-                            ),
+                              )
+                            : null,
+                        hintText: 'Search plans, sports, study, ride…',
+                        hintStyle: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 13),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFDDE3F0),
+                            width: 1.5,
                           ),
-                          if (_query.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                _ctrl.clear();
-                                setState(() => _query = '');
-                              },
-                              child: const Icon(
-                                Icons.close_rounded,
-                                size: 17,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                        ],
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFDDE3F0),
+                            width: 1.5,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: AppColors.accent,
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
                   ),
