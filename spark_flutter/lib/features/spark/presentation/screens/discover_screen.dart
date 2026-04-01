@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
@@ -26,17 +25,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   String query = '';
   late final ScrollController _scrollController;
   bool _isInfiniteScrolling = false;
-  bool _heroExpanded = false;
   String _timingTab = 'all';
-
-  static const String _heroSeenKey = 'hero_seen_v1';
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _initHeroState();
     Future.microtask(() {
       ref.read(sparkDataControllerProvider).refreshNearby(
         radiusKm: radius.toDouble(),
@@ -44,25 +39,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     });
   }
 
-  Future<void> _initHeroState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final seen = prefs.getBool(_heroSeenKey) ?? false;
-    if (!seen) {
-      if (mounted) setState(() => _heroExpanded = true);
-      await prefs.setBool(_heroSeenKey, true);
-    }
-  }
-
   void _onScroll() {
-    final pixels = _scrollController.position.pixels;
-
-    // Auto-collapse banner on scroll down, restore on scroll back to top
-    if (pixels > 40 && _heroExpanded) {
-      setState(() => _heroExpanded = false);
-    } else if (pixels <= 8 && !_heroExpanded) {
-      setState(() => _heroExpanded = true);
-    }
-
     if (_isInfiniteScrolling) return;
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 200) {
@@ -141,33 +118,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // ── Full-width merged header + hero banner ─────────────
-              SliverToBoxAdapter(
-                child: GestureDetector(
-                  onTap: () =>
-                      setState(() => _heroExpanded = !_heroExpanded),
-                  child: AnimatedCrossFade(
-                    duration: const Duration(milliseconds: 300),
-                    crossFadeState: _heroExpanded
-                        ? CrossFadeState.showFirst
-                        : CrossFadeState.showSecond,
-                    firstChild: _HeroPanel(
-                      selectedLocation: selectedLocation,
-                      radius: radius,
-                      onLocationTap: () =>
-                          _showLocationSelector(context),
-                      onRadiusTap: () =>
-                          _showPreferencesSheet(context),
-                      searchQuery: query,
-                      onSearchChanged: (v) =>
-                          setState(() => query = v.trim().toLowerCase()),
-                      onSearchSubmitted: (v) =>
-                          setState(() => query = v.trim().toLowerCase()),
-                    ),
-                    secondChild: _HeroCollapsed(
-                      selectedLocation: selectedLocation,
-                    ),
-                  ),
+              // ── Pinned header: expands at top, collapses on scroll ─
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _DiscoverHeaderDelegate(
+                  selectedLocation: selectedLocation,
+                  radius: radius,
+                  onLocationTap: () => _showLocationSelector(context),
+                  onRadiusTap: () => _showPreferencesSheet(context),
+                  searchQuery: query,
+                  onSearchChanged: (v) =>
+                      setState(() => query = v.trim().toLowerCase()),
+                  onSearchSubmitted: (v) =>
+                      setState(() => query = v.trim().toLowerCase()),
                 ),
               ),
               SliverPadding(
@@ -550,6 +513,77 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 }
 
+// ── Heights must match the measured content inside each state ──────────────
+const double _kExpandedHeight = 212.0;
+const double _kCollapsedHeight = 96.0;
+
+class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
+  const _DiscoverHeaderDelegate({
+    required this.selectedLocation,
+    required this.radius,
+    required this.onLocationTap,
+    required this.onRadiusTap,
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.onSearchSubmitted,
+  });
+
+  final String selectedLocation;
+  final int radius;
+  final VoidCallback onLocationTap;
+  final VoidCallback onRadiusTap;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onSearchSubmitted;
+
+  @override
+  double get minExtent => _kCollapsedHeight;
+
+  @override
+  double get maxExtent => _kExpandedHeight;
+
+  @override
+  bool shouldRebuild(_DiscoverHeaderDelegate old) =>
+      old.selectedLocation != selectedLocation ||
+      old.radius != radius ||
+      old.searchQuery != searchQuery;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final t =
+        (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
+    final collapsed = t > 0.55;
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation, child: child),
+      child: collapsed
+          ? _HeroCollapsed(
+              key: const ValueKey('c'),
+              selectedLocation: selectedLocation,
+              searchQuery: searchQuery,
+              onSearchChanged: onSearchChanged,
+              onSearchSubmitted: onSearchSubmitted,
+            )
+          : _HeroPanel(
+              key: const ValueKey('e'),
+              selectedLocation: selectedLocation,
+              radius: radius,
+              onLocationTap: onLocationTap,
+              onRadiusTap: onRadiusTap,
+              searchQuery: searchQuery,
+              onSearchChanged: onSearchChanged,
+              onSearchSubmitted: onSearchSubmitted,
+            ),
+    );
+  }
+}
+
 class _HeroPanel extends StatelessWidget {
   const _HeroPanel({
     required this.selectedLocation,
@@ -726,27 +760,27 @@ class _HeroBannerSearchState extends State<_HeroBannerSearch> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 46,
+      height: 40,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.10),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Icon(
             Icons.search_rounded,
-            size: 18,
-            color: Colors.black.withValues(alpha: 0.35),
+            size: 16,
+            color: Colors.black.withValues(alpha: 0.28),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: _controller,
@@ -754,25 +788,25 @@ class _HeroBannerSearchState extends State<_HeroBannerSearch> {
               textInputAction: TextInputAction.search,
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
-              style: const TextStyle(
-                fontSize: 14,
+              style: TextStyle(
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+                color: AppColors.textPrimary.withValues(alpha: 0.9),
                 height: 1.2,
               ),
               decoration: InputDecoration(
                 hintText: 'Search plans, sports, study, ride…',
                 hintStyle: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 13,
                   fontWeight: FontWeight.w400,
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: Colors.black.withValues(alpha: 0.28),
                 ),
                 border: InputBorder.none,
                 isDense: true,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
         ],
       ),
     );
@@ -780,48 +814,71 @@ class _HeroBannerSearchState extends State<_HeroBannerSearch> {
 }
 
 class _HeroCollapsed extends StatelessWidget {
-  const _HeroCollapsed({required this.selectedLocation});
+  const _HeroCollapsed({
+    required this.selectedLocation,
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.onSearchSubmitted,
+  });
+
   final String selectedLocation;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onSearchSubmitted;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF2F426F),
-      padding: const EdgeInsets.fromLTRB(20, 12, 16, 14),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Saurav',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              fontFamily: 'Manrope',
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 7),
-            child: Text(
-              '•',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.4),
+          // ── Name · location ──────────────────────────────────────
+          Row(
+            children: [
+              const Text(
+                'Saurav',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  fontFamily: 'Manrope',
+                ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '•',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                ),
+              ),
+              Icon(
+                Icons.location_on_rounded,
+                size: 11,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
+              const SizedBox(width: 2),
+              Text(
+                selectedLocation,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
           ),
-          Icon(
-            Icons.location_on_rounded,
-            size: 12,
-            color: Colors.white.withValues(alpha: 0.55),
-          ),
-          const SizedBox(width: 3),
-          Text(
-            selectedLocation,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.75),
-            ),
+          const SizedBox(height: 8),
+          // ── Sticky search bar ────────────────────────────────────
+          _HeroBannerSearch(
+            initialValue: searchQuery,
+            onChanged: onSearchChanged,
+            onSubmitted: onSearchSubmitted,
           ),
         ],
       ),
@@ -1318,7 +1375,7 @@ class _CreateNudge extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Your spark could be what someone nearby is looking for right now.',
+            'Start a plan. Someone nearby might join.',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
