@@ -495,7 +495,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                 ),
               PrimaryButton(
                 label: 'Create',
-                backgroundColor: const Color(0xFF2F426F),
+                backgroundColor: AppColors.accent,
                 onPressed: () async {
                   if (validationMessage == null) {
                     await _createSpark();
@@ -1291,7 +1291,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
             width: double.infinity,
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2F426F),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -1307,7 +1307,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
             child: TextButton(
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF2F426F),
+                foregroundColor: AppColors.accent,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
               child: const Text('Cancel'),
@@ -1337,13 +1337,13 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF2F426F),
+              foregroundColor: AppColors.accent,
             ),
             child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2F426F),
+              backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(controller.text.trim()),
@@ -1446,7 +1446,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
             width: double.infinity,
             child: FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2F426F),
+                backgroundColor: AppColors.accent,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -1581,7 +1581,7 @@ class _ModeSwitch extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF2F426F) : Colors.transparent,
+          color: selected ? AppColors.accent : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -1634,7 +1634,7 @@ class _AutoPreviewCard extends StatelessWidget {
                   color: const Color(0xFFEAF2FF),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(plan.category.icon, size: 16, color: const Color(0xFF2F426F)),
+                child: Icon(plan.category.icon, size: 16, color: AppColors.accent),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -2163,9 +2163,9 @@ class _QuickChoiceChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF2F426F) : Colors.white,
+          color: selected ? AppColors.accent : Colors.white,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: selected ? const Color(0xFF2F426F) : AppColors.border),
+          border: Border.all(color: selected ? AppColors.accent : AppColors.border),
         ),
         child: Text(
           label,
@@ -2345,7 +2345,7 @@ class _MicPulseDotState extends State<_MicPulseDot>
           width: size,
           height: size,
           decoration: BoxDecoration(
-            color: const Color(0xFF2F426F).withValues(alpha: 0.5 + (t * 0.5)),
+            color: AppColors.accent.withValues(alpha: 0.5 + (t * 0.5)),
             shape: BoxShape.circle,
           ),
         );

@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_theme.dart';
+
 import '../controllers/auth_controller.dart';
 
 class PhoneLoginScreen extends ConsumerStatefulWidget {
@@ -364,7 +366,7 @@ class _LogoSection extends StatelessWidget {
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF3A55A4), Color(0xFF2F426F)],
+                  colors: [Color(0xFF3A55A4), AppColors.accent],
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -590,12 +592,12 @@ class _PrimaryButtonState extends State<_PrimaryButton>
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF3A55A4), Color(0xFF2F426F)],
+              colors: [Color(0xFF3A55A4), AppColors.accent],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2F426F).withValues(alpha: 0.6),
+                color: AppColors.accent.withValues(alpha: 0.6),
                 blurRadius: 24,
                 offset: const Offset(0, 8),
               ),

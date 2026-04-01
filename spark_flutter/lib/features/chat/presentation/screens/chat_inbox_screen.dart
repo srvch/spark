@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../spark/domain/spark.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import 'chat_screen.dart';
 
-const _kNavy = Color(0xFF2F426F);
+final _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFEAF0FF);
 
 class ChatInboxScreen extends ConsumerWidget {

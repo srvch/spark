@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../../features/chat/presentation/screens/chat_screen.dart';
 import '../controllers/spark_controller.dart';
 import '../../domain/spark.dart';
 import 'spark_detail_screen.dart';
 
-const _kNavy = Color(0xFF2F426F);
+final _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFEAF0FF);
 const _kSurface = Color(0xFFF7F8FC);
 

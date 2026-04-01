@@ -596,7 +596,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-class _HeroPanel extends StatelessWidget {
+class _HeroPanel extends StatefulWidget {
   const _HeroPanel({
     super.key,
     required this.selectedLocation,
@@ -616,6 +616,35 @@ class _HeroPanel extends StatelessWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSearchSubmitted;
 
+  @override
+  State<_HeroPanel> createState() => _HeroPanelState();
+}
+
+class _HeroPanelState extends State<_HeroPanel>
+    with TickerProviderStateMixin {
+  late final AnimationController _shimmerCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  )..repeat();
+
+  late final AnimationController _floatCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 4),
+  )..repeat(reverse: true);
+
+  late final AnimationController _entryCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  )..forward();
+
+  @override
+  void dispose() {
+    _shimmerCtrl.dispose();
+    _floatCtrl.dispose();
+    _entryCtrl.dispose();
+    super.dispose();
+  }
+
   String get _greeting {
     final h = DateTime.now().hour;
     if (h < 12) return 'Good morning';
@@ -627,133 +656,227 @@ class _HeroPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(24),
-        bottomRight: Radius.circular(24),
+        bottomLeft: Radius.circular(28),
+        bottomRight: Radius.circular(28),
       ),
-      child: Container(
-        color: const Color(0xFF2F426F),
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Row 1: greeting (left) + bell (right) ──────────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    '$_greeting, Saurav',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontFamily: 'Manrope',
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      size: 17,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            // ── Row 2: location (tappable) · radius (tappable) ─────
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 📍 location tap → location selector
-                GestureDetector(
-                  onTap: onLocationTap,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.location_on_rounded,
-                        size: 12,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        selectedLocation,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.65),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: Text(
-                    '·',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.35),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                // radius tap → preferences sheet
-                GestureDetector(
-                  onTap: onRadiusTap,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${radius}km',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.65),
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.45),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // ── Row 3: headline ─────────────────────────────────────
-            const Text(
-              'Plans happening near you, right now.',
-              style: TextStyle(
-                fontSize: 22,
-                height: 1.2,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                fontFamily: 'Manrope',
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_shimmerCtrl, _floatCtrl]),
+        builder: (context, child) {
+          final shimmerT = _shimmerCtrl.value;
+          final floatT = _floatCtrl.value;
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment(-1.0 + shimmerT * 0.3, -0.5),
+                end: Alignment(1.0 + shimmerT * 0.3, 1.0),
+                colors: const [
+                  Color(0xFF1A2D50),
+                  Color(0xFF243B6A),
+                  Color(0xFF1E3358),
+                  Color(0xFF2A4575),
+                ],
+                stops: [
+                  0.0,
+                  0.3 + shimmerT * 0.1,
+                  0.6 + shimmerT * 0.05,
+                  1.0,
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            // ── Row 4: search bar (white, inside navy) ──────────────
-            _HeroBannerSearch(
-              currentQuery: searchQuery,
-              onQueryChanged: (v) {
-                onSearchChanged(v);
-                onSearchSubmitted(v);
-              },
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -30 + floatT * 15,
+                  top: -20 + floatT * 10,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFF60A5FA).withValues(alpha: 0.12),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: -40 + floatT * 8,
+                  bottom: -10 + floatT * 12,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFF86EFAC).withValues(alpha: 0.08),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 60 + floatT * 5,
+                  bottom: 30 - floatT * 8,
+                  child: Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.15 + floatT * 0.1),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 40 - floatT * 6,
+                  top: 30 + floatT * 4,
+                  child: Container(
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF86EFAC).withValues(alpha: 0.2 + floatT * 0.15),
+                    ),
+                  ),
+                ),
+                child!,
+              ],
             ),
-          ],
+          );
+        },
+        child: FadeTransition(
+          opacity: CurvedAnimation(
+            parent: _entryCtrl,
+            curve: Curves.easeOut,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$_greeting, Saurav',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.notifications_none_rounded,
+                          size: 18,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: widget.onLocationTap,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.06),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 12,
+                              color: const Color(0xFF86EFAC).withValues(alpha: 0.9),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              widget.selectedLocation,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '·',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${widget.radius}km',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 14,
+                              color: Colors.white.withValues(alpha: 0.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Plans happening\nnear you, right now.',
+                  style: TextStyle(
+                    fontSize: 24,
+                    height: 1.15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontFamily: 'Manrope',
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _HeroBannerSearch(
+                  currentQuery: widget.searchQuery,
+                  onQueryChanged: (v) {
+                    widget.onSearchChanged(v);
+                    widget.onSearchSubmitted(v);
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1072,13 +1195,18 @@ class _HeroCollapsed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF2F426F),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A2D50), Color(0xFF243B6A)],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Name · location ──────────────────────────────────────
           Row(
             children: [
               const Text(
@@ -1103,21 +1231,20 @@ class _HeroCollapsed extends StatelessWidget {
               Icon(
                 Icons.location_on_rounded,
                 size: 11,
-                color: Colors.white.withValues(alpha: 0.5),
+                color: const Color(0xFF86EFAC).withValues(alpha: 0.8),
               ),
-              const SizedBox(width: 2),
+              const SizedBox(width: 3),
               Text(
                 selectedLocation,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.white.withValues(alpha: 0.75),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          // ── Sticky search bar ────────────────────────────────────
           _HeroBannerSearch(
             currentQuery: searchQuery,
             onQueryChanged: (v) {
@@ -1147,33 +1274,50 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 7),
+      padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             color: selected
-                ? const Color(0xFF2F426F)
-                : const Color(0xFFF0F1F5),
+                ? AppColors.accent
+                : AppColors.surfaceDim,
             borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected
+                  ? AppColors.accent
+                  : AppColors.border.withValues(alpha: 0.6),
+              width: 1,
+            ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
-                size: 13,
-                color: selected ? Colors.white : Colors.black45,
+                size: 14,
+                color: selected ? Colors.white : AppColors.textSecondary,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : Colors.black54,
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                  letterSpacing: 0.1,
                 ),
               ),
             ],
@@ -1268,9 +1412,15 @@ class _NearbyCard extends StatefulWidget {
 class _NearbyCardState extends State<_NearbyCard> {
   Timer? _timer;
 
-  static const _avatarBg = Color(0xFFDDE3F0);
-  static const _avatarFg = Color(0xFF2F426F);
   static const _avatarInitials = ['A', 'J', 'S', 'M', 'R', 'K', 'P', 'D'];
+
+  static const _categoryColors = <SparkCategory, (Color, Color)>{
+    SparkCategory.sports: (Color(0xFF10B981), Color(0xFFECFDF5)),
+    SparkCategory.study: (Color(0xFF6366F1), Color(0xFFEEF2FF)),
+    SparkCategory.ride: (Color(0xFFF59E0B), Color(0xFFFFFBEB)),
+    SparkCategory.events: (Color(0xFFEC4899), Color(0xFFFDF2F8)),
+    SparkCategory.hangout: (Color(0xFF8B5CF6), Color(0xFFF5F3FF)),
+  };
 
   @override
   void initState() {
@@ -1308,7 +1458,8 @@ class _NearbyCardState extends State<_NearbyCard> {
     final count = 2 + (seed % 2);
     return List.generate(count, (i) {
       final ii = (seed + i * 13) % _avatarInitials.length;
-      return (_avatarBg, _avatarInitials[ii]);
+      final colors = _categoryColors[widget.spark.category]!;
+      return (colors.$2, _avatarInitials[ii]);
     });
   }
 
@@ -1319,49 +1470,72 @@ class _NearbyCardState extends State<_NearbyCard> {
     final isLowSpots = spark.spotsLeft <= 2;
     final isJoined = widget.ctaLabel == 'Chat';
     final avatars = _avatars();
+    final catColors = _categoryColors[spark.category]!;
+    final accentColor = catColors.$1;
+    final bgColor = catColors.$2;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
+    return GestureDetector(
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.border.withValues(alpha: 0.5),
+            width: 1,
+          ),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0F000000),
-              blurRadius: 12,
-              offset: Offset(0, 3),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(width: 4, color: const Color(0xFFE8ECF4)),
+                Container(
+                  width: 5,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        accentColor,
+                        accentColor.withValues(alpha: 0.5),
+                      ],
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 13, 12, 13),
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 46,
+                          height: 46,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF0F3FA),
-                            borderRadius: BorderRadius.circular(12),
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
                             icon,
-                            color: const Color(0xFF2F426F),
-                            size: 20,
+                            color: accentColor,
+                            size: 22,
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1373,23 +1547,27 @@ class _NearbyCardState extends State<_NearbyCard> {
                                 style: const TextStyle(
                                   fontSize: 15.5,
                                   fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                  letterSpacing: -0.2,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 5),
                               Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.schedule_rounded,
                                     size: 12,
-                                    color: AppColors.textSecondary,
+                                    color: accentColor.withValues(alpha: 0.7),
                                   ),
                                   const SizedBox(width: 3),
                                   Text(
                                     _countdown(),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.textSecondary,
+                                      color: spark.startsInMinutes <= 0
+                                          ? AppColors.success
+                                          : AppColors.textSecondary,
                                     ),
                                   ),
                                   const Padding(
@@ -1421,11 +1599,11 @@ class _NearbyCardState extends State<_NearbyCard> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 6),
                               Row(
                                 children: [
                                   _AvatarStack(avatars: avatars),
-                                  const SizedBox(width: 5),
+                                  const SizedBox(width: 6),
                                   Text(
                                     '${spark.participants.length} joining',
                                     style: const TextStyle(
@@ -1435,22 +1613,23 @@ class _NearbyCardState extends State<_NearbyCard> {
                                     ),
                                   ),
                                   if (isLowSpots) ...[
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(horizontal: 5),
-                                      child: Text(
-                                        '·',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 11.5,
-                                        ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 2,
                                       ),
-                                    ),
-                                    Text(
-                                      '${spark.spotsLeft} left',
-                                      style: const TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF2F426F),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF2F2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '${spark.spotsLeft} left',
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFFEF4444),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -1462,14 +1641,23 @@ class _NearbyCardState extends State<_NearbyCard> {
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
+                            horizontal: 16,
+                            vertical: 9,
                           ),
                           decoration: BoxDecoration(
                             color: isJoined
-                                ? const Color(0xFFE4EBFA)
+                                ? AppColors.accent.withValues(alpha: 0.08)
                                 : AppColors.accent,
                             borderRadius: BorderRadius.circular(999),
+                            boxShadow: isJoined
+                                ? []
+                                : [
+                                    BoxShadow(
+                                      color: AppColors.accent.withValues(alpha: 0.25),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                           ),
                           child: Text(
                             widget.ctaLabel,
@@ -1501,8 +1689,8 @@ class _AvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const size = 18.0;
-    const overlap = 10.0;
+    const size = 20.0;
+    const overlap = 11.0;
     return SizedBox(
       width: size + (avatars.length - 1) * overlap,
       height: size,
@@ -1523,9 +1711,9 @@ class _AvatarStack extends StatelessWidget {
                 child: Text(
                   avatars[i].$2,
                   style: const TextStyle(
-                    fontSize: 8,
+                    fontSize: 8.5,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF2F426F),
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -1570,23 +1758,33 @@ class _LiveHeaderState extends State<_LiveHeader>
         const Text(
           'Happening nearby',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: Colors.black,
+            color: AppColors.textPrimary,
             fontFamily: 'Manrope',
+            letterSpacing: -0.3,
           ),
         ),
-        const SizedBox(width: 7),
-        FadeTransition(
-          opacity: _pulse,
-          child: Container(
-            width: 7,
-            height: 7,
-            decoration: const BoxDecoration(
-              color: Color(0xFF22C55E),
-              shape: BoxShape.circle,
-            ),
-          ),
+        const SizedBox(width: 8),
+        AnimatedBuilder(
+          animation: _pulse,
+          builder: (context, child) {
+            return Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.success.withValues(alpha: 0.4 * _pulse.value),
+                    blurRadius: 6 + _pulse.value * 4,
+                    spreadRadius: _pulse.value * 2,
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
@@ -1601,67 +1799,106 @@ class _CreateNudge extends ConsumerWidget {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8, bottom: 8),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F4FF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFD0DCFF)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.accent.withValues(alpha: 0.06),
+            const Color(0xFFF8FAFD),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: AppColors.accent.withValues(alpha: 0.12),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Nothing nearby? Start one.',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.accent,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Start a plan. Someone nearby might join.',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 12),
           Row(
             children: [
-              GestureDetector(
-                onTap: () {
-                  ref.read(bottomTabProvider.notifier).state = 1;
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  size: 18,
+                  color: AppColors.accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Nothing nearby? Start one.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add, size: 14, color: Colors.white),
-                      SizedBox(width: 5),
-                      Text(
-                        'Create a spark',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+                    letterSpacing: -0.2,
                   ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.only(left: 48),
+            child: Text(
+              'Start a plan. Someone nearby might join.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.only(left: 48),
+            child: GestureDetector(
+              onTap: () {
+                ref.read(bottomTabProvider.notifier).state = 1;
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.25),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, size: 15, color: Colors.white),
+                    SizedBox(width: 6),
+                    Text(
+                      'Create a spark',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

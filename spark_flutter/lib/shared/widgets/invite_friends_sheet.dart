@@ -39,7 +39,7 @@ Future<void> showInviteFriendsBottomSheet({
                     child: const Icon(
                       Icons.person_add_rounded,
                       size: 21,
-                      color: Color(0xFF2F426F),
+                      color: AppColors.accent,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -115,7 +115,7 @@ Future<void> showInviteFriendsBottomSheet({
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  backgroundColor: const Color(0xFF2F426F),
+                  backgroundColor: AppColors.accent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -149,7 +149,7 @@ Future<void> showInviteFriendsBottomSheet({
                       child: const Text(
                         'VIEW SPARK',
                         style: TextStyle(
-                          color: Color(0xFF2F426F),
+                          color: AppColors.accent,
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                         ),
