@@ -8,7 +8,7 @@ import '../../../spark/domain/spark.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../controllers/chat_controller.dart';
 
-final _kNavy = AppColors.accent;
+const _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFEAF0FF);
 const _kSurface = Color(0xFFF7F8FC);
 

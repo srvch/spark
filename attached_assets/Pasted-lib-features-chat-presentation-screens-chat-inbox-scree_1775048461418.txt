@@ -1,0 +1,96 @@
+lib/features/chat/presentation/screens/chat_inbox_screen.dart:39:20: Error: Not a constant expression.
+            color: _kNavy,
+                   ^^^^^^
+lib/features/chat/presentation/screens/chat_inbox_screen.dart:97:22: Error: Not a constant expression.
+              color: _kNavy,
+                     ^^^^^^
+lib/features/chat/presentation/screens/chat_inbox_screen.dart:106:22: Error: Not a constant expression.
+              color: _kNavy,
+                     ^^^^^^
+lib/features/chat/presentation/screens/chat_inbox_screen.dart:197:30: Error: Not a constant expression.
+                      color: _kNavy,
+                             ^^^^^^
+lib/features/chat/presentation/screens/chat_inbox_screen.dart:255:18: Error: Not a constant expression.
+          color: _kNavy,
+                 ^^^^^^
+lib/features/profile/presentation/screens/profile_screen.dart:136:44: Error: Not a constant expression.
+                                    color: _kNavy,
+                                           ^^^^^^
+lib/features/profile/presentation/screens/profile_screen.dart:348:26: Error: Not a constant expression.
+        backgroundColor: _kNavy,
+                         ^^^^^^
+lib/features/profile/presentation/screens/profile_screen.dart:430:40: Error: Not a constant expression.
+                      backgroundColor: _kNavy,
+                                       ^^^^^^
+lib/features/profile/presentation/screens/profile_screen.dart:726:40: Error: Not a constant expression.
+                                color: _kNavy,
+                                       ^^^^^^
+lib/features/profile/presentation/screens/profile_screen.dart:737:40: Error: Not a constant expression.
+                                color: _kNavy,
+                                       ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:144:20: Error: Not a constant expression.
+            color: _kNavy,
+                   ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:161:30: Error: Not a constant expression.
+                      color: _kNavy,
+                             ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:305:34: Error: Not a constant expression.
+                          color: _kNavy,
+                                 ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:360:32: Error: Not a constant expression.
+                        color: _kNavy,
+                               ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:494:38: Error: Not a constant expression.
+                              color: _kNavy, size: 20),
+                                     ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:505:40: Error: Not a constant expression.
+                                color: _kNavy,
+                                       ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:564:44: Error: Not a constant expression.
+                                    color: _kNavy,
+                                           ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:917:18: Error: Not a constant expression.
+          color: _kNavy,
+                 ^^^^^^
+lib/features/chat/presentation/screens/chat_screen.dart:965:24: Error: Not a constant expression.
+                color: _kNavy,
+                       ^^^^^^
+lib/features/spark/presentation/screens/activity_screen.dart:41:32: Error: Not a constant expression.
+              size: 18, color: _kNavy),
+                               ^^^^^^
+lib/features/spark/presentation/screens/activity_screen.dart:48:20: Error: Not a constant expression.
+            color: _kNavy,
+                   ^^^^^^
+lib/features/spark/presentation/screens/activity_screen.dart:233:22: Error: Not a constant expression.
+              color: _kNavy,
+                     ^^^^^^
+lib/features/spark/presentation/screens/activity_screen.dart:342:40: Error: Not a constant expression.
+                                color: _kNavy,
+                                       ^^^^^^
+lib/features/spark/presentation/widgets/location_picker_sheet.dart:406:46: Error: Not a constant expression.
+                                      color: _kNavy,
+                                             ^^^^^^
+lib/features/spark/presentation/widgets/location_picker_sheet.dart:412:44: Error: Not a constant expression.
+                                    color: _kNavy,
+                                           ^^^^^^
+lib/features/spark/presentation/widgets/location_picker_sheet.dart:422:40: Error: Not a constant expression.
+                                color: _kNavy,
+                                       ^^^^^^
+Target kernel_snapshot_program failed: Exception
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileFlutterBuildDebug'.
+> Process 'command '/Users/saurav/flutter/bin/flutter'' finished with non-zero exit value 1
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 8s
+Running Gradle task 'assembleDebug'...                              8.9s
+Error: Gradle task assembleDebug failed with exit code 1

@@ -6,7 +6,7 @@ import '../../../spark/domain/spark.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import 'chat_screen.dart';
 
-final _kNavy = AppColors.accent;
+const _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFEAF0FF);
 
 class ChatInboxScreen extends ConsumerWidget {

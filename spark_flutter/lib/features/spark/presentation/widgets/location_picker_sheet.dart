@@ -234,7 +234,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
     return widget.selectedLocation;
   }
 
-  static final _kNavy = AppColors.accent;
+  static const _kNavy = AppColors.accent;
 
   /// Opens a full-screen dialog (not a sheet) so the TextField lives at root
   /// Navigator coordinates — iOS renders its input toolbar correctly there.

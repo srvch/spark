@@ -12,9 +12,9 @@ import '../../../spark/presentation/screens/activity_screen.dart';
 import '../../../spark/presentation/screens/spark_detail_screen.dart';
 import '../controllers/profile_preferences_controller.dart';
 
-final _kNavy = AppColors.accent;
+const _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFF0F4FF);
-final _kDivider = AppColors.border;
+const _kDivider = AppColors.border;
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -818,7 +818,7 @@ class _AlertsSheet extends ConsumerWidget {
               value: prefs.notifyStartsSoon,
               onChanged: notifier.setStartsSoon,
             ),
-            Divider(height: 1, color: _kDivider),
+            const Divider(height: 1, color: _kDivider),
             _SheetToggleRow(
               icon: Icons.people_outline_rounded,
               label: 'Filling fast',
