@@ -16,7 +16,7 @@ class AppColors {
 
   static const pillSurface   = Color(0xFFF2F2F7);
   static const neutralSurface = Color(0xFFF0F1F5);
-  static const cardDivider   = Color(0xFFEBEDF0);
+  static const cardDivider   = Color(0xFFF2F2F2);
   static const cardBorder    = Color(0xFFE4E7EC);
   static const avatarBg      = Color(0xFFE8ECF5);
 
@@ -29,10 +29,10 @@ class AppColors {
   static const surfaceSubtle = Color(0xFFF7F8FC);
   static const mutedIcon     = Color(0xFF6B7280);
   static const cardShadow    = Color(0x0A000000);
-  static const heroBg1       = Color(0xFF1C2A40);
-  static const heroBg2       = Color(0xFF213050);
-  static const heroBg3       = Color(0xFF1C2E46);
-  static const heroBg4       = Color(0xFF233048);
+  static const heroBg1       = Color(0xFF19222F);
+  static const heroBg2       = Color(0xFF1D2A3C);
+  static const heroBg3       = Color(0xFF192634);
+  static const heroBg4       = Color(0xFF1D2A38);
   static const prefsBg1      = Color(0xFF1A2D50);
   static const prefsBg2      = Color(0xFF243B6A);
   static const chipBg        = Color(0xFFF5F7FC);
