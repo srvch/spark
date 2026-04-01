@@ -7,7 +7,7 @@ import '../../../spark/presentation/controllers/spark_controller.dart';
 import 'chat_screen.dart';
 
 const _kNavy = AppColors.accent;
-const _kNavyLight = Color(0xFFEAF0FF);
+const _kNavyLight = AppColors.accentSurface;
 
 class ChatInboxScreen extends ConsumerWidget {
   const ChatInboxScreen({super.key});
@@ -42,7 +42,7 @@ class ChatInboxScreen extends ConsumerWidget {
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF0F1F5)),
+          child: Container(height: 1, color: AppColors.cardDivider),
         ),
       ),
       body: SafeArea(
@@ -54,7 +54,7 @@ class ChatInboxScreen extends ConsumerWidget {
                 separatorBuilder: (_, _) => Container(
                   height: 1,
                   margin: const EdgeInsets.only(left: 72),
-                  color: const Color(0xFFF0F1F5),
+                  color: AppColors.cardDivider,
                 ),
                 itemBuilder: (context, index) {
                   final spark = available[index];
@@ -87,6 +87,7 @@ class _EmptyInbox extends StatelessWidget {
           Container(
             width: 72,
             height: 72,
+            alignment: Alignment.center,
             decoration: const BoxDecoration(
               color: _kNavyLight,
               shape: BoxShape.circle,
@@ -113,7 +114,7 @@ class _EmptyInbox extends StatelessWidget {
             style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF9CA3AF),
+              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -135,52 +136,35 @@ class _InboxRow extends StatelessWidget {
   final bool created;
   final VoidCallback onTap;
 
-  Color get _accentBg {
-    switch (spark.category) {
-      case SparkCategory.sports:
-        return const Color(0xFFDCFCE7);
-      case SparkCategory.study:
-        return const Color(0xFFDBEAFE);
-      case SparkCategory.ride:
-        return const Color(0xFFEDE9FE);
-      case SparkCategory.events:
-        return const Color(0xFFFEF3C7);
-      case SparkCategory.hangout:
-        return const Color(0xFFFCE7F3);
-    }
-  }
-
-  Color get _accentIcon {
-    switch (spark.category) {
-      case SparkCategory.sports:
-        return const Color(0xFF15803D);
-      case SparkCategory.study:
-        return const Color(0xFF1D4ED8);
-      case SparkCategory.ride:
-        return const Color(0xFF6D28D9);
-      case SparkCategory.events:
-        return const Color(0xFFC2410C);
-      case SparkCategory.hangout:
-        return const Color(0xFFBE185D);
-    }
-  }
+  static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
+        SparkCategory.sports => Icons.directions_run_rounded,
+        SparkCategory.study => Icons.auto_stories_rounded,
+        SparkCategory.ride => Icons.drive_eta_rounded,
+        SparkCategory.events => Icons.confirmation_number_outlined,
+        SparkCategory.hangout => Icons.coffee_outlined,
+      };
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: _accentBg,
-                borderRadius: BorderRadius.circular(14),
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.iconBg,
+                shape: BoxShape.circle,
               ),
-              child: Icon(spark.category.icon, color: _accentIcon, size: 22),
+              child: Icon(
+                _categoryIcon(spark.category),
+                color: AppColors.accent,
+                size: 19,
+              ),
             ),
             const SizedBox(width: 13),
             Expanded(
@@ -204,7 +188,7 @@ class _InboxRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.textMuted,
                     ),
                   ),
                   if (joined || created) ...[
@@ -226,7 +210,7 @@ class _InboxRow extends StatelessWidget {
             const Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color: Color(0xFFD1D5DB),
+              color: AppColors.onSurfaceFaint,
             ),
           ],
         ),

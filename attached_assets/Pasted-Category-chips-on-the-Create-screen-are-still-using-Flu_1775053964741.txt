@@ -1,0 +1,21 @@
+Category chips on the Create screen are still using Flutter's default ChoiceChip widget — Material-style elevation, checkmarks, grey selection states. They look out of place against the rest of the Apple-style design. A custom pill style (same as the quick-time chips "Now / 30 min / 1 hr") would unify the form completely.
+
+Seed data shows "Starts in 602 min" in the Chat list (visible in your screenshot). The mock sparks use hardcoded past/future times rather than times relative to DateTime.now(), so events always look stale. Refreshing the seed data to generate times from the current moment makes the app feel live.
+
+Page transitions — pushes and pops still use the default Material slide-from-right/fade. One line change to use Cupertino-style transitions app-wide gives the entire navigation feel a significant iOS upgrade.
+
+Medium impact — visible in specific flows
+
+CTA button labels use ALL-CAPS + letter spacing ("JOIN SPARK", "OPEN CHAT", "CREATE"). Apple HIG prefers title case or sentence case. Removing the all-caps on primary buttons makes them feel more native.
+
+Create screen field rows (Place/Venue, Notes) have bare floating icons without the circle background. The Discover list, Profile, and Spark Detail all got the circle treatment — Create is the one screen that still has the inconsistency.
+
+Hero radar preview still reads "SPORTS / TRANSIT / CULTURE / LIFE" — those aren't the app's actual category names (Sports, Study, Ride, Events, Hangout). Minor but breaks the polish.
+
+Lower impact — nice to have
+
+Bottom nav Create (+) button isn't visually differentiated from Discover/Chat/Profile. On apps like Instagram and Threads, the Create action is elevated with a filled circle or accent color to make it feel like the main action.
+
+Referral code watermark in the Profile banner uses .withOpacity() (deprecated API) rather than .withValues(alpha:) — minor but worth tidying.
+
+Spark Detail card — when 0 spots remain, there's no distinct visual state on the Join button (disabled, greyed-out, "Full" label). The edge case isn't designed.
