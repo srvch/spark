@@ -13,7 +13,7 @@ import '../../../spark/presentation/screens/spark_detail_screen.dart';
 import '../controllers/profile_preferences_controller.dart';
 
 const _kNavy = AppColors.accent;
-const _kNavyLight = Color(0xFFF0F4FF);
+const _kNavyLight = AppColors.accentSurface;
 const _kDivider = AppColors.border;
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -38,7 +38,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final recent = _recentItems(created: created, joined: joined);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -53,13 +53,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F7),
+                        color: AppColors.pillSurface,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Icon(
                         Icons.arrow_back_rounded,
                         size: 18,
-                        color: Colors.black87,
+                        color: AppColors.onSurfaceEmphasis,
                       ),
                     ),
                   ),
@@ -121,7 +121,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 style: const TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black54,
+                                  color: AppColors.onSurfaceStrong,
                                   fontFamily: 'Manrope',
                                 ),
                               ),
@@ -236,8 +236,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _MenuRow(
                     icon: Icons.sos_rounded,
                     label: 'SOS Alert',
-                    labelColor: const Color(0xFFB91C1C),
-                    iconColor: const Color(0xFFB91C1C),
+                    labelColor: AppColors.errorText,
+                    iconColor: AppColors.errorText,
                     onTap: () {
                       _analytics.track('sos_from_profile_tapped');
                       _openLegalFlow(_LegalType.safety);
@@ -495,7 +495,7 @@ class _QuickStat extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.black54,
+                color: AppColors.onSurfaceStrong,
                 fontFamily: 'Manrope',
               ),
             ),
@@ -523,7 +523,7 @@ class _SectionLabel extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: Colors.black38,
+          color: AppColors.onSurfaceLight,
           letterSpacing: 0.6,
           fontFamily: 'Manrope',
         ),
@@ -568,7 +568,7 @@ class _MenuRow extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 20,
-                color: iconColor ?? Colors.black54,
+                color: iconColor ?? AppColors.onSurfaceStrong,
               ),
             ),
             const SizedBox(width: 14),
@@ -592,7 +592,7 @@ class _MenuRow extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black45,
+                        color: AppColors.onSurfaceMedium,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -603,7 +603,7 @@ class _MenuRow extends StatelessWidget {
             const Icon(
               Icons.chevron_right_rounded,
               size: 18,
-              color: Colors.black26,
+              color: AppColors.onSurfaceFaint,
             ),
           ],
         ),
@@ -621,7 +621,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 24, thickness: 4, color: Color(0xFFF5F5F7));
+    return const Divider(height: 24, thickness: 4, color: AppColors.pillSurface);
   }
 }
 
@@ -644,7 +644,7 @@ class _ReferralBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF3FF),
+        color: AppColors.accentTint,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Stack(
@@ -806,7 +806,7 @@ class _AlertsSheet extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Colors.black45,
+                color: AppColors.onSurfaceMedium,
                 fontFamily: 'Manrope',
               ),
             ),
@@ -833,7 +833,7 @@ class _AlertsSheet extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Colors.black38,
+                color: AppColors.onSurfaceLight,
                 letterSpacing: 0.6,
                 fontFamily: 'Manrope',
               ),
@@ -851,7 +851,7 @@ class _AlertsSheet extends ConsumerWidget {
                       labelStyle: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: prefs.radiusKm == km ? _kNavy : Colors.black54,
+                        color: prefs.radiusKm == km ? _kNavy : AppColors.onSurfaceStrong,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -866,7 +866,7 @@ class _AlertsSheet extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Colors.black38,
+                color: AppColors.onSurfaceLight,
                 letterSpacing: 0.6,
                 fontFamily: 'Manrope',
               ),
@@ -888,7 +888,7 @@ class _AlertsSheet extends ConsumerWidget {
                         fontWeight: FontWeight.w600,
                         color: prefs.interests.contains(category)
                             ? _kNavy
-                            : Colors.black54,
+                            : AppColors.onSurfaceStrong,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -921,7 +921,7 @@ class _SheetToggleRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.black54),
+          Icon(icon, size: 18, color: AppColors.onSurfaceStrong),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

@@ -9,8 +9,8 @@ import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../controllers/chat_controller.dart';
 
 const _kNavy = AppColors.accent;
-const _kNavyLight = Color(0xFFEAF0FF);
-const _kSurface = Color(0xFFF7F8FC);
+const _kNavyLight = AppColors.accentSurface;
+const _kSurface = AppColors.surfaceSubtle;
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, required this.spark});
@@ -130,9 +130,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         participants.where((p) => !hiddenUserIds.contains(p.id)).length;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -169,7 +169,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F7),
+                      color: AppColors.pillSurface,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
@@ -177,7 +177,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF6B7280),
+                        color: AppColors.mutedIcon,
                       ),
                     ),
                   ),
@@ -189,7 +189,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               style: const TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF9CA3AF),
+                color: AppColors.textMuted,
               ),
             ),
           ],
@@ -212,7 +212,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF6B7280),
+                          color: AppColors.mutedIcon,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -223,7 +223,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: const Color(0xFFF0F1F5)),
+          child: Container(height: 1, color: AppColors.neutralSurface),
         ),
       ),
       body: SafeArea(
@@ -235,18 +235,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 8),
-                color: const Color(0xFFF5F5F7),
+                color: AppColors.pillSurface,
                 child: Row(
                   children: const [
                     Icon(Icons.lock_rounded,
-                        size: 14, color: Color(0xFF6B7280)),
+                        size: 14, color: AppColors.mutedIcon),
                     SizedBox(width: 6),
                     Text(
                       'This spark is locked — no new members can join',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF6B7280),
+                        color: AppColors.mutedIcon,
                       ),
                     ),
                   ],
@@ -294,7 +294,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         border:
-                            Border.all(color: const Color(0xFFDDE1ED)),
+                            Border.all(color: AppColors.cardBorder),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -322,7 +322,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         color: _kSurface,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                            color: const Color(0xFFE4E7EF)),
+                            color: AppColors.cardBorder),
                       ),
                       child: TextField(
                         controller: _controller,
@@ -338,7 +338,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           hintStyle: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFFB0B7C3),
+                            color: AppColors.separator,
                           ),
                           contentPadding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
@@ -463,7 +463,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
@@ -511,7 +511,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF9CA3AF),
+                                color: AppColors.textMuted,
                               ),
                             ),
                           ],
@@ -535,7 +535,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             height: 36,
                             decoration: BoxDecoration(
                               color: locked
-                                  ? const Color(0xFFF5F5F7)
+                                  ? AppColors.pillSurface
                                   : _kNavyLight,
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -545,7 +545,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   : Icons.lock_open_rounded,
                               size: 18,
                               color: locked
-                                  ? const Color(0xFF6B7280)
+                                  ? AppColors.mutedIcon
                                   : _kNavy,
                             ),
                           ),
@@ -572,7 +572,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF9CA3AF),
+                                    color: AppColors.textMuted,
                                   ),
                                 ),
                               ],
@@ -597,7 +597,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF6B7280),
+                          color: AppColors.mutedIcon,
                           letterSpacing: 0.3,
                         ),
                       ),
@@ -638,7 +638,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF9CA3AF),
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ),
@@ -768,7 +768,7 @@ class _MessageBubble extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF9CA3AF),
+                    color: AppColors.textMuted,
                   ),
                 ),
               ),
@@ -836,7 +836,7 @@ class _MessageBubble extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF9CA3AF),
+                        color: AppColors.textMuted,
                       ),
                     ),
                   ),
@@ -868,7 +868,7 @@ class _MessageBubble extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A202C),
+                          color: AppColors.textPrimary,
                           height: 1.35,
                         ),
                       ),
@@ -877,7 +877,7 @@ class _MessageBubble extends StatelessWidget {
                         message.timeLabel,
                         style: const TextStyle(
                           fontSize: 10.5,
-                          color: Color(0xFF9CA3AF),
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -972,7 +972,7 @@ class _HostControlRow extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F7),
+                color: AppColors.pillSurface,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -980,7 +980,7 @@ class _HostControlRow extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.mutedIcon,
                 ),
               ),
             )
@@ -991,7 +991,7 @@ class _HostControlRow extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F7),
+                  color: AppColors.pillSurface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
@@ -999,7 +999,7 @@ class _HostControlRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedIcon,
                   ),
                 ),
               ),
@@ -1011,7 +1011,7 @@ class _HostControlRow extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: AppColors.errorSurface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
@@ -1019,7 +1019,7 @@ class _HostControlRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFFDC2626),
+                    color: AppColors.errorText,
                   ),
                 ),
               ),

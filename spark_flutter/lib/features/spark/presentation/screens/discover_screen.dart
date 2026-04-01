@@ -110,7 +110,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final filtered = _applyFilters(discoverableSparks);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,
@@ -177,7 +177,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             width: 1,
                             height: 20,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
-                            color: const Color(0xFFDDE3F0),
+                            color: AppColors.chipBorder,
                           ),
                           GestureDetector(
                             onTap: () => _showPreferencesSheet(context),
@@ -188,14 +188,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: const Color(0xFFD1D5DB),
+                                  color: AppColors.separator,
                                   width: 1,
                                 ),
                               ),
                               child: const Icon(
                                 Icons.tune_rounded,
                                 size: 15,
-                                color: Color(0xFF374151),
+                                color: AppColors.chipText,
                               ),
                             ),
                           ),
@@ -238,10 +238,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
+                            color: AppColors.errorSurface,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFFFCA5A5),
+                              color: AppColors.errorText,
                             ),
                           ),
                           child: Row(
@@ -249,7 +249,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               const Icon(
                                 Icons.error_outline,
                                 size: 16,
-                                color: Color(0xFFB91C1C),
+                                color: AppColors.errorText,
                               ),
                               const SizedBox(width: 8),
                               const Expanded(
@@ -258,7 +258,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF7F1D1D),
+                                    color: AppColors.accent,
                                   ),
                                 ),
                               ),
@@ -276,17 +276,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 sliver: SliverToBoxAdapter(
                   child: filtered.isEmpty
                       ? const SizedBox.shrink()
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFFE4E7EC),
-                                width: 1,
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: AppColors.cardShadow,
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
                               ),
-                            ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -295,7 +298,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                     const Divider(
                                       height: 1,
                                       thickness: 1,
-                                      color: Color(0xFFEBEDF0),
+                                      indent: 54,
+                                      endIndent: 16,
+                                      color: AppColors.cardDivider,
                                     ),
                                   _NearbyCard(
                                     spark: filtered[i],
@@ -686,10 +691,10 @@ class _HeroPanelState extends State<_HeroPanel>
                 begin: Alignment(-1.0 + shimmerT * 0.3, -0.5),
                 end: Alignment(1.0 + shimmerT * 0.3, 1.0),
                 colors: const [
-                  Color(0xFF1A2D50),
-                  Color(0xFF243B6A),
-                  Color(0xFF1E3358),
-                  Color(0xFF2A4575),
+                  AppColors.heroBg1,
+                  AppColors.heroBg2,
+                  AppColors.heroBg3,
+                  AppColors.heroBg4,
                 ],
                 stops: [
                   0.0,
@@ -711,7 +716,7 @@ class _HeroPanelState extends State<_HeroPanel>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF60A5FA).withValues(alpha: 0.12),
+                          AppColors.darkAccent.withValues(alpha: 0.12),
                           Colors.transparent,
                         ],
                       ),
@@ -728,7 +733,7 @@ class _HeroPanelState extends State<_HeroPanel>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF86EFAC).withValues(alpha: 0.08),
+                          AppColors.orbGreen.withValues(alpha: 0.08),
                           Colors.transparent,
                         ],
                       ),
@@ -755,7 +760,7 @@ class _HeroPanelState extends State<_HeroPanel>
                     height: 4,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF86EFAC).withValues(alpha: 0.2 + floatT * 0.15),
+                      color: AppColors.orbGreen.withValues(alpha: 0.2 + floatT * 0.15),
                     ),
                   ),
                 ),
@@ -830,7 +835,7 @@ class _HeroPanelState extends State<_HeroPanel>
                             Icon(
                               Icons.location_on_rounded,
                               size: 12,
-                              color: const Color(0xFF86EFAC).withValues(alpha: 0.9),
+                              color: AppColors.orbGreen.withValues(alpha: 0.9),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -1027,7 +1032,7 @@ class _SearchScreenState extends State<_SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1042,7 +1047,7 @@ class _SearchScreenState extends State<_SearchScreen> {
                     icon: const Icon(
                       Icons.arrow_back_rounded,
                       size: 22,
-                      color: Colors.black87,
+                      color: AppColors.onSurfaceEmphasis,
                     ),
                     onPressed: () => Navigator.of(context).pop(null),
                   ),
@@ -1065,7 +1070,7 @@ class _SearchScreenState extends State<_SearchScreen> {
                       ),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: const Color(0xFFF5F7FC),
+                        fillColor: AppColors.chipBg,
                         prefixIcon: const Icon(
                           Icons.search_rounded,
                           size: 20,
@@ -1094,14 +1099,14 @@ class _SearchScreenState extends State<_SearchScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(
-                            color: Color(0xFFDDE3F0),
+                            color: AppColors.chipBorder,
                             width: 1.5,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(
-                            color: Color(0xFFDDE3F0),
+                            color: AppColors.chipBorder,
                             width: 1.5,
                           ),
                         ),
@@ -1150,12 +1155,12 @@ class _SearchScreenState extends State<_SearchScreen> {
                       decoration: BoxDecoration(
                         color: isActive
                             ? AppColors.accent
-                            : const Color(0xFFF0F3FA),
+                            : AppColors.chipSelectedBg,
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
                           color: isActive
                               ? AppColors.accent
-                              : const Color(0xFFDDE3F0),
+                              : AppColors.chipBorder,
                           width: 1,
                         ),
                       ),
@@ -1215,7 +1220,7 @@ class _HeroCollapsed extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1A2D50), Color(0xFF243B6A)],
+          colors: [AppColors.prefsBg1, AppColors.prefsBg2],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
@@ -1247,7 +1252,7 @@ class _HeroCollapsed extends StatelessWidget {
               Icon(
                 Icons.location_on_rounded,
                 size: 11,
-                color: const Color(0xFF86EFAC).withValues(alpha: 0.8),
+                color: AppColors.orbGreen.withValues(alpha: 0.8),
               ),
               const SizedBox(width: 3),
               Text(
@@ -1301,7 +1306,7 @@ class _CategoryChip extends StatelessWidget {
             color: selected ? AppColors.accent : Colors.white,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppColors.accent : const Color(0xFFD1D5DB),
+              color: selected ? AppColors.accent : AppColors.separator,
               width: 1,
             ),
           ),
@@ -1317,7 +1322,7 @@ class _CategoryChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : const Color(0xFF374151),
+                  color: selected ? Colors.white : AppColors.chipText,
                 ),
               ),
             ],
@@ -1342,13 +1347,13 @@ class _EmptyState extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFE4EBFA),
+              color: AppColors.chipAccentBg,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(
               Icons.explore_off_outlined,
               size: 30,
-              color: Color(0xFF3E5E9E),
+              color: AppColors.chipAccentText,
             ),
           ),
           const SizedBox(height: 16),
@@ -1414,8 +1419,8 @@ class _NearbyCardState extends State<_NearbyCard> {
 
   static const _avatarInitials = ['A', 'J', 'S', 'M', 'R', 'K', 'P', 'D'];
 
-  static const _iconBg = Color(0xFFF2F4F8);
-  static const _iconFg = Color(0xFF3D5070);
+  static const _iconBg = AppColors.iconBg;
+  static const _iconFg = AppColors.iconFg;
 
   @override
   void initState() {
@@ -1453,7 +1458,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     final count = 2 + (seed % 2);
     return List.generate(count, (i) {
       final ii = (seed + i * 13) % _avatarInitials.length;
-      return (const Color(0xFFE8ECF5), _avatarInitials[ii]);
+      return (AppColors.avatarBg, _avatarInitials[ii]);
     });
   }
 
@@ -1469,7 +1474,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -1486,32 +1491,32 @@ class _NearbyCardState extends State<_NearbyCard> {
                     style: const TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: AppColors.textPrimary,
                       letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       Icon(
                         Icons.schedule_rounded,
                         size: 11,
-                        color: isNow ? AppColors.success : const Color(0xFF9CA3AF),
+                        color: isNow ? AppColors.success : AppColors.textMuted,
                       ),
                       const SizedBox(width: 3),
                       Text(
                         _countdown(),
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: isNow ? AppColors.success : const Color(0xFF9CA3AF),
+                          fontWeight: FontWeight.w400,
+                          color: isNow ? AppColors.success : AppColors.textMuted,
                         ),
                       ),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 4),
-                        child: Text('·', style: TextStyle(color: Color(0xFFD1D5DB), fontSize: 12)),
+                        child: Text('·', style: TextStyle(color: AppColors.separator, fontSize: 12)),
                       ),
-                      Icon(Icons.near_me_rounded, size: 11, color: const Color(0xFF9CA3AF)),
+                      const Icon(Icons.near_me_rounded, size: 11, color: AppColors.textMuted),
                       const SizedBox(width: 3),
                       Flexible(
                         child: Text(
@@ -1519,24 +1524,24 @@ class _NearbyCardState extends State<_NearbyCard> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF9CA3AF),
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 7),
                   Row(
                     children: [
-                      _AvatarStack(avatars: avatars),
+                      _AvatarStack(avatars: avatars, total: spark.participants.length),
                       const SizedBox(width: 5),
                       Text(
                         '${spark.participants.length} joining',
                         style: const TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF9CA3AF),
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textMuted,
                         ),
                       ),
                       if (isLowSpots) ...[
@@ -1544,7 +1549,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFEF2F2),
+                            color: AppColors.errorSurface,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -1552,7 +1557,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFFEF4444),
+                              color: AppColors.errorText,
                             ),
                           ),
                         ),
@@ -1564,19 +1569,17 @@ class _NearbyCardState extends State<_NearbyCard> {
             ),
             const SizedBox(width: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F7),
+                color: AppColors.pillSurface,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 widget.ctaLabel,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: isJoined
-                      ? const Color(0xFF9CA3AF)
-                      : AppColors.accent,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.accent,
                 ),
               ),
             ),
@@ -1588,19 +1591,27 @@ class _NearbyCardState extends State<_NearbyCard> {
 }
 
 class _AvatarStack extends StatelessWidget {
-  const _AvatarStack({required this.avatars});
+  const _AvatarStack({required this.avatars, required this.total});
   final List<(Color, String)> avatars;
+  final int total;
+
+  static const int _maxVisible = 3;
 
   @override
   Widget build(BuildContext context) {
     const size = 20.0;
     const overlap = 11.0;
+    final shown = avatars.length.clamp(0, _maxVisible);
+    final overflow = total > shown ? total - shown : 0;
+    final slots = shown + (overflow > 0 ? 1 : 0);
+    final totalWidth = slots <= 1 ? size : size + (slots - 1) * overlap;
+
     return SizedBox(
-      width: size + (avatars.length - 1) * overlap,
+      width: totalWidth,
       height: size,
       child: Stack(
         children: [
-          for (var i = 0; i < avatars.length; i++)
+          for (var i = 0; i < shown; i++)
             Positioned(
               left: i * overlap,
               child: Container(
@@ -1617,6 +1628,28 @@ class _AvatarStack extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          if (overflow > 0)
+            Positioned(
+              left: shown * overlap,
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$overflow',
+                  style: const TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -1664,7 +1697,7 @@ class _LiveHeaderState extends State<_LiveHeader>
           style: TextStyle(
             fontSize: 19,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF111827),
+            color: AppColors.textPrimary,
             fontFamily: 'Manrope',
             letterSpacing: -0.4,
           ),
@@ -1707,7 +1740,7 @@ class _CreateNudge extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E7EC), width: 1),
+        border: Border.all(color: AppColors.cardBorder, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

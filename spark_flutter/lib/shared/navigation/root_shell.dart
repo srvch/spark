@@ -105,7 +105,7 @@ class _NavItem extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const activeColor = AppColors.accent;
     final inactiveColor =
-        isDark ? AppColors.darkTextSecondary : const Color(0xFF94A3B8);
+        isDark ? AppColors.darkTextSecondary : AppColors.darkTextSecondary;
 
     return Expanded(
       child: GestureDetector(
@@ -117,7 +117,7 @@ class _NavItem extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
                 color: selected
                     ? (isDark
