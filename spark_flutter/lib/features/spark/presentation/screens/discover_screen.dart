@@ -132,106 +132,37 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
+              // ── Full-width merged header + hero banner ─────────────
+              SliverToBoxAdapter(
+                child: GestureDetector(
+                  onTap: () =>
+                      setState(() => _heroExpanded = !_heroExpanded),
+                  child: AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 300),
+                    crossFadeState: _heroExpanded
+                        ? CrossFadeState.showFirst
+                        : CrossFadeState.showSecond,
+                    firstChild: _HeroPanel(
+                      selectedLocation: selectedLocation,
+                      radius: radius,
+                      onLocationTap: () =>
+                          _showLocationSelector(context),
+                      onRadiusTap: () =>
+                          _showPreferencesSheet(context),
+                    ),
+                    secondChild: _HeroCollapsed(
+                      selectedLocation: selectedLocation,
+                    ),
+                  ),
+                ),
+              ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
                 sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _HeaderSection(
-                        selectedLocation: selectedLocation,
-                        onLocationTap: () =>
-                            _showLocationSelector(context),
-                        onRadiusTap: () =>
-                            _showPreferencesSheet(context),
-                        radius: radius,
-                      ),
-                      const SizedBox(height: 14),
-                      GestureDetector(
-                        onTap: () =>
-                            setState(() => _heroExpanded = !_heroExpanded),
-                        child: AnimatedCrossFade(
-                          duration: const Duration(milliseconds: 280),
-                          crossFadeState: _heroExpanded
-                              ? CrossFadeState.showFirst
-                              : CrossFadeState.showSecond,
-                          firstChild: Stack(
-                            children: [
-                              const _HeroPanel(),
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.expand_less,
-                                        size: 14,
-                                        color: Colors.white70,
-                                      ),
-                                      SizedBox(width: 3),
-                                      Text(
-                                        'Hide',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.white70,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          secondChild: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2F426F),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(
-                                  Icons.explore,
-                                  color: Colors.white70,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Find plans happening around you',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                Spacer(),
-                                Icon(
-                                  Icons.expand_more,
-                                  color: Colors.white70,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      // ── Search + section header row ───────────────
+                      // ── Search ───────────────────────────────────
                       _InlineSearchBar(
                         initialValue: query,
                         onChanged: (value) {
@@ -620,149 +551,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 }
 
-class _HeaderSection extends StatelessWidget {
-  const _HeaderSection({
-    required this.selectedLocation,
-    required this.onLocationTap,
-    required this.onRadiusTap,
-    required this.radius,
-  });
-
-  final String selectedLocation;
-  final VoidCallback onLocationTap;
-  final VoidCallback onRadiusTap;
-  final int radius;
-
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _greeting,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Saurav',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: onLocationTap,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.location_on_rounded,
-                          size: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          selectedLocation,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    '·',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  GestureDetector(
-                    onTap: onRadiusTap,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${radius}km radius',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Icon(
-                          Icons.tune_rounded,
-                          size: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: () {},
-          child: Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Icon(
-              Icons.notifications_none_rounded,
-              size: 18,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _InlineSearchBar extends StatefulWidget {
   const _InlineSearchBar({
     required this.initialValue,
@@ -919,90 +707,235 @@ class _InlineSearchBarState extends State<_InlineSearchBar> {
 }
 
 class _HeroPanel extends StatelessWidget {
-  const _HeroPanel();
+  const _HeroPanel({
+    required this.selectedLocation,
+    required this.radius,
+    required this.onLocationTap,
+    required this.onRadiusTap,
+  });
+
+  final String selectedLocation;
+  final int radius;
+  final VoidCallback onLocationTap;
+  final VoidCallback onRadiusTap;
+
+  String get _greeting {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(28),
+        bottomRight: Radius.circular(28),
+      ),
       child: Container(
-        height: 128,
-        decoration: const BoxDecoration(
-          color: Color(0xFF2F426F),
-        ),
+        color: const Color(0xFF2F426F),
         child: Stack(
           children: [
-            // ── Decorative circles (right side depth) ──────────────
+            // ── Decorative circles ──────────────────────────────────
             Positioned(
-              right: -28,
-              top: -28,
+              right: -40,
+              top: -40,
               child: Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.06),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 28,
-              bottom: -36,
-              child: Container(
-                width: 100,
-                height: 100,
+                width: 200,
+                height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.05),
                 ),
               ),
             ),
-            // ── Icon cluster ────────────────────────────────────────
             Positioned(
-              right: 18,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _HeroIconBubble(
-                      icon: Icons.directions_run_rounded,
-                      offsetX: -10,
-                    ),
-                    const SizedBox(height: 6),
-                    _HeroIconBubble(
-                      icon: Icons.drive_eta_rounded,
-                      offsetX: 10,
-                    ),
-                    const SizedBox(height: 6),
-                    _HeroIconBubble(
-                      icon: Icons.auto_stories_rounded,
-                      offsetX: -6,
-                    ),
-                  ],
+              right: 60,
+              bottom: -50,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.04),
                 ),
               ),
             ),
-            // ── Text content ────────────────────────────────────────
+            // ── Icon cluster (right side) ───────────────────────────
+            Positioned(
+              right: 20,
+              bottom: 28,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _HeroIconBubble(
+                    icon: Icons.directions_run_rounded,
+                    offsetX: -12,
+                  ),
+                  const SizedBox(height: 8),
+                  _HeroIconBubble(
+                    icon: Icons.drive_eta_rounded,
+                    offsetX: 12,
+                  ),
+                  const SizedBox(height: 8),
+                  _HeroIconBubble(
+                    icon: Icons.auto_stories_rounded,
+                    offsetX: -6,
+                  ),
+                ],
+              ),
+            ),
+            // ── Content ─────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 18, 120, 18),
+              padding: const EdgeInsets.fromLTRB(20, 16, 130, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const _PillLabel(label: 'LIVE IN YOUR AREA'),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Top row: greeting + notification bell
+                  Row(
                     children: [
+                      Expanded(
+                        child: Text(
+                          _greeting,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            size: 18,
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  // Name
+                  const Text(
+                    'Saurav',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontFamily: 'Manrope',
+                      height: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Location + radius row
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: onLocationTap,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.location_on_rounded,
+                                  size: 12,
+                                  color: Colors.white.withValues(alpha: 0.8)),
+                              const SizedBox(width: 4),
+                              Text(
+                                selectedLocation,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(Icons.keyboard_arrow_down_rounded,
+                                  size: 14,
+                                  color: Colors.white.withValues(alpha: 0.7)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: onRadiusTap,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.tune_rounded,
+                                  size: 12,
+                                  color: Colors.white.withValues(alpha: 0.8)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${radius}km radius',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // LIVE pill
+                  const _PillLabel(label: 'LIVE IN YOUR AREA'),
+                  const SizedBox(height: 10),
+                  // Headline
+                  const Text(
+                    'Plans happening\nnear you, right now.',
+                    style: TextStyle(
+                      fontSize: 22,
+                      height: 1.2,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Hide hint
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.expand_less_rounded,
+                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(width: 3),
                       Text(
-                        'Plans happening\nnear you, right now.',
+                        'Tap to hide',
                         style: TextStyle(
-                          fontSize: 18,
-                          height: 1.2,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          fontFamily: 'Manrope',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
                       ),
                     ],
@@ -1012,6 +945,88 @@ class _HeroPanel extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeroCollapsed extends StatelessWidget {
+  const _HeroCollapsed({required this.selectedLocation});
+  final String selectedLocation;
+
+  String get _greeting {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Morning';
+    if (h < 17) return 'Afternoon';
+    return 'Evening';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFF2F426F),
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 20),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Good $_greeting, Saurav',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.location_on_rounded,
+                      size: 11, color: Colors.white.withValues(alpha: 0.6)),
+                  const SizedBox(width: 3),
+                  Text(
+                    selectedLocation,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.explore_outlined,
+                    size: 13, color: Colors.white.withValues(alpha: 0.8)),
+                const SizedBox(width: 5),
+                Text(
+                  'Nearby plans',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.expand_more_rounded,
+                    size: 14, color: Colors.white.withValues(alpha: 0.6)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1027,19 +1042,19 @@ class _HeroIconBubble extends StatelessWidget {
     return Transform.translate(
       offset: Offset(offsetX, 0),
       child: Container(
-        width: 36,
-        height: 36,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: Colors.white.withValues(alpha: 0.18),
           ),
         ),
         child: Icon(
           icon,
-          size: 18,
-          color: Colors.white,
+          size: 20,
+          color: Colors.white.withValues(alpha: 0.85),
         ),
       ),
     );
