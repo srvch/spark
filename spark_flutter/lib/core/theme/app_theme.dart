@@ -61,6 +61,12 @@ class AppColors {
   static const catEventsFg   = Color(0xFFB45309);
   static const catHangoutFg  = Color(0xFFBE185D);
 
+  static const onSurfaceFaint    = Color(0x42000000);
+  static const onSurfaceLight    = Color(0x61000000);
+  static const onSurfaceMedium   = Color(0x72000000);
+  static const onSurfaceStrong   = Color(0x8A000000);
+  static const onSurfaceEmphasis = Color(0xDE000000);
+
   static const darkBackground = Color(0xFF0B1120);
   static const darkSurface = Color(0xFF141C2E);
   static const darkBorder = Color(0xFF1E293B);

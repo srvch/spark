@@ -110,7 +110,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final filtered = _applyFilters(discoverableSparks);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,
@@ -1032,7 +1032,7 @@ class _SearchScreenState extends State<_SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1047,7 +1047,7 @@ class _SearchScreenState extends State<_SearchScreen> {
                     icon: const Icon(
                       Icons.arrow_back_rounded,
                       size: 22,
-                      color: Colors.black87,
+                      color: AppColors.onSurfaceEmphasis,
                     ),
                     onPressed: () => Navigator.of(context).pop(null),
                   ),

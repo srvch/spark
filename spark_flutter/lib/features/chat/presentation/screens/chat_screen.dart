@@ -130,9 +130,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         participants.where((p) => !hiddenUserIds.contains(p.id)).length;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -463,7 +463,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {

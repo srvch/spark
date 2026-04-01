@@ -781,7 +781,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 minimumSize: const Size.fromHeight(46),
-                                foregroundColor: Colors.black54,
+                                foregroundColor: AppColors.onSurfaceStrong,
                                 side: const BorderSide(
                                     color: AppColors.chipBorder),
                                 shape: RoundedRectangleBorder(
