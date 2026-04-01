@@ -1569,7 +1569,7 @@ class _NearbyCardState extends State<_NearbyCard> {
             ),
             const SizedBox(width: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.pillSurface,
                 borderRadius: BorderRadius.circular(999),
