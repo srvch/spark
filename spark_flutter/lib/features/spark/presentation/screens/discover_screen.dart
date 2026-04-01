@@ -923,68 +923,124 @@ class _HeroPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2F426F),
-        borderRadius: BorderRadius.circular(22),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        height: 128,
+        decoration: const BoxDecoration(
+          color: Color(0xFF2F426F),
+        ),
+        child: Stack(
+          children: [
+            // ── Decorative circles (right side depth) ──────────────
+            Positioned(
+              right: -28,
+              top: -28,
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 28,
+              bottom: -36,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            // ── Icon cluster ────────────────────────────────────────
+            Positioned(
+              right: 18,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _HeroIconBubble(
+                      icon: Icons.directions_run_rounded,
+                      offsetX: -10,
+                    ),
+                    const SizedBox(height: 6),
+                    _HeroIconBubble(
+                      icon: Icons.drive_eta_rounded,
+                      offsetX: 10,
+                    ),
+                    const SizedBox(height: 6),
+                    _HeroIconBubble(
+                      icon: Icons.auto_stories_rounded,
+                      offsetX: -6,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // ── Text content ────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 120, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const _PillLabel(label: 'LIVE IN YOUR AREA'),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Plans happening\nnear you, right now.',
+                        style: TextStyle(
+                          fontSize: 18,
+                          height: 1.2,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _PillLabel(label: 'LIVE IN YOUR AREA'),
-          SizedBox(height: 12),
-          Text(
-            'Find plans happening around you',
-            style: TextStyle(
-              fontSize: 24,
-              height: 1.1,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+    );
+  }
+}
+
+class _HeroIconBubble extends StatelessWidget {
+  const _HeroIconBubble({required this.icon, required this.offsetX});
+  final IconData icon;
+  final double offsetX;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: Offset(offsetX, 0),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.15),
           ),
-          SizedBox(height: 10),
-          Text(
-            'Spark helps people discover tiny plans nearby\nwithout the noise of a big social feed.',
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.35,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFFD5E0FA),
-            ),
-          ),
-          SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _BehaviorPill(label: 'Nearby'),
-              _BehaviorPill(label: 'Happening soon'),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniSpark(
-                  category: 'SPORTS',
-                  title: 'Cricket game',
-                  when: 'Tonight',
-                  categoryColor: Color(0xFF31C48D),
-                ),
-              ),
-              SizedBox(width: 8),
-              Expanded(
-                child: _MiniSpark(
-                  category: 'TRANSIT',
-                  title: 'Airport split',
-                  when: 'In 45 min',
-                  categoryColor: Color(0xFF7390FF),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -1009,109 +1065,6 @@ class _PillLabel extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 1,
           color: Color(0xFFDCE3F5),
-        ),
-      ),
-    );
-  }
-}
-
-class _BehaviorPill extends StatelessWidget {
-  const _BehaviorPill({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFFE3ECFF),
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniSpark extends StatelessWidget {
-  const _MiniSpark({
-    required this.category,
-    required this.title,
-    required this.when,
-    required this.categoryColor,
-  });
-
-  final String category;
-  final String title;
-  final String when;
-  final Color categoryColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        height: 98,
-        decoration: const BoxDecoration(color: Colors.white),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(height: 3, color: categoryColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      category,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                        color: categoryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.1,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5FF),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        when,
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2F426F),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
