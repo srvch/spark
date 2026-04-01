@@ -43,3 +43,6 @@ class ChatModerationState {
 
 final chatModerationProvider =
     StateProvider<Map<String, ChatModerationState>>((ref) => {});
+
+final lockedSparkIdsProvider =
+    StateProvider<Set<String>>((ref) => <String>{});

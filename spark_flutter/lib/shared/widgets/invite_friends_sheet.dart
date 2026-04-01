@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -135,27 +134,6 @@ Future<void> showInviteFriendsBottomSheet({
                 icon: const Icon(Icons.ios_share_rounded, size: 18),
                 label: const Text(
                   'SHARE INVITE',
-                  style: TextStyle(letterSpacing: 0.6),
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: link));
-                  if (!sheetContext.mounted) return;
-                  ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    const SnackBar(content: Text('Invite link copied')),
-                  );
-                },
-                icon: const Icon(Icons.link_rounded, size: 18),
-                label: const Text(
-                  'COPY LINK',
                   style: TextStyle(letterSpacing: 0.6),
                 ),
               ),
