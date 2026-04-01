@@ -158,6 +158,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           _showLocationSelector(context),
                       onRadiusTap: () =>
                           _showPreferencesSheet(context),
+                      searchQuery: query,
+                      onSearchChanged: (v) =>
+                          setState(() => query = v.trim().toLowerCase()),
+                      onSearchSubmitted: (v) =>
+                          setState(() => query = v.trim().toLowerCase()),
                     ),
                     secondChild: _HeroCollapsed(
                       selectedLocation: selectedLocation,
@@ -166,26 +171,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                 sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Search ───────────────────────────────────
-                      _InlineSearchBar(
-                        initialValue: query,
-                        onChanged: (value) {
-                          setState(() {
-                            query = value.trim().toLowerCase();
-                          });
-                        },
-                        onSubmitted: (value) {
-                          setState(() {
-                            query = value.trim().toLowerCase();
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 12),
                       // ── Category chips + activity pill ────────────
                       Row(
                         children: [
@@ -560,173 +550,24 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 }
 
-class _InlineSearchBar extends StatefulWidget {
-  const _InlineSearchBar({
-    required this.initialValue,
-    required this.onChanged,
-    required this.onSubmitted,
-  });
-
-  final String initialValue;
-  final ValueChanged<String> onChanged;
-  final ValueChanged<String> onSubmitted;
-
-  @override
-  State<_InlineSearchBar> createState() => _InlineSearchBarState();
-}
-
-class _InlineSearchBarState extends State<_InlineSearchBar> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialValue,
-  );
-  final FocusNode _focusNode = FocusNode();
-  bool _focused = false;
-
-  static const _quickTags = [
-    'Cricket', 'Coffee', 'Study', 'Cycling', 'Drive', 'Badminton',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (mounted) setState(() => _focused = _focusNode.hasFocus);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: _focused ? Colors.white : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: _focused ? const Color(0xFF2F426F) : AppColors.border,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.search,
-                size: 18,
-                color: _focused
-                    ? const Color(0xFF2F426F)
-                    : AppColors.textSecondary,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  textInputAction: TextInputAction.search,
-                  onChanged: widget.onChanged,
-                  onSubmitted: widget.onSubmitted,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.2,
-                    color: AppColors.textPrimary,
-                  ),
-                  decoration: const InputDecoration(
-                    isCollapsed: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    hintText: 'Search plans, sports, study, ride',
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      height: 1.2,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-              if (_focused && _controller.text.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    _controller.clear();
-                    widget.onChanged('');
-                    setState(() {});
-                  },
-                  child: const Icon(
-                    Icons.close_rounded,
-                    size: 16,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        if (_focused && _controller.text.isEmpty) ...[
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 30,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: _quickTags
-                  .map(
-                    (tag) => Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          _controller.text = tag.toLowerCase();
-                          widget.onChanged(tag.toLowerCase());
-                          setState(() {});
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF2F426F),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-}
-
 class _HeroPanel extends StatelessWidget {
   const _HeroPanel({
     required this.selectedLocation,
     required this.radius,
     required this.onLocationTap,
     required this.onRadiusTap,
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.onSearchSubmitted,
   });
 
   final String selectedLocation;
   final int radius;
   final VoidCallback onLocationTap;
   final VoidCallback onRadiusTap;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<String> onSearchSubmitted;
 
   String get _greeting {
     final h = DateTime.now().hour;
@@ -744,22 +585,45 @@ class _HeroPanel extends StatelessWidget {
       ),
       child: Container(
         color: const Color(0xFF2F426F),
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Line 1: "Good morning, Saurav" ─────────────────────
-            Text(
-              '$_greeting, Saurav',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.65),
-                fontFamily: 'Manrope',
-              ),
+            // ── Row 1: greeting (left) + bell (right) ──────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    '$_greeting, Saurav',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      size: 17,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            // ── Line 2: location · radius ──────────────────────────
+            const SizedBox(height: 4),
+            // ── Row 2: location · radius ────────────────────────────
             GestureDetector(
               onTap: onLocationTap,
               child: Row(
@@ -767,59 +631,149 @@ class _HeroPanel extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.location_on_rounded,
-                    size: 13,
-                    color: Colors.white.withValues(alpha: 0.55),
+                    size: 12,
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                   const SizedBox(width: 3),
                   Text(
                     selectedLocation,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withValues(alpha: 0.65),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
                     child: Text(
-                      '•',
+                      '·',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: Colors.white.withValues(alpha: 0.35),
+                        fontSize: 12,
                       ),
                     ),
                   ),
                   Text(
                     '${radius}km',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: Colors.white.withValues(alpha: 0.65),
                     ),
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: 2),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
-                    size: 15,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    size: 14,
+                    color: Colors.white.withValues(alpha: 0.45),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            // ── Line 3: headline ───────────────────────────────────
+            const SizedBox(height: 12),
+            // ── Row 3: headline ─────────────────────────────────────
             const Text(
               'Plans happening near you, right now.',
               style: TextStyle(
-                fontSize: 20,
-                height: 1.25,
+                fontSize: 22,
+                height: 1.2,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
                 fontFamily: 'Manrope',
               ),
             ),
+            const SizedBox(height: 16),
+            // ── Row 4: search bar (white, inside navy) ──────────────
+            _HeroBannerSearch(
+              initialValue: searchQuery,
+              onChanged: onSearchChanged,
+              onSubmitted: onSearchSubmitted,
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeroBannerSearch extends StatefulWidget {
+  const _HeroBannerSearch({
+    required this.initialValue,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
+
+  final String initialValue;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  State<_HeroBannerSearch> createState() => _HeroBannerSearchState();
+}
+
+class _HeroBannerSearchState extends State<_HeroBannerSearch> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue);
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 46,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 14),
+          Icon(
+            Icons.search_rounded,
+            size: 18,
+            color: Colors.black.withValues(alpha: 0.35),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              textInputAction: TextInputAction.search,
+              onChanged: widget.onChanged,
+              onSubmitted: widget.onSubmitted,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+                height: 1.2,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search plans, sports, study, ride…',
+                hintStyle: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black.withValues(alpha: 0.35),
+                ),
+                border: InputBorder.none,
+                isDense: true,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
       ),
     );
   }
