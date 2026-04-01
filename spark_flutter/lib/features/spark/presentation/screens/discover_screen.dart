@@ -144,7 +144,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         children: [
                           Expanded(
                             child: SizedBox(
-                              height: 34,
+                              height: 40,
                               child: ListView(
                                 scrollDirection: Axis.horizontal,
                                 children: [
@@ -181,16 +181,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           GestureDetector(
                             onTap: () => _showPreferencesSheet(context),
                             child: Container(
-                              width: 34,
-                              height: 34,
+                              width: 38,
+                              height: 38,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F7),
-                                borderRadius: BorderRadius.circular(10),
+                                color: const Color(0xFFF2F4F8),
+                                borderRadius: BorderRadius.circular(11),
                               ),
                               child: const Icon(
                                 Icons.tune_rounded,
                                 size: 16,
-                                color: Colors.black54,
+                                color: Color(0xFF3D5070),
                               ),
                             ),
                           ),
