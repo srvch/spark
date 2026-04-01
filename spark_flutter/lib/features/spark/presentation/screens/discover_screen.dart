@@ -799,6 +799,9 @@ class _HeroBannerSearchState extends State<_HeroBannerSearch> {
               controller: _controller,
               focusNode: _focusNode,
               textInputAction: TextInputAction.search,
+              autocorrect: false,
+              enableSuggestions: false,
+              contextMenuBuilder: null,
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
               style: TextStyle(
