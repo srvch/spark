@@ -283,7 +283,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE4E7EC),
+                                color: AppColors.cardBorder,
                                 width: 1,
                               ),
                             ),
@@ -295,7 +295,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                     const Divider(
                                       height: 1,
                                       thickness: 1,
-                                      color: Color(0xFFEBEDF0),
+                                      color: AppColors.cardDivider,
                                     ),
                                   _NearbyCard(
                                     spark: filtered[i],
@@ -1453,7 +1453,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     final count = 2 + (seed % 2);
     return List.generate(count, (i) {
       final ii = (seed + i * 13) % _avatarInitials.length;
-      return (const Color(0xFFE8ECF5), _avatarInitials[ii]);
+      return (AppColors.avatarBg, _avatarInitials[ii]);
     });
   }
 
@@ -1529,7 +1529,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                   const SizedBox(height: 5),
                   Row(
                     children: [
-                      _AvatarStack(avatars: avatars),
+                      _AvatarStack(avatars: avatars, total: spark.participants.length),
                       const SizedBox(width: 5),
                       Text(
                         '${spark.participants.length} joining',
@@ -1566,7 +1566,7 @@ class _NearbyCardState extends State<_NearbyCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F7),
+                color: AppColors.pillSurface,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -1588,19 +1588,27 @@ class _NearbyCardState extends State<_NearbyCard> {
 }
 
 class _AvatarStack extends StatelessWidget {
-  const _AvatarStack({required this.avatars});
+  const _AvatarStack({required this.avatars, required this.total});
   final List<(Color, String)> avatars;
+  final int total;
+
+  static const int _maxVisible = 3;
 
   @override
   Widget build(BuildContext context) {
     const size = 20.0;
     const overlap = 11.0;
+    final shown = avatars.length.clamp(0, _maxVisible);
+    final overflow = total > shown ? total - shown : 0;
+    final slots = shown + (overflow > 0 ? 1 : 0);
+    final totalWidth = slots <= 1 ? size : size + (slots - 1) * overlap;
+
     return SizedBox(
-      width: size + (avatars.length - 1) * overlap,
+      width: totalWidth,
       height: size,
       child: Stack(
         children: [
-          for (var i = 0; i < avatars.length; i++)
+          for (var i = 0; i < shown; i++)
             Positioned(
               left: i * overlap,
               child: Container(
@@ -1617,6 +1625,28 @@ class _AvatarStack extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 8.5,
                     fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+          if (overflow > 0)
+            Positioned(
+              left: shown * overlap,
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '+$overflow',
+                  style: const TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -1707,7 +1737,7 @@ class _CreateNudge extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E7EC), width: 1),
+        border: Border.all(color: AppColors.cardBorder, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

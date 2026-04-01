@@ -102,7 +102,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                   width: 60,
                   height: 60,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF2F2F7),
+                    color: AppColors.pillSurface,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check_rounded, size: 30, color: AppColors.accent),
@@ -348,7 +348,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF0F1F5),
+                            color: AppColors.neutralSurface,
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -422,14 +422,14 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           icon: Icons.schedule_rounded,
                           text: spark.timeLabel,
                           color: AppColors.accent,
-                          bg: const Color(0xFFF0F1F5),
+                          bg: AppColors.neutralSurface,
                         ),
                         const SizedBox(width: 8),
                         _StatPill(
                           icon: Icons.near_me_rounded,
                           text: spark.distanceLabel,
                           color: AppColors.accent,
-                          bg: const Color(0xFFF0F1F5),
+                          bg: AppColors.neutralSurface,
                         ),
                       ],
                     ),

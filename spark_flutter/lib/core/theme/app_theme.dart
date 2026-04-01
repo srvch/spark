@@ -14,6 +14,12 @@ class AppColors {
   static const success = Color(0xFF10B981);
   static const action = Color(0xFFFF6B35);
 
+  static const pillSurface = Color(0xFFF2F2F7);
+  static const neutralSurface = Color(0xFFF0F1F5);
+  static const cardDivider = Color(0xFFEBEDF0);
+  static const cardBorder = Color(0xFFE4E7EC);
+  static const avatarBg = Color(0xFFE8ECF5);
+
   static const darkBackground = Color(0xFF0B1120);
   static const darkSurface = Color(0xFF141C2E);
   static const darkBorder = Color(0xFF1E293B);
