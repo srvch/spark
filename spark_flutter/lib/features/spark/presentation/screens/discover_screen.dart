@@ -54,6 +54,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   void _onScroll() {
+    final pixels = _scrollController.position.pixels;
+
+    // Auto-collapse banner on scroll down, restore on scroll back to top
+    if (pixels > 40 && _heroExpanded) {
+      setState(() => _heroExpanded = false);
+    } else if (pixels <= 8 && !_heroExpanded) {
+      setState(() => _heroExpanded = true);
+    }
+
     if (_isInfiniteScrolling) return;
     final position = _scrollController.position;
     if (position.pixels >= position.maxScrollExtent - 200) {
@@ -730,217 +739,83 @@ class _HeroPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(28),
-        bottomRight: Radius.circular(28),
+        bottomLeft: Radius.circular(24),
+        bottomRight: Radius.circular(24),
       ),
       child: Container(
         color: const Color(0xFF2F426F),
-        child: Stack(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Decorative circles ──────────────────────────────────
-            Positioned(
-              right: -40,
-              top: -40,
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
+            // ── Line 1: "Good morning, Saurav" ─────────────────────
+            Text(
+              '$_greeting, Saurav',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.65),
+                fontFamily: 'Manrope',
               ),
             ),
-            Positioned(
-              right: 60,
-              bottom: -50,
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.04),
-                ),
-              ),
-            ),
-            // ── Icon cluster (right side) ───────────────────────────
-            Positioned(
-              right: 20,
-              bottom: 28,
-              child: Column(
+            const SizedBox(height: 6),
+            // ── Line 2: location · radius ──────────────────────────
+            GestureDetector(
+              onTap: onLocationTap,
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _HeroIconBubble(
-                    icon: Icons.directions_run_rounded,
-                    offsetX: -12,
+                  Icon(
+                    Icons.location_on_rounded,
+                    size: 13,
+                    color: Colors.white.withValues(alpha: 0.55),
                   ),
-                  const SizedBox(height: 8),
-                  _HeroIconBubble(
-                    icon: Icons.drive_eta_rounded,
-                    offsetX: 12,
+                  const SizedBox(width: 3),
+                  Text(
+                    selectedLocation,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  _HeroIconBubble(
-                    icon: Icons.auto_stories_rounded,
-                    offsetX: -6,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      '•',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${radius}km',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 15,
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                 ],
               ),
             ),
-            // ── Content ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 130, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top row: greeting + notification bell
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _greeting,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontFamily: 'Manrope',
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            size: 18,
-                            color: Colors.white.withValues(alpha: 0.85),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  // Name
-                  const Text(
-                    'Saurav',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      fontFamily: 'Manrope',
-                      height: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Location + radius row
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onTap: onLocationTap,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.location_on_rounded,
-                                  size: 12,
-                                  color: Colors.white.withValues(alpha: 0.8)),
-                              const SizedBox(width: 4),
-                              Text(
-                                selectedLocation,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                              Icon(Icons.keyboard_arrow_down_rounded,
-                                  size: 14,
-                                  color: Colors.white.withValues(alpha: 0.7)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: onRadiusTap,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.tune_rounded,
-                                  size: 12,
-                                  color: Colors.white.withValues(alpha: 0.8)),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${radius}km radius',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // LIVE pill
-                  const _PillLabel(label: 'LIVE IN YOUR AREA'),
-                  const SizedBox(height: 10),
-                  // Headline
-                  const Text(
-                    'Plans happening\nnear you, right now.',
-                    style: TextStyle(
-                      fontSize: 22,
-                      height: 1.2,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      fontFamily: 'Manrope',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // Hide hint
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.expand_less_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        'Tap to hide',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 16),
+            // ── Line 3: headline ───────────────────────────────────
+            const Text(
+              'Plans happening near you, right now.',
+              style: TextStyle(
+                fontSize: 20,
+                height: 1.25,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                fontFamily: 'Manrope',
               ),
             ),
           ],
@@ -954,133 +829,47 @@ class _HeroCollapsed extends StatelessWidget {
   const _HeroCollapsed({required this.selectedLocation});
   final String selectedLocation;
 
-  String get _greeting {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Morning';
-    if (h < 17) return 'Afternoon';
-    return 'Evening';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       color: const Color(0xFF2F426F),
-      padding: const EdgeInsets.fromLTRB(20, 16, 16, 20),
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 14),
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Good $_greeting, Saurav',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.location_on_rounded,
-                      size: 11, color: Colors.white.withValues(alpha: 0.6)),
-                  const SizedBox(width: 3),
-                  Text(
-                    selectedLocation,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(999),
+          const Text(
+            'Saurav',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              fontFamily: 'Manrope',
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.explore_outlined,
-                    size: 13, color: Colors.white.withValues(alpha: 0.8)),
-                const SizedBox(width: 5),
-                Text(
-                  'Nearby plans',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.expand_more_rounded,
-                    size: 14, color: Colors.white.withValues(alpha: 0.6)),
-              ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7),
+            child: Text(
+              '•',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+          Icon(
+            Icons.location_on_rounded,
+            size: 12,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+          const SizedBox(width: 3),
+          Text(
+            selectedLocation,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.75),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _HeroIconBubble extends StatelessWidget {
-  const _HeroIconBubble({required this.icon, required this.offsetX});
-  final IconData icon;
-  final double offsetX;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: Offset(offsetX, 0),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.18),
-          ),
-        ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: Colors.white.withValues(alpha: 0.85),
-        ),
-      ),
-    );
-  }
-}
-
-class _PillLabel extends StatelessWidget {
-  const _PillLabel({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white24,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1,
-          color: Color(0xFFDCE3F5),
-        ),
       ),
     );
   }
