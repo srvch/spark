@@ -37,6 +37,58 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
+  // ── Participant building ──────────────────────────────────────────────────
+  // Merges spark.participants + chat thread senders so host controls
+  // always has a populated list even on a freshly created spark.
+  List<_ChatUser> _buildParticipants({
+    required Spark spark,
+    required String currentUserId,
+    required String currentUserName,
+    required List<ChatMessage> thread,
+  }) {
+    final map = <String, _ChatUser>{};
+
+    // Always include the host
+    map[spark.createdBy] = _ChatUser(
+      id: spark.createdBy,
+      name: spark.createdBy == currentUserId ? currentUserName : 'Spark host',
+      isHost: true,
+    );
+
+    // Current user
+    if (!map.containsKey(currentUserId)) {
+      map[currentUserId] = _ChatUser(
+        id: currentUserId,
+        name: currentUserName,
+        isHost: spark.createdBy == currentUserId,
+      );
+    }
+
+    // Participants from spark model
+    for (var i = 0; i < spark.participants.length; i++) {
+      final id = 'p_$i';
+      if (!map.containsKey(id)) {
+        map[id] = _ChatUser(
+          id: id,
+          name: _nameFromInitial(spark.participants[i], i),
+        );
+      }
+    }
+
+    // Participants from chat thread (catches senders not in spark.participants)
+    for (final msg in thread) {
+      if (!map.containsKey(msg.senderId)) {
+        map[msg.senderId] = _ChatUser(
+          id: msg.senderId,
+          name: msg.sender,
+          isHost: msg.isHost,
+        );
+      }
+    }
+
+    return map.values.toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = ref.watch(currentUserIdProvider);
@@ -45,14 +97,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ? ref.watch(authSessionProvider)!.displayName
         : 'You';
     final isHost = widget.spark.createdBy == currentUserId;
+    final isLocked = ref.watch(lockedSparkIdsProvider)
+        .contains(widget.spark.id);
 
-    final participants = _buildParticipants(
-      spark: widget.spark,
-      currentUserId: currentUserId,
-      currentUserName: currentUserName,
-    );
     final moderationMap = ref.watch(chatModerationProvider);
-    final moderation = moderationMap[widget.spark.id] ?? const ChatModerationState();
+    final moderation =
+        moderationMap[widget.spark.id] ?? const ChatModerationState();
     final hiddenUserIds = {
       ...moderation.blockedUserIds,
       ...moderation.removedUserIds,
@@ -68,9 +118,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final messages = thread
         .where((msg) => !hiddenUserIds.contains(msg.senderId))
         .toList();
-    final visibleCount = participants
-        .where((p) => !hiddenUserIds.contains(p.id))
-        .length;
+
+    final participants = _buildParticipants(
+      spark: widget.spark,
+      currentUserId: currentUserId,
+      currentUserName: currentUserName,
+      thread: thread,
+    );
+    final visibleCount =
+        participants.where((p) => !hiddenUserIds.contains(p.id)).length;
 
     return Scaffold(
       backgroundColor: _kSurface,
@@ -91,16 +147,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.spark.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: _kNavy,
-                fontFamily: 'Manrope',
-              ),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    widget.spark.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: _kNavy,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                ),
+                if (isLocked) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Locked',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             Text(
               '$visibleCount people · ${widget.spark.timeLabel}',
@@ -116,11 +197,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (isHost)
             IconButton(
               tooltip: 'Host controls',
-              onPressed: () => _openHostControls(context, participants, moderation),
-              icon: const Icon(
-                Icons.shield_outlined,
-                color: _kNavy,
-                size: 20,
+              onPressed: () =>
+                  _openHostControls(context, participants, moderation),
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.shield_outlined, color: _kNavy, size: 20),
+                  if (isLocked)
+                    Positioned(
+                      top: -2,
+                      right: -2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF6B7280),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
         ],
@@ -132,7 +228,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Message list ─────────────────────────────────────
+            // ── Locked banner ─────────────────────────────────────────
+            if (isLocked)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
+                color: const Color(0xFFF5F5F7),
+                child: Row(
+                  children: const [
+                    Icon(Icons.lock_rounded,
+                        size: 14, color: Color(0xFF6B7280)),
+                    SizedBox(width: 6),
+                    Text(
+                      'This spark is locked — no new members can join',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // ── Message list ──────────────────────────────────────────
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
@@ -152,7 +271,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ),
-            // ── Quick replies ─────────────────────────────────────
+            // ── Quick replies ─────────────────────────────────────────
             Container(
               height: 38,
               color: Colors.white,
@@ -170,11 +289,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     },
                     child: Container(
                       alignment: Alignment.center,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 0),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border.all(color: const Color(0xFFDDE1ED)),
+                        border:
+                            Border.all(color: const Color(0xFFDDE1ED)),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -190,7 +309,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 },
               ),
             ),
-            // ── Input bar ─────────────────────────────────────────
+            // ── Input bar ─────────────────────────────────────────────
             Container(
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -201,7 +320,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       decoration: BoxDecoration(
                         color: _kSurface,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFFE4E7EF)),
+                        border: Border.all(
+                            color: const Color(0xFFE4E7EF)),
                       ),
                       child: TextField(
                         controller: _controller,
@@ -230,7 +350,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: () => _sendMessage(currentUserId, currentUserName),
+                    onTap: () =>
+                        _sendMessage(currentUserId, currentUserName),
                     child: Container(
                       width: 44,
                       height: 44,
@@ -254,40 +375,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  List<_ChatUser> _buildParticipants({
-    required Spark spark,
-    required String currentUserId,
-    required String currentUserName,
-  }) {
-    final host = _ChatUser(
-      id: spark.createdBy,
-      name: spark.createdBy == currentUserId ? 'You' : 'Spark host',
-      isHost: true,
-    );
-    final me = _ChatUser(
-        id: currentUserId,
-        name: currentUserName,
-        isHost: spark.createdBy == currentUserId);
-    final others = <_ChatUser>[
-      for (var i = 0; i < spark.participants.length; i++)
-        _ChatUser(
-          id: 'p_$i',
-          name: _nameFromInitial(spark.participants[i], i),
-        ),
-    ];
-    final map = <String, _ChatUser>{};
-    for (final user in [host, me, ...others]) {
-      map[user.id] = user;
-    }
-    return map.values.toList();
-  }
+  // ── Message helpers ───────────────────────────────────────────────────────
 
   List<ChatMessage> _initialMessages({
     required Spark spark,
     required String currentUserId,
     required String currentUserName,
   }) {
-    final hostName = spark.createdBy == currentUserId ? 'You' : 'Spark host';
+    final hostName =
+        spark.createdBy == currentUserId ? currentUserName : 'Spark host';
     return [
       ChatMessage(
         senderId: spark.createdBy,
@@ -327,24 +423,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             currentUserName: currentUserName,
           ))
     ];
-    current.add(
-      ChatMessage(
-        senderId: currentUserId,
-        sender: currentUserName,
-        text: text,
-        isMine: true,
-        timeLabel: _formatNow(),
-        isHost: widget.spark.createdBy == currentUserId,
-      ),
-    );
+    current.add(ChatMessage(
+      senderId: currentUserId,
+      sender: currentUserName,
+      text: text,
+      isMine: true,
+      timeLabel: _formatNow(),
+      isHost: widget.spark.createdBy == currentUserId,
+    ));
     map[widget.spark.id] = current;
     ref.read(chatThreadsProvider.notifier).state = map;
     ref.read(analyticsServiceProvider).track(
       'chat_message_sent',
-      properties: {
-        'spark_id': widget.spark.id,
-        'length': text.length,
-      },
+      properties: {'spark_id': widget.spark.id, 'length': text.length},
     );
     _controller.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -358,80 +449,229 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+  // ── Host controls sheet ───────────────────────────────────────────────────
+
   Future<void> _openHostControls(
     BuildContext context,
     List<_ChatUser> users,
     ChatModerationState moderation,
   ) async {
+    final isLocked =
+        ref.read(lockedSparkIdsProvider).contains(widget.spark.id);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       backgroundColor: Colors.white,
-      builder: (context) {
-        final members = users.where((u) => !u.isHost).toList();
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final locked =
+                ref.read(lockedSparkIdsProvider).contains(widget.spark.id);
+            final members = users
+                .where((u) => u.id != widget.spark.createdBy)
+                .toList();
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: _kNavyLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.shield_outlined,
-                          color: _kNavy, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Header
+                    Row(
                       children: [
-                        Text(
-                          'Host controls',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: _kNavy,
-                            fontFamily: 'Manrope',
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: _kNavyLight,
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          child: const Icon(Icons.shield_outlined,
+                              color: _kNavy, size: 20),
                         ),
-                        Text(
-                          'Remove or block participants',
+                        const SizedBox(width: 12),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Host controls',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: _kNavy,
+                                fontFamily: 'Manrope',
+                              ),
+                            ),
+                            Text(
+                              'Manage participants & spark settings',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── SPARK-403: Lock/close spark ────────────────────
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _kSurface,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: locked
+                                  ? const Color(0xFFF5F5F7)
+                                  : _kNavyLight,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              locked
+                                  ? Icons.lock_rounded
+                                  : Icons.lock_open_rounded,
+                              size: 18,
+                              color: locked
+                                  ? const Color(0xFF6B7280)
+                                  : _kNavy,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  locked
+                                      ? 'Spark is locked'
+                                      : 'Lock spark',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: _kNavy,
+                                    fontFamily: 'Manrope',
+                                  ),
+                                ),
+                                Text(
+                                  locked
+                                      ? 'No new members can join'
+                                      : 'Stop new members from joining',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF9CA3AF),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: locked,
+                            activeColor: _kNavy,
+                            onChanged: (val) {
+                              _toggleLock(val);
+                              setSheetState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    if (members.isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Participants',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF6B7280),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ...members.map(
+                        (user) {
+                          final removed =
+                              moderation.removedUserIds.contains(user.id);
+                          final blocked =
+                              moderation.blockedUserIds.contains(user.id);
+                          return _HostControlRow(
+                            user: user,
+                            removed: removed,
+                            blocked: blocked,
+                            onRemove: () {
+                              _removeUser(user.id);
+                              Navigator.of(ctx).pop();
+                            },
+                            onBlock: () {
+                              _blockUser(user.id);
+                              Navigator.of(ctx).pop();
+                            },
+                          );
+                        },
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: _kSurface,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Text(
+                          'No participants yet. They will appear here once they join.',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF9CA3AF),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 16),
-                ...members.map(
-                  (user) => _HostControlRow(
-                    user: user,
-                    removed: moderation.removedUserIds.contains(user.id),
-                    blocked: moderation.blockedUserIds.contains(user.id),
-                    onRemove: () => _removeUser(user.id),
-                    onBlock: () => _blockUser(user.id),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
+  void _toggleLock(bool lock) {
+    final current = {...ref.read(lockedSparkIdsProvider)};
+    if (lock) {
+      current.add(widget.spark.id);
+    } else {
+      current.remove(widget.spark.id);
+    }
+    ref.read(lockedSparkIdsProvider.notifier).state = current;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          lock
+              ? 'Spark locked — no new joins allowed'
+              : 'Spark unlocked — anyone can join',
+        ),
+      ),
+    );
+  }
+
+  // ── SPARK-401: Remove ─────────────────────────────────────────────────────
   void _removeUser(String userId) {
     final map = {...ref.read(chatModerationProvider)};
     final current = map[widget.spark.id] ?? const ChatModerationState();
@@ -440,10 +680,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
     ref.read(chatModerationProvider.notifier).state = map;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Participant removed')),
+      const SnackBar(
+          content: Text('Participant removed from this spark')),
     );
   }
 
+  // ── SPARK-402: Block ──────────────────────────────────────────────────────
   void _blockUser(String userId) {
     final map = {...ref.read(chatModerationProvider)};
     final current = map[widget.spark.id] ?? const ChatModerationState();
@@ -513,10 +755,7 @@ class _MessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     if (message.isMine) {
       return Padding(
-        padding: EdgeInsets.only(
-          bottom: isLast ? 10 : 3,
-          left: 64,
-        ),
+        padding: EdgeInsets.only(bottom: isLast ? 10 : 3, left: 64),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -533,7 +772,8 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: _kNavy,
                 borderRadius: BorderRadius.only(
@@ -571,7 +811,6 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
-    // Others' message
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 10 : 3),
       child: Row(
