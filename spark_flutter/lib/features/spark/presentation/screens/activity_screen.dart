@@ -7,7 +7,7 @@ import '../controllers/spark_controller.dart';
 import '../../domain/spark.dart';
 import 'spark_detail_screen.dart';
 
-final _kNavy = AppColors.accent;
+const _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFEAF0FF);
 const _kSurface = Color(0xFFF7F8FC);
 
