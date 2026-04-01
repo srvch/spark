@@ -82,6 +82,12 @@ final sparksLoadingMoreProvider = StateProvider<bool>((ref) => false);
 final sparksErrorProvider = StateProvider<String?>((ref) => null);
 final nearbyPageProvider = StateProvider<int>((ref) => 0);
 final nearbyHasMoreProvider = StateProvider<bool>((ref) => false);
+
+/// IDs of sparks where current user has tapped "On my way"
+final onMyWaySparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
+
+/// Tracks how many chat conversations the user has "seen" (for unread badge)
+final seenChatCountProvider = StateProvider<int>((ref) => 0);
 final currentUserIdProvider = Provider<String>((ref) {
   return ref.watch(authSessionProvider)?.userId ?? 'anonymous';
 });
@@ -328,6 +334,26 @@ class SparkDataController {
     } catch (_) {
       // Keep optimistic join for UX; backend retry can happen later.
     }
+  }
+
+  Future<void> cancelSpark(String sparkId) async {
+    // Remove from created list
+    ref.read(createdSparksProvider.notifier).state = ref
+        .read(createdSparksProvider)
+        .where((s) => s.id != sparkId)
+        .toList();
+    // Remove from remote list too
+    ref.read(remoteSparksProvider.notifier).state = ref
+        .read(remoteSparksProvider)
+        .where((s) => s.id != sparkId)
+        .toList();
+    // Remove any joined state for this spark
+    final joined = {...ref.read(joinedSparkIdsProvider)}..remove(sparkId);
+    ref.read(joinedSparkIdsProvider.notifier).state = joined;
+    ref.read(analyticsServiceProvider).track(
+      'spark_cancelled',
+      properties: {'spark_id': sparkId},
+    );
   }
 
   Future<void> leaveSpark(String sparkId) async {

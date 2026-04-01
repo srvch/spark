@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/chat/presentation/screens/chat_inbox_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/spark/presentation/controllers/spark_controller.dart';
 import '../../features/spark/presentation/screens/create_spark_screen.dart';
 import '../../features/spark/presentation/screens/discover_screen.dart';
 
@@ -17,6 +18,12 @@ class RootShell extends ConsumerWidget {
     final tab = ref.watch(bottomTabProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkBackground : Colors.white;
+
+    final joinedCount = ref.watch(joinedSparksProvider).length;
+    final createdCount = ref.watch(myCreatedSparksProvider).length;
+    final chatCount = joinedCount + createdCount;
+    final seenCount = ref.watch(seenChatCountProvider);
+    final hasUnreadChat = chatCount > seenCount;
 
     final screens = const [
       DiscoverScreen(),
@@ -52,10 +59,7 @@ class RootShell extends ConsumerWidget {
                   onTap: () =>
                       ref.read(bottomTabProvider.notifier).state = 0,
                 ),
-                _NavItem(
-                  label: 'Create',
-                  icon: Icons.add_circle_outline_rounded,
-                  activeIcon: Icons.add_circle_rounded,
+                _CreateNavItem(
                   selected: tab == 1,
                   onTap: () =>
                       ref.read(bottomTabProvider.notifier).state = 1,
@@ -65,8 +69,11 @@ class RootShell extends ConsumerWidget {
                   icon: Icons.chat_bubble_outline_rounded,
                   activeIcon: Icons.chat_bubble_rounded,
                   selected: tab == 2,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 2,
+                  showBadge: hasUnreadChat && tab != 2,
+                  onTap: () {
+                    ref.read(bottomTabProvider.notifier).state = 2;
+                    ref.read(seenChatCountProvider.notifier).state = chatCount;
+                  },
                 ),
                 _NavItem(
                   label: 'Profile',
@@ -85,6 +92,60 @@ class RootShell extends ConsumerWidget {
   }
 }
 
+class _CreateNavItem extends StatelessWidget {
+  const _CreateNavItem({required this.selected, required this.onTap});
+
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const activeColor = AppColors.accent;
+    const inactiveColor = AppColors.darkTextSecondary;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.accent
+                    : AppColors.accent.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.add_rounded,
+                size: 22,
+                color: selected ? Colors.white : activeColor,
+              ),
+            ),
+            const SizedBox(height: 3),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                color: selected ? activeColor : inactiveColor,
+                letterSpacing: selected ? 0.2 : 0,
+              ),
+              child: const Text('Create'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.label,
@@ -92,6 +153,7 @@ class _NavItem extends StatelessWidget {
     required this.activeIcon,
     required this.selected,
     required this.onTap,
+    this.showBadge = false,
   });
 
   final String label;
@@ -99,6 +161,7 @@ class _NavItem extends StatelessWidget {
   final IconData activeIcon;
   final bool selected;
   final VoidCallback onTap;
+  final bool showBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -126,14 +189,32 @@ class _NavItem extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  selected ? activeIcon : icon,
-                  key: ValueKey(selected),
-                  size: 22,
-                  color: selected ? activeColor : inactiveColor,
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      selected ? activeIcon : icon,
+                      key: ValueKey(selected),
+                      size: 22,
+                      color: selected ? activeColor : inactiveColor,
+                    ),
+                  ),
+                  if (showBadge)
+                    Positioned(
+                      top: -3,
+                      right: -4,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53935),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 3),

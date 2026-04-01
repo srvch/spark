@@ -56,6 +56,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
   Future<void> _joinSpark() async {
     final alreadyJoined = ref.read(joinedSparkIdsProvider).contains(widget.spark.id);
     if (alreadyJoined) return;
+    HapticFeedback.mediumImpact();
     try {
       await ref.read(sparkDataControllerProvider).joinSpark(widget.spark.id);
     } catch (e) {
@@ -69,10 +70,22 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     await _joinPulseController.forward(from: 0);
     await _joinPulseController.reverse();
     if (!mounted) return;
-    unawaited(_showJoinedSheet());
+    await _showJoinedSheet();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Joined ${widget.spark.title}'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => _leaveSpark(showMessage: false),
+        ),
+      ),
+    );
   }
 
   Future<void> _leaveSpark({bool showMessage = true}) async {
+    HapticFeedback.lightImpact();
     await ref.read(sparkDataControllerProvider).leaveSpark(widget.spark.id);
     if (showMessage && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -171,10 +184,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     );
                   },
                   icon: const Icon(Icons.chat_bubble_rounded, size: 18),
-                  label: const Text(
-                    'OPEN CHAT',
-                    style: TextStyle(letterSpacing: 0.6),
-                  ),
+                  label: const Text('Open Chat'),
                 ),
                 const SizedBox(height: 12),
                 _JoinedActionTile(
@@ -627,7 +637,10 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        _ParticipantStack(participants: spark.participants),
+                        _ParticipantStack(
+                          participants: spark.participants,
+                          currentUserInitials: ref.watch(currentUserInitialsProvider),
+                        ),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -727,19 +740,48 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 switchInCurve: Curves.easeOut,
                 switchOutCurve: Curves.easeIn,
                 child: (!joined && !isCreator)
-                    ? PrimaryButton(
-                        key: const ValueKey('join-btn'),
-                        label: 'JOIN SPARK',
-                        backgroundColor: AppColors.accent,
-                        onPressed: _joinSpark,
-                      )
+                    ? (spark.spotsLeft == 0
+                        ? SizedBox(
+                            key: const ValueKey('full-btn'),
+                            height: 50,
+                            width: double.infinity,
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.pillSurface,
+                                foregroundColor: AppColors.textMuted,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              onPressed: null,
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.lock_outline_rounded, size: 16),
+                                  SizedBox(width: 7),
+                                  Text('Spark Full',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 15)),
+                                ],
+                              ),
+                            ),
+                          )
+                        : PrimaryButton(
+                            key: const ValueKey('join-btn'),
+                            label: 'Join Spark',
+                            backgroundColor: AppColors.accent,
+                            onPressed: _joinSpark,
+                          ))
                     : (isCreator
                         ? Row(
                             key: const ValueKey('creator-actions'),
                             children: [
                               Expanded(
                                 child: PrimaryButton(
-                                  label: 'OPEN HOST CHAT',
+                                  label: 'Open Host Chat',
                                   compact: true,
                                   backgroundColor: AppColors.accent,
                                   onPressed: () {
@@ -772,7 +814,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                     );
                                   },
                                   child: const Text(
-                                    'SHARE INVITE',
+                                    'Share Invite',
                                     style: TextStyle(
                                       color: AppColors.accent,
                                       fontWeight: FontWeight.w700,
@@ -782,49 +824,54 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               ),
                             ],
                           )
-                        : Row(
+                        : Column(
                         key: const ValueKey('joined-actions'),
                         children: [
-                          Expanded(
-                            child: PrimaryButton(
-                              label: 'OPEN CHAT',
-                              compact: true,
-                              backgroundColor: AppColors.accent,
-                              onPressed: () {
-                                ref.read(analyticsServiceProvider).track(
-                                  'open_chat_from_detail',
-                                  properties: {'spark_id': widget.spark.id},
-                                );
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => ChatScreen(spark: widget.spark),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: PrimaryButton(
+                                  label: 'Open Chat',
+                                  compact: true,
+                                  backgroundColor: AppColors.accent,
+                                  onPressed: () {
+                                    ref.read(analyticsServiceProvider).track(
+                                      'open_chat_from_detail',
+                                      properties: {'spark_id': widget.spark.id},
+                                    );
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ChatScreen(spark: widget.spark),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(46),
+                                    foregroundColor: AppColors.onSurfaceStrong,
+                                    side: const BorderSide(
+                                        color: AppColors.chipBorder),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(46),
-                                foregroundColor: AppColors.onSurfaceStrong,
-                                side: const BorderSide(
-                                    color: AppColors.chipBorder),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  onPressed: () => _leaveSpark(),
+                                  child: const Text(
+                                    'Leave',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              onPressed: () => _leaveSpark(),
-                              child: const Text(
-                                'LEAVE',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.4,
-                                ),
-                              ),
-                            ),
+                            ],
                           ),
+                          const SizedBox(height: 8),
+                          _OnMyWayButton(sparkId: widget.spark.id),
                         ],
                       )),
               ),
@@ -1403,14 +1450,81 @@ class _MetaInline extends StatelessWidget {
   }
 }
 
+class _OnMyWayButton extends ConsumerWidget {
+  const _OnMyWayButton({required this.sparkId});
+  final String sparkId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onMyWayIds = ref.watch(onMyWaySparkIdsProvider);
+    final isOnMyWay = onMyWayIds.contains(sparkId);
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        final current = {...ref.read(onMyWaySparkIdsProvider)};
+        if (isOnMyWay) {
+          current.remove(sparkId);
+        } else {
+          current.add(sparkId);
+        }
+        ref.read(onMyWaySparkIdsProvider.notifier).state = current;
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          color: isOnMyWay ? AppColors.accentSurface : AppColors.pillSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isOnMyWay ? AppColors.accent : AppColors.chipBorder,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isOnMyWay
+                  ? Icons.directions_walk_rounded
+                  : Icons.directions_walk_outlined,
+              size: 16,
+              color: isOnMyWay ? AppColors.accent : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              isOnMyWay ? 'On my way!' : 'On my way',
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: isOnMyWay ? AppColors.accent : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ParticipantStack extends StatelessWidget {
-  const _ParticipantStack({required this.participants});
+  const _ParticipantStack({
+    required this.participants,
+    this.currentUserInitials,
+  });
 
   final List<String> participants;
+  final String? currentUserInitials;
 
   @override
   Widget build(BuildContext context) {
-    final shown = participants.take(3).toList();
+    // Put current user first so "You" appears at front of the avatar stack
+    final reordered = [
+      if (currentUserInitials != null &&
+          participants.contains(currentUserInitials))
+        currentUserInitials!,
+      ...participants.where((p) => p != currentUserInitials),
+    ];
+    final shown = reordered.take(3).toList();
     final hasMore = participants.length > 3;
     final total = shown.length + (hasMore ? 1 : 0);
     final width = total == 0 ? 0.0 : (32 + ((total - 1) * 24)).toDouble();
