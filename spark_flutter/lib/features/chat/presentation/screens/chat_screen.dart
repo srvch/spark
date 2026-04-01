@@ -130,7 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         participants.where((p) => !hiddenUserIds.contains(p.id)).length;
 
     return Scaffold(
-      backgroundColor: _kSurface,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,

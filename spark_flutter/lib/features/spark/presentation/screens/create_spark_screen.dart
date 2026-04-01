@@ -2121,23 +2121,12 @@ class _SectionCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Colors.white,
           border: Border.all(color: AppColors.border),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (accentColor != null)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                height: 4,
-                color: accentColor,
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: child,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: child,
         ),
       ),
     );

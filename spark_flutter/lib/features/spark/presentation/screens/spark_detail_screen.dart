@@ -82,9 +82,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
   }
 
   Future<void> _showJoinedSheet() async {
-    final catColor = _categoryColor(widget.spark.category);
-    final catDark = _categoryDarkColor(widget.spark.category);
-
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -104,8 +101,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 Container(
                   width: 60,
                   height: 60,
-                  decoration: BoxDecoration(color: catColor, shape: BoxShape.circle),
-                  child: Icon(Icons.check_rounded, size: 30, color: catDark),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF2F2F7),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_rounded, size: 30, color: AppColors.accent),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -291,8 +291,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       0.0,
       1.0,
     ).toDouble();
-    final catColor = _categoryColor(spark.category);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -318,7 +316,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: joined ? AppColors.accent : AppColors.border,
@@ -337,7 +335,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(height: 4, color: catColor),
                         Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
@@ -351,16 +348,16 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: catColor.withValues(alpha: 0.18),
+                            color: const Color(0xFFF0F1F5),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             spark.category.label.toUpperCase(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 10.5,
                               letterSpacing: 0.6,
                               fontWeight: FontWeight.w800,
-                              color: _categoryDarkColor(spark.category),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ),
@@ -425,14 +422,14 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           icon: Icons.schedule_rounded,
                           text: spark.timeLabel,
                           color: AppColors.accent,
-                          bg: const Color(0xFFD5DCF5),
+                          bg: const Color(0xFFF0F1F5),
                         ),
                         const SizedBox(width: 8),
                         _StatPill(
                           icon: Icons.near_me_rounded,
                           text: spark.distanceLabel,
                           color: AppColors.accent,
-                          bg: const Color(0xFFD5DCF5),
+                          bg: const Color(0xFFF0F1F5),
                         ),
                       ],
                     ),
@@ -811,22 +808,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     );
   }
 
-  static Color _categoryColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF86EFAC),
-        SparkCategory.study => const Color(0xFF93C5FD),
-        SparkCategory.ride => const Color(0xFFC4B5FD),
-        SparkCategory.events => const Color(0xFFFDBA74),
-        SparkCategory.hangout => const Color(0xFFF9A8D4),
-      };
-
-  static Color _categoryDarkColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF15803D),
-        SparkCategory.study => const Color(0xFF1D4ED8),
-        SparkCategory.ride => const Color(0xFF6D28D9),
-        SparkCategory.events => const Color(0xFFB45309),
-        SparkCategory.hangout => const Color(0xFFBE185D),
-      };
-
   String _creatorDisplayName({
     required String createdByRaw,
     required String currentUserId,
@@ -928,7 +909,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -1039,7 +1020,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border),
                   ),
@@ -1216,7 +1197,7 @@ class _JoinedActionTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.border),
         ),
