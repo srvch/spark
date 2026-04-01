@@ -234,7 +234,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
     return widget.selectedLocation;
   }
 
-  static const _kNavy = Color(0xFF2F426F);
+  static final _kNavy = AppColors.accent;
 
   /// Opens a full-screen dialog (not a sheet) so the TextField lives at root
   /// Navigator coordinates — iOS renders its input toolbar correctly there.
@@ -318,7 +318,7 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search_rounded, size: 18, color: _kNavy),
+                      Icon(Icons.search_rounded, size: 18, color: _kNavy),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -583,7 +583,7 @@ class _LocationRow extends StatelessWidget {
                 color: const Color(0xFFEAF0FF),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, size: 16, color: const Color(0xFF2F426F)),
+              child: Icon(icon, size: 16, color: AppColors.accent),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -612,7 +612,7 @@ class _LocationRow extends StatelessWidget {
               ),
             ),
             if (selected)
-              const Icon(Icons.check_rounded, size: 18, color: Color(0xFF2F426F))
+              const Icon(Icons.check_rounded, size: 18, color: AppColors.accent)
             else
               const Icon(
                 Icons.chevron_right_rounded,
@@ -755,7 +755,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
                             const Icon(
                               Icons.search_rounded,
                               size: 18,
-                              color: Color(0xFF2F426F),
+                              color: AppColors.accent,
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -793,7 +793,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 1.8,
-                                  color: Color(0xFF2F426F),
+                                  color: AppColors.accent,
                                 ),
                               ),
                           ],
@@ -808,7 +808,7 @@ class _LocationSearchDialogState extends State<_LocationSearchDialog> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF2F426F),
+                          color: AppColors.accent,
                         ),
                       ),
                     ),
@@ -891,7 +891,7 @@ class _DialogRow extends StatelessWidget {
                 color: const Color(0xFFEAF0FF),
                 borderRadius: BorderRadius.circular(9),
               ),
-              child: Icon(icon, size: 15, color: const Color(0xFF2F426F)),
+              child: Icon(icon, size: 15, color: AppColors.accent),
             ),
             const SizedBox(width: 12),
             Expanded(

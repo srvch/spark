@@ -153,7 +153,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 FilledButton.icon(
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    backgroundColor: const Color(0xFF2F426F),
+                    backgroundColor: AppColors.accent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -204,7 +204,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                   width: double.infinity,
                   child: FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF2F426F),
+                      backgroundColor: AppColors.accent,
                       minimumSize: const Size.fromHeight(50),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -321,7 +321,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: joined ? const Color(0xFF2F426F) : AppColors.border,
+                      color: joined ? AppColors.accent : AppColors.border,
                       width: joined ? 1.3 : 1,
                     ),
                     boxShadow: const [
@@ -379,14 +379,14 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.check_circle_rounded,
-                                    size: 12, color: Color(0xFF2F426F)),
+                                    size: 12, color: AppColors.accent),
                                 SizedBox(width: 4),
                                 Text(
                                   'Joined',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF2F426F),
+                                    color: AppColors.accent,
                                   ),
                                 ),
                               ],
@@ -424,14 +424,14 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         _StatPill(
                           icon: Icons.schedule_rounded,
                           text: spark.timeLabel,
-                          color: const Color(0xFF2F426F),
+                          color: AppColors.accent,
                           bg: const Color(0xFFD5DCF5),
                         ),
                         const SizedBox(width: 8),
                         _StatPill(
                           icon: Icons.near_me_rounded,
                           text: spark.distanceLabel,
-                          color: const Color(0xFF2F426F),
+                          color: AppColors.accent,
                           bg: const Color(0xFFD5DCF5),
                         ),
                       ],
@@ -475,7 +475,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF2F426F),
+                                color: AppColors.accent,
                               ),
                             ),
                           ),
@@ -512,7 +512,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             ),
                             TextButton(
                               style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFF2F426F),
+                                foregroundColor: AppColors.accent,
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                               ),
                               onPressed: () => _callHost(spark.hostPhoneNumber!),
@@ -553,7 +553,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           ),
                           TextButton(
                             style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFF2F426F),
+                              foregroundColor: AppColors.accent,
                               padding: const EdgeInsets.symmetric(horizontal: 8),
                             ),
                             onPressed: () => _openInMaps(context),
@@ -581,7 +581,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         const Spacer(),
                         TextButton(
                           style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFF2F426F),
+                            foregroundColor: AppColors.accent,
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             minimumSize: const Size(0, 28),
                           ),
@@ -634,7 +634,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           value: fillRatio,
                           minHeight: 7,
                           backgroundColor: const Color(0xFFE2E8F0),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2F426F)),
+                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -663,7 +663,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2F426F),
+                              color: AppColors.accent,
                             ),
                           ),
                         ],
@@ -706,7 +706,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     ? PrimaryButton(
                         key: const ValueKey('join-btn'),
                         label: 'JOIN SPARK',
-                        backgroundColor: const Color(0xFF2F426F),
+                        backgroundColor: AppColors.accent,
                         onPressed: _joinSpark,
                       )
                     : (isCreator
@@ -717,7 +717,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                 child: PrimaryButton(
                                   label: 'OPEN HOST CHAT',
                                   compact: true,
-                                  backgroundColor: const Color(0xFF2F426F),
+                                  backgroundColor: AppColors.accent,
                                   onPressed: () {
                                     ref.read(analyticsServiceProvider).track(
                                       'open_chat_from_detail',
@@ -750,7 +750,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                   child: const Text(
                                     'SHARE INVITE',
                                     style: TextStyle(
-                                      color: Color(0xFF2F426F),
+                                      color: AppColors.accent,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -765,7 +765,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             child: PrimaryButton(
                               label: 'OPEN CHAT',
                               compact: true,
-                              backgroundColor: const Color(0xFF2F426F),
+                              backgroundColor: AppColors.accent,
                               onPressed: () {
                                 ref.read(analyticsServiceProvider).track(
                                   'open_chat_from_detail',
@@ -939,7 +939,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         width: 22,
                         height: 22,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF2F426F),
+                          color: AppColors.accent,
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -974,7 +974,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF2F426F),
+                    backgroundColor: AppColors.accent,
                     minimumSize: const Size.fromHeight(50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1115,7 +1115,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
         name: creatorName,
         role: 'Host',
         badge: 'Reliable host',
-        badgeColor: const Color(0xFF2F426F),
+        badgeColor: AppColors.accent,
       ),
     ];
 

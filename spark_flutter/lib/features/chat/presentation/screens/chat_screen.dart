@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/auth/auth_state.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../spark/domain/spark.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../controllers/chat_controller.dart';
 
-const _kNavy = Color(0xFF2F426F);
+final _kNavy = AppColors.accent;
 const _kNavyLight = Color(0xFFEAF0FF);
 const _kSurface = Color(0xFFF7F8FC);
 
@@ -202,7 +203,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               icon: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  const Icon(Icons.shield_outlined, color: _kNavy, size: 20),
+                  Icon(Icons.shield_outlined, color: _kNavy, size: 20),
                   if (isLocked)
                     Positioned(
                       top: -2,
