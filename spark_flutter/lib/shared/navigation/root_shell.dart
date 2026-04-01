@@ -105,7 +105,7 @@ class _NavItem extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const activeColor = AppColors.accent;
     final inactiveColor =
-        isDark ? AppColors.darkTextSecondary : const Color(0xFF94A3B8);
+        isDark ? AppColors.darkTextSecondary : AppColors.darkTextSecondary;
 
     return Expanded(
       child: GestureDetector(

@@ -237,7 +237,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     child: const Text(
                       'Leave spark',
                       style: TextStyle(
-                        color: Color(0xFFDC2626),
+                        color: AppColors.errorText,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -324,7 +324,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     ),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x0C000000),
+                        color: AppColors.cardShadow,
                         blurRadius: 12,
                         offset: Offset(0, 4),
                       ),
@@ -369,7 +369,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
+                              color: AppColors.accentSurface,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Row(
@@ -464,7 +464,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAF2FF),
+                              color: AppColors.accentSurface,
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: const Text(
@@ -630,7 +630,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         child: LinearProgressIndicator(
                           value: fillRatio,
                           minHeight: 7,
-                          backgroundColor: const Color(0xFFE2E8F0),
+                          backgroundColor: AppColors.border,
                           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
                         ),
                       ),
@@ -783,7 +783,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                 minimumSize: const Size.fromHeight(46),
                                 foregroundColor: Colors.black54,
                                 side: const BorderSide(
-                                    color: Color(0xFFDDE1E9)),
+                                    color: AppColors.chipBorder),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -874,13 +874,13 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4ED),
+                      color: AppColors.warmSurface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.shield_rounded,
                       size: 22,
-                      color: Color(0xFFEA580C),
+                      color: AppColors.warmAccent,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1107,7 +1107,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
           name: 'You',
           role: 'Participant',
           badge: 'Verified',
-          badgeColor: const Color(0xFF0F766E),
+          badgeColor: AppColors.tealAccent,
         ),
       );
     }
@@ -1120,7 +1120,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
           name: _nameFromInitial(initial, i),
           role: 'Participant',
           badge: 'Verified',
-          badgeColor: const Color(0xFF0F766E),
+          badgeColor: AppColors.tealAccent,
         ),
       );
     }
@@ -1324,7 +1324,7 @@ class _CountdownBadgeState extends State<_CountdownBadge>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF4ED),
+          color: AppColors.warmSurface,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
@@ -1333,7 +1333,7 @@ class _CountdownBadgeState extends State<_CountdownBadge>
             const Icon(
               Icons.bolt_rounded,
               size: 12,
-              color: Color(0xFFEA580C),
+              color: AppColors.warmAccent,
             ),
             const SizedBox(width: 4),
             Text(
@@ -1341,7 +1341,7 @@ class _CountdownBadgeState extends State<_CountdownBadge>
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFFEA580C),
+                color: AppColors.warmAccent,
               ),
             ),
           ],
@@ -1420,7 +1420,7 @@ class _ParticipantChip extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: const Color(0xFFE2E8F0),
+        color: AppColors.border,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 1.5),
       ),

@@ -489,7 +489,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: _isManualMode ? const Color(0xFFDC2626) : AppColors.textSecondary,
+                      color: _isManualMode ? AppColors.dangerText : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -505,7 +505,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(validationMessage),
-                      backgroundColor: const Color(0xFFB91C1C),
+                      backgroundColor: AppColors.danger,
                     ),
                   );
                 },
@@ -518,11 +518,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   static Color _categoryAccentColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF86EFAC),
-        SparkCategory.study => const Color(0xFF93C5FD),
-        SparkCategory.ride => const Color(0xFFC4B5FD),
-        SparkCategory.events => const Color(0xFFFDBA74),
-        SparkCategory.hangout => const Color(0xFFF9A8D4),
+        SparkCategory.sports => AppColors.catSports,
+        SparkCategory.study => AppColors.catStudy,
+        SparkCategory.ride => AppColors.catRide,
+        SparkCategory.events => AppColors.catEvents,
+        SparkCategory.hangout => AppColors.catHangout,
       };
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
@@ -629,7 +629,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(validationMessage),
-          backgroundColor: const Color(0xFFB91C1C),
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -992,7 +992,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_userFacingSparkError(e)),
-          backgroundColor: const Color(0xFFB91C1C),
+          backgroundColor: AppColors.danger,
         ),
       );
       return;
@@ -1631,7 +1631,7 @@ class _AutoPreviewCard extends StatelessWidget {
                 width: 30,
                 height: 30,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF2FF),
+                  color: AppColors.accentSurface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(plan.category.icon, size: 16, color: AppColors.accent),
@@ -1994,7 +1994,7 @@ class _SelectField<T> extends StatelessWidget {
         icon: const Icon(Icons.expand_more, size: 16),
         decoration: InputDecoration(
           filled: true,
-          fillColor: const Color(0xFFF8FAFC),
+          fillColor: AppColors.surfaceDim,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           border: OutlineInputBorder(
@@ -2032,11 +2032,11 @@ class _CreateScreenHeader extends StatelessWidget {
   final SparkCategory category;
 
   static Color _accentColor(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => const Color(0xFF86EFAC),
-        SparkCategory.study => const Color(0xFF93C5FD),
-        SparkCategory.ride => const Color(0xFFC4B5FD),
-        SparkCategory.events => const Color(0xFFFDBA74),
-        SparkCategory.hangout => const Color(0xFFF9A8D4),
+        SparkCategory.sports => AppColors.catSports,
+        SparkCategory.study => AppColors.catStudy,
+        SparkCategory.ride => AppColors.catRide,
+        SparkCategory.events => AppColors.catEvents,
+        SparkCategory.hangout => AppColors.catHangout,
       };
 
   static IconData _icon(SparkCategory cat) => switch (cat) {
@@ -2091,15 +2091,15 @@ class _CreateScreenHeader extends StatelessWidget {
             child: Icon(
               _icon(category),
               key: ValueKey(category),
-              color: accent == const Color(0xFF86EFAC)
-                  ? const Color(0xFF15803D)
-                  : accent == const Color(0xFF93C5FD)
-                      ? const Color(0xFF1D4ED8)
-                      : accent == const Color(0xFFC4B5FD)
-                          ? const Color(0xFF6D28D9)
-                          : accent == const Color(0xFFFDBA74)
-                              ? const Color(0xFFB45309)
-                              : const Color(0xFFBE185D),
+              color: accent == AppColors.catSports
+                  ? AppColors.catSportsFg
+                  : accent == AppColors.catStudy
+                      ? AppColors.catStudyFg
+                      : accent == AppColors.catRide
+                          ? AppColors.catRideFg
+                          : accent == AppColors.catEvents
+                              ? AppColors.catEventsFg
+                              : AppColors.catHangoutFg,
               size: 20,
             ),
           ),
@@ -2237,7 +2237,7 @@ class _ReadOnlyMetaChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: AppColors.surfaceDim,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.border),
       ),

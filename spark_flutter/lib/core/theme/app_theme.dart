@@ -14,11 +14,52 @@ class AppColors {
   static const success = Color(0xFF10B981);
   static const action = Color(0xFFFF6B35);
 
-  static const pillSurface = Color(0xFFF2F2F7);
+  static const pillSurface   = Color(0xFFF2F2F7);
   static const neutralSurface = Color(0xFFF0F1F5);
-  static const cardDivider = Color(0xFFEBEDF0);
-  static const cardBorder = Color(0xFFE4E7EC);
-  static const avatarBg = Color(0xFFE8ECF5);
+  static const cardDivider   = Color(0xFFEBEDF0);
+  static const cardBorder    = Color(0xFFE4E7EC);
+  static const avatarBg      = Color(0xFFE8ECF5);
+
+  static const textMuted     = Color(0xFF9CA3AF);
+  static const separator     = Color(0xFFD1D5DB);
+  static const errorText     = Color(0xFFEF4444);
+  static const errorSurface  = Color(0xFFFEF2F2);
+  static const accentSurface = Color(0xFFEAF2FF);
+  static const accentTint    = Color(0xFFEEF3FF);
+  static const surfaceSubtle = Color(0xFFF7F8FC);
+  static const mutedIcon     = Color(0xFF6B7280);
+  static const cardShadow    = Color(0x0A000000);
+  static const heroBg1       = Color(0xFF1C2A40);
+  static const heroBg2       = Color(0xFF213050);
+  static const heroBg3       = Color(0xFF1C2E46);
+  static const heroBg4       = Color(0xFF233048);
+  static const prefsBg1      = Color(0xFF1A2D50);
+  static const prefsBg2      = Color(0xFF243B6A);
+  static const chipBg        = Color(0xFFF5F7FC);
+  static const chipBorder    = Color(0xFFDDE3F0);
+  static const chipSelectedBg = Color(0xFFF0F3FA);
+  static const chipText      = Color(0xFF374151);
+  static const chipAccentBg  = Color(0xFFE4EBFA);
+  static const chipAccentText = Color(0xFF3E5E9E);
+  static const iconBg        = Color(0xFFF2F4F8);
+  static const iconFg        = Color(0xFF3D5070);
+  static const orbGreen      = Color(0xFF86EFAC);
+  static const warmSurface   = Color(0xFFFFF4ED);
+  static const warmAccent    = Color(0xFFEA580C);
+  static const tealAccent    = Color(0xFF0F766E);
+  static const dangerText    = Color(0xFFDC2626);
+  static const danger        = Color(0xFFB91C1C);
+
+  static const catSports     = Color(0xFF86EFAC);
+  static const catStudy      = Color(0xFF93C5FD);
+  static const catRide       = Color(0xFFC4B5FD);
+  static const catEvents     = Color(0xFFFDBA74);
+  static const catHangout    = Color(0xFFF9A8D4);
+  static const catSportsFg   = Color(0xFF15803D);
+  static const catStudyFg    = Color(0xFF1D4ED8);
+  static const catRideFg     = Color(0xFF6D28D9);
+  static const catEventsFg   = Color(0xFFB45309);
+  static const catHangoutFg  = Color(0xFFBE185D);
 
   static const darkBackground = Color(0xFF0B1120);
   static const darkSurface = Color(0xFF141C2E);

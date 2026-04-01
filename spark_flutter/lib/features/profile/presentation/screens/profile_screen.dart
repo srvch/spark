@@ -13,7 +13,7 @@ import '../../../spark/presentation/screens/spark_detail_screen.dart';
 import '../controllers/profile_preferences_controller.dart';
 
 const _kNavy = AppColors.accent;
-const _kNavyLight = Color(0xFFF0F4FF);
+const _kNavyLight = AppColors.accentSurface;
 const _kDivider = AppColors.border;
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -53,7 +53,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F7),
+                        color: AppColors.pillSurface,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: const Icon(
@@ -236,8 +236,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _MenuRow(
                     icon: Icons.sos_rounded,
                     label: 'SOS Alert',
-                    labelColor: const Color(0xFFB91C1C),
-                    iconColor: const Color(0xFFB91C1C),
+                    labelColor: AppColors.errorText,
+                    iconColor: AppColors.errorText,
                     onTap: () {
                       _analytics.track('sos_from_profile_tapped');
                       _openLegalFlow(_LegalType.safety);
@@ -621,7 +621,7 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 24, thickness: 4, color: Color(0xFFF5F5F7));
+    return const Divider(height: 24, thickness: 4, color: AppColors.pillSurface);
   }
 }
 
@@ -644,7 +644,7 @@ class _ReferralBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF3FF),
+        color: AppColors.accentTint,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Stack(
