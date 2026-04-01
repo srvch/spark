@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/chat/presentation/screens/chat_screen.dart';
 import '../controllers/spark_controller.dart';
 import '../../domain/spark.dart';
+import 'create_spark_screen.dart';
 import 'spark_detail_screen.dart';
 
 const _kNavy = AppColors.accent;
@@ -111,15 +113,53 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
                                     content: Text('You left this spark')),
                               );
                             },
-                            onDelete: () {
-                              final next = [
-                                ...ref.read(createdSparksProvider)
-                              ]..removeWhere((s) => s.id == spark.id);
-                              ref
-                                  .read(createdSparksProvider.notifier)
-                                  .state = next;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Spark deleted')),
+                            onCancel: () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Cancel Spark?'),
+                                  content: Text(
+                                    'This will remove "${spark.title}" for all participants.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(false),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.accent,
+                                      ),
+                                      child: const Text('Keep'),
+                                    ),
+                                    FilledButton(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppColors.errorText,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.of(ctx).pop(true),
+                                      child: const Text('Cancel Spark'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed == true && context.mounted) {
+                                HapticFeedback.mediumImpact();
+                                await ref
+                                    .read(sparkDataControllerProvider)
+                                    .cancelSpark(spark.id);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Spark cancelled')),
+                                  );
+                                }
+                              }
+                            },
+                            onPostAgain: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      CreateSparkScreen(prefill: spark),
+                                ),
                               );
                             },
                           ),
@@ -260,7 +300,8 @@ class _ActivityCard extends StatelessWidget {
     required this.onView,
     required this.onChat,
     required this.onLeave,
-    required this.onDelete,
+    required this.onCancel,
+    required this.onPostAgain,
   });
 
   final Spark spark;
@@ -268,7 +309,8 @@ class _ActivityCard extends StatelessWidget {
   final VoidCallback onView;
   final VoidCallback onChat;
   final VoidCallback onLeave;
-  final VoidCallback onDelete;
+  final VoidCallback onCancel;
+  final VoidCallback onPostAgain;
 
   @override
   Widget build(BuildContext context) {
@@ -386,9 +428,15 @@ class _ActivityCard extends StatelessWidget {
                             ] else ...[
                               _Divider(),
                               _ActionButton(
-                                label: 'Delete',
+                                label: 'Post again',
+                                color: _kNavy,
+                                onTap: onPostAgain,
+                              ),
+                              _Divider(),
+                              _ActionButton(
+                                label: 'Cancel',
                                 color: AppColors.errorText,
-                                onTap: onDelete,
+                                onTap: onCancel,
                               ),
                             ],
                           ],

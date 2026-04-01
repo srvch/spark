@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/chat/presentation/screens/chat_inbox_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/spark/presentation/controllers/spark_controller.dart';
 import '../../features/spark/presentation/screens/create_spark_screen.dart';
 import '../../features/spark/presentation/screens/discover_screen.dart';
 
@@ -17,6 +18,12 @@ class RootShell extends ConsumerWidget {
     final tab = ref.watch(bottomTabProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkBackground : Colors.white;
+
+    final joinedCount = ref.watch(joinedSparksProvider).length;
+    final createdCount = ref.watch(myCreatedSparksProvider).length;
+    final chatCount = joinedCount + createdCount;
+    final seenCount = ref.watch(seenChatCountProvider);
+    final hasUnreadChat = chatCount > seenCount;
 
     final screens = const [
       DiscoverScreen(),
@@ -62,8 +69,11 @@ class RootShell extends ConsumerWidget {
                   icon: Icons.chat_bubble_outline_rounded,
                   activeIcon: Icons.chat_bubble_rounded,
                   selected: tab == 2,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 2,
+                  showBadge: hasUnreadChat && tab != 2,
+                  onTap: () {
+                    ref.read(bottomTabProvider.notifier).state = 2;
+                    ref.read(seenChatCountProvider.notifier).state = chatCount;
+                  },
                 ),
                 _NavItem(
                   label: 'Profile',
@@ -143,6 +153,7 @@ class _NavItem extends StatelessWidget {
     required this.activeIcon,
     required this.selected,
     required this.onTap,
+    this.showBadge = false,
   });
 
   final String label;
@@ -150,6 +161,7 @@ class _NavItem extends StatelessWidget {
   final IconData activeIcon;
   final bool selected;
   final VoidCallback onTap;
+  final bool showBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -177,14 +189,32 @@ class _NavItem extends StatelessWidget {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  selected ? activeIcon : icon,
-                  key: ValueKey(selected),
-                  size: 22,
-                  color: selected ? activeColor : inactiveColor,
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      selected ? activeIcon : icon,
+                      key: ValueKey(selected),
+                      size: 22,
+                      color: selected ? activeColor : inactiveColor,
+                    ),
+                  ),
+                  if (showBadge)
+                    Positioned(
+                      top: -3,
+                      right: -4,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53935),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 3),

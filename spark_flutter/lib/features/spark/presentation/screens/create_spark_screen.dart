@@ -17,7 +17,10 @@ import '../widgets/location_picker_sheet.dart';
 import 'spark_detail_screen.dart';
 
 class CreateSparkScreen extends ConsumerStatefulWidget {
-  const CreateSparkScreen({super.key});
+  const CreateSparkScreen({super.key, this.prefill});
+
+  /// When set, pre-fills the manual form with this spark's data ("Post again").
+  final Spark? prefill;
 
   @override
   ConsumerState<CreateSparkScreen> createState() => _CreateSparkScreenState();
@@ -69,6 +72,19 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     _manualMinute = now.minute;
     _manualPeriod = now.hour >= 12 ? 'PM' : 'AM';
     _planController.addListener(_onPlanChanged);
+    // Pre-fill if "Post again" was triggered
+    final prefill = widget.prefill;
+    if (prefill != null) {
+      _isManualMode = true;
+      _manualTitleController.text = prefill.title;
+      _manualLocationController.text = prefill.location;
+      _manualNoteController.text = prefill.note ?? '';
+      _manualCategory = prefill.category;
+      _manualOpenGroup = prefill.maxSpots == 0;
+      if (prefill.maxSpots > 0) {
+        _manualSpotsController.text = prefill.maxSpots.toString();
+      }
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _initSpeech();
@@ -991,6 +1007,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       return;
     }
 
+    HapticFeedback.mediumImpact();
     ref.read(bottomTabProvider.notifier).state = 0;
     if (!mounted) return;
     await showInviteFriendsBottomSheet(
@@ -1923,14 +1940,39 @@ class _ManualForm extends StatelessWidget {
         const SizedBox(height: 10),
         _LabeledField(
           label: 'Note (optional)',
-          child: TextField(
-            controller: noteController,
-            minLines: 1,
-            maxLines: 1,
-            inputFormatters: [_WordLimitFormatter(maxWords: 15)],
-            decoration: const InputDecoration(
-              hintText: 'e.g. Bring your own bat and reach Gate 2',
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              TextField(
+                controller: noteController,
+                minLines: 1,
+                maxLines: 2,
+                inputFormatters: [_WordLimitFormatter(maxWords: 15)],
+                decoration: const InputDecoration(
+                  hintText: 'e.g. Bring your own bat and reach Gate 2',
+                ),
+              ),
+              const SizedBox(height: 4),
+              AnimatedBuilder(
+                animation: noteController,
+                builder: (context, _) {
+                  final text = noteController.text.trim();
+                  final wordCount = text.isEmpty
+                      ? 0
+                      : text.split(RegExp(r'\s+')).length;
+                  return Text(
+                    '$wordCount / 15 words',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: wordCount >= 14
+                          ? AppColors.errorText
+                          : AppColors.textMuted,
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ],

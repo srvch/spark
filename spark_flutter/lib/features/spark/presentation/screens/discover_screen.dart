@@ -150,6 +150,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               label: 'All',
                               icon: Icons.apps_outlined,
                               selected: selectedCategory == null,
+                              count: discoverableSparks.length,
                               onTap: () => setState(() {
                                 selectedCategory = null;
                               }),
@@ -161,6 +162,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                     label: category.label,
                                     icon: category.icon,
                                     selected: selectedCategory == category,
+                                    count: discoverableSparks
+                                        .where((s) => s.category == category)
+                                        .length,
                                     onTap: () => setState(() {
                                       selectedCategory = category;
                                     }),
@@ -211,6 +215,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 10),
+                      // ── Sort toggle ───────────────────────────────
+                      _SortToggle(
+                        selected: ref.watch(selectedSortProvider),
+                        onSelect: (s) =>
+                            ref.read(selectedSortProvider.notifier).state = s,
                       ),
                       const SizedBox(height: 10),
                       if (loading)
@@ -1265,34 +1276,84 @@ class _HeroCollapsed extends StatelessWidget {
   }
 }
 
+class _SortToggle extends StatelessWidget {
+  const _SortToggle({required this.selected, required this.onSelect});
+
+  final SparkSort selected;
+  final ValueChanged<SparkSort> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: SparkSort.values.map((sort) {
+        final isSelected = sort == selected;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => onSelect(sort),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              margin: const EdgeInsets.only(right: 6),
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.accent : AppColors.pillSurface,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                sort.label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : AppColors.textMuted,
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
 class _CategoryChip extends StatelessWidget {
   const _CategoryChip({
     required this.label,
     required this.icon,
     required this.selected,
     required this.onTap,
+    this.count,
   });
 
   final String label;
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
+    final isEmpty = count != null && count! == 0;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: isEmpty ? null : onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accent : Colors.white,
+            color: selected
+                ? AppColors.accent
+                : isEmpty
+                    ? AppColors.pillSurface
+                    : Colors.white,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected ? AppColors.accent : AppColors.separator,
+              color: selected
+                  ? AppColors.accent
+                  : isEmpty
+                      ? AppColors.separator
+                      : AppColors.separator,
               width: 1,
             ),
           ),
@@ -1304,11 +1365,15 @@ class _CategoryChip extends StatelessWidget {
                 const SizedBox(width: 5),
               ],
               Text(
-                label,
+                count != null ? '$label ($count)' : label,
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : AppColors.chipText,
+                  color: selected
+                      ? Colors.white
+                      : isEmpty
+                          ? AppColors.textMuted
+                          : AppColors.chipText,
                 ),
               ),
             ],
@@ -1456,6 +1521,7 @@ class _NearbyCardState extends State<_NearbyCard> {
     final isJoined = widget.ctaLabel == 'Chat';
     final avatars = _avatars();
     final isNow = spark.startsInMinutes <= 0;
+    final isHappeningNow = spark.startsInMinutes <= 5;
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -1479,16 +1545,41 @@ class _NearbyCardState extends State<_NearbyCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    spark.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.2,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          spark.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      if (isHappeningNow) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            isNow ? 'Now' : 'Starting',
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Row(
