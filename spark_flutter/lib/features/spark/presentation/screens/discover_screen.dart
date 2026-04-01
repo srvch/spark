@@ -1480,15 +1480,7 @@ class _NearbyCardState extends State<_NearbyCard> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: _iconBg,
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Icon(icon, color: _iconFg, size: 19),
-              ),
+              Icon(icon, color: _iconFg, size: 22),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(
@@ -1578,19 +1570,12 @@ class _NearbyCardState extends State<_NearbyCard> {
                 ),
               ),
               const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                decoration: BoxDecoration(
-                  color: isJoined ? const Color(0xFFF3F4F6) : AppColors.accent,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  widget.ctaLabel,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: isJoined ? AppColors.accent : Colors.white,
-                  ),
+              Text(
+                widget.ctaLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isJoined ? const Color(0xFF9CA3AF) : AppColors.accent,
                 ),
               ),
             ],
@@ -1719,36 +1704,19 @@ class _CreateNudge extends ConsumerWidget {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.accent.withValues(alpha: 0.06),
-            const Color(0xFFF8FAFD),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.accent.withValues(alpha: 0.12),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E7EC), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.bolt_rounded,
-                  size: 18,
-                  color: AppColors.accent,
-                ),
+              const Icon(
+                Icons.bolt_rounded,
+                size: 22,
+                color: AppColors.accent,
               ),
               const SizedBox(width: 12),
               const Expanded(
