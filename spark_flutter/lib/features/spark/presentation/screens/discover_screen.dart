@@ -335,7 +335,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                           ),
                         ),
-                      const _CreateNudge(),
                     ],
                   ),
                 ),
@@ -1480,15 +1479,7 @@ class _NearbyCardState extends State<_NearbyCard> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: _iconBg,
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Icon(icon, color: _iconFg, size: 19),
-              ),
+              Icon(icon, color: _iconFg, size: 22),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(
@@ -1578,19 +1569,12 @@ class _NearbyCardState extends State<_NearbyCard> {
                 ),
               ),
               const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                decoration: BoxDecoration(
-                  color: isJoined ? const Color(0xFFF3F4F6) : AppColors.accent,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  widget.ctaLabel,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: isJoined ? AppColors.accent : Colors.white,
-                  ),
+              Text(
+                widget.ctaLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isJoined ? const Color(0xFF9CA3AF) : AppColors.accent,
                 ),
               ),
             ],
