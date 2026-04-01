@@ -140,74 +140,42 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Category chips + activity pill ────────────
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 40,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children: [
-                                  _CategoryChip(
-                                    label: 'All',
-                                    icon: Icons.apps_outlined,
-                                    selected: selectedCategory == null,
+                      // ── Category chips ────────────────────────────
+                      SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            _CategoryChip(
+                              label: 'All',
+                              icon: Icons.apps_outlined,
+                              selected: selectedCategory == null,
+                              onTap: () => setState(() {
+                                selectedCategory = null;
+                              }),
+                            ),
+                            ...SparkCategory.values
+                                .where((c) => c != SparkCategory.hangout)
+                                .map(
+                                  (category) => _CategoryChip(
+                                    label: category.label,
+                                    icon: category.icon,
+                                    selected: selectedCategory == category,
                                     onTap: () => setState(() {
-                                      selectedCategory = null;
+                                      selectedCategory = category;
                                     }),
                                   ),
-                                  ...SparkCategory.values
-                                      .where((c) => c != SparkCategory.hangout)
-                                      .map(
-                                        (category) => _CategoryChip(
-                                          label: category.label,
-                                          icon: category.icon,
-                                          selected: selectedCategory == category,
-                                          onTap: () => setState(() {
-                                            selectedCategory = category;
-                                          }),
-                                        ),
-                                      ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 1,
-                            height: 20,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            color: AppColors.chipBorder,
-                          ),
-                          GestureDetector(
-                            onTap: () => _showPreferencesSheet(context),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: AppColors.separator,
-                                  width: 1,
                                 ),
-                              ),
-                              child: const Icon(
-                                Icons.tune_rounded,
-                                size: 15,
-                                color: AppColors.chipText,
-                              ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                       // ── Section header ────────────────────────────
                       Row(
                         children: [
                           const _LiveHeader(),
+                          const Spacer(),
                           if (showMyActivity) ...[
-                            const Spacer(),
                             GestureDetector(
                               onTap: () => Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -223,7 +191,25 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 12),
                           ],
+                          GestureDetector(
+                            onTap: () => _showPreferencesSheet(context),
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: AppColors.surfaceSubtle,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.tune_rounded,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
