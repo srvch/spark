@@ -754,7 +754,7 @@ class _HeroPanelState extends State<_HeroPanel>
             curve: Curves.easeOut,
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -793,7 +793,7 @@ class _HeroPanelState extends State<_HeroPanel>
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -854,11 +854,11 @@ class _HeroPanelState extends State<_HeroPanel>
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 8),
                 const Text(
                   'Plans happening\nnear you, right now.',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 23,
                     height: 1.15,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -866,7 +866,7 @@ class _HeroPanelState extends State<_HeroPanel>
                     letterSpacing: -0.3,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
                 _HeroBannerSearch(
                   currentQuery: widget.searchQuery,
                   onQueryChanged: (v) {
