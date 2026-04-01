@@ -335,6 +335,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                           ),
                         ),
+                      const _CreateNudge(),
                     ],
                   ),
                 ),
@@ -1703,36 +1704,19 @@ class _CreateNudge extends ConsumerWidget {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.accent.withValues(alpha: 0.06),
-            const Color(0xFFF8FAFD),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: AppColors.accent.withValues(alpha: 0.12),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E7EC), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.bolt_rounded,
-                  size: 18,
-                  color: AppColors.accent,
-                ),
+              const Icon(
+                Icons.bolt_rounded,
+                size: 22,
+                color: AppColors.accent,
               ),
               const SizedBox(width: 12),
               const Expanded(
