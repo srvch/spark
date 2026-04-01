@@ -110,6 +110,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final filtered = _applyFilters(discoverableSparks);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,
@@ -1471,38 +1472,24 @@ class _NearbyCardState extends State<_NearbyCard> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: const Color(0xFFECEFF5),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE4E7EC), width: 1),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: _iconBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(
-                  icon,
-                  color: _iconFg,
-                  size: 20,
-                ),
+                child: Icon(icon, color: _iconFg, size: 19),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1512,48 +1499,34 @@ class _NearbyCardState extends State<_NearbyCard> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: Color(0xFF111827),
                         letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
                         Icon(
                           Icons.schedule_rounded,
                           size: 11,
-                          color: isNow
-                              ? AppColors.success
-                              : const Color(0xFF94A3B8),
+                          color: isNow ? AppColors.success : const Color(0xFF9CA3AF),
                         ),
                         const SizedBox(width: 3),
                         Text(
                           _countdown(),
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isNow
-                                ? AppColors.success
-                                : const Color(0xFF94A3B8),
+                            fontWeight: FontWeight.w500,
+                            color: isNow ? AppColors.success : const Color(0xFF9CA3AF),
                           ),
                         ),
                         const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 5),
-                          child: Text(
-                            '·',
-                            style: TextStyle(
-                              color: Color(0xFFCBD5E1),
-                              fontSize: 12,
-                            ),
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 4),
+                          child: Text('·', style: TextStyle(color: Color(0xFFD1D5DB), fontSize: 12)),
                         ),
-                        Icon(
-                          Icons.near_me_rounded,
-                          size: 11,
-                          color: const Color(0xFF94A3B8),
-                        ),
+                        Icon(Icons.near_me_rounded, size: 11, color: const Color(0xFF9CA3AF)),
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
@@ -1561,8 +1534,8 @@ class _NearbyCardState extends State<_NearbyCard> {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF9CA3AF),
                             ),
                           ),
                         ),
@@ -1572,30 +1545,27 @@ class _NearbyCardState extends State<_NearbyCard> {
                     Row(
                       children: [
                         _AvatarStack(avatars: avatars),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Text(
                           '${spark.participants.length} joining',
                           style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF94A3B8),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF9CA3AF),
                           ),
                         ),
                         if (isLowSpots) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 7),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF2F2),
-                              borderRadius: BorderRadius.circular(5),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               '${spark.spotsLeft} left',
                               style: const TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w700,
                                 color: Color(0xFFEF4444),
                               ),
@@ -1607,25 +1577,19 @@ class _NearbyCardState extends State<_NearbyCard> {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                 decoration: BoxDecoration(
-                  color: isJoined
-                      ? const Color(0xFFF2F4F8)
-                      : AppColors.accent,
+                  color: isJoined ? const Color(0xFFF3F4F6) : AppColors.accent,
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   widget.ctaLabel,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: isJoined ? AppColors.accent : Colors.white,
-                    letterSpacing: 0.1,
                   ),
                 ),
               ),
