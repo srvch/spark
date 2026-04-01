@@ -215,11 +215,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                 ),
                               ),
                               child: const Text(
-                                'My activity →',
+                                'Activity',
                                 style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.accent,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -1474,12 +1474,21 @@ class _NearbyCardState extends State<_NearbyCard> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: _iconFg, size: 22),
-            const SizedBox(width: 13),
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: _iconBg,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: _iconFg, size: 17),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1571,15 +1580,15 @@ class _NearbyCardState extends State<_NearbyCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.pillSurface,
+                color: isJoined ? AppColors.pillSurface : AppColors.accentSurface,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 widget.ctaLabel,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.accent,
+                  color: isJoined ? AppColors.textMuted : AppColors.accent,
                 ),
               ),
             ),
