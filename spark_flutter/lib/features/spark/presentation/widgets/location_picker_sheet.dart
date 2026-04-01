@@ -234,6 +234,8 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
     return widget.selectedLocation;
   }
 
+  static const _kNavy = Color(0xFF2F426F);
+
   @override
   Widget build(BuildContext context) {
     final hasApiKey = widget.placesService.isConfigured;
@@ -243,243 +245,381 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
 
     return SafeArea(
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.72,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                height: 46,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+        height: MediaQuery.of(context).size.height * 0.88,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Drag handle ────────────────────────────────────────
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 10, bottom: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: const Color(0xFFDDE3F0),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            // ── Header row ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F6FA),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        size: 18,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Select a location',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // ── Search bar ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: const Color(0xFFDDE3F0), width: 1.5),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+                    const Icon(Icons.search_rounded, size: 18, color: _kNavy),
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextField(
                         controller: _searchController,
-                        autofocus: true,
+                        autofocus: false,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        contextMenuBuilder: null,
                         onChanged: _onSearchChanged,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
                         decoration: const InputDecoration(
                           border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          hintText: 'Search area, landmark, city',
+                          isCollapsed: true,
+                          hintText: 'Search location',
                           hintStyle: TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ),
                     ),
+                    if (_isLoading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 1.8),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.my_location, color: Color(0xFF2F426F)),
-                title: Text(
-                  _resolvingCurrentLocation
-                      ? 'Fetching current location...'
-                      : 'Use current location',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  widget.selectedLocation,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                trailing: _resolvingCurrentLocation
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : null,
-                onTap: _useCurrentLocation,
-              ),
-              if (_query.isEmpty && widget.recentLocations.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                const Text(
-                  'Recent',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: widget.recentLocations
-                      .map(
-                        (place) => ActionChip(
-                          label: Text(place),
-                          onPressed: () => widget.onSelect(place),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
+            ),
+            const SizedBox(height: 20),
+            // ── Scrollable body ────────────────────────────────────
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 children: [
-                  const Text(
-                    'Locations',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (!hasApiKey)
+                  // ── Current location section ──────────────────────
+                  if (_query.isEmpty) ...[
                     const Text(
-                      'Local mode',
+                      'Current location',
                       style: TextStyle(
-                        fontSize: 11.5,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        fontFamily: 'Manrope',
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: Builder(
-                  builder: (context) {
-                    if (_isLoading) {
-                      return const Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.selectedLocation,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: _useCurrentLocation,
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFDDE3F0), width: 1.5),
                         ),
-                      );
-                    }
-
-                    final items = <Widget>[];
-                    if (_query.isNotEmpty) {
-                      items.add(
-                        ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.edit_location_alt_outlined, size: 18),
-                          title: Text(
-                            'Use "$_query"',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                          ),
-                          onTap: () => widget.onSelect(_query),
-                        ),
-                      );
-                    }
-
-                    if (showApiMode && apiResults.isNotEmpty) {
-                      items.addAll(
-                        apiResults.map(
-                          (suggestion) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.place_outlined, size: 18),
-                            title: Text(
-                              suggestion.primaryText,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            subtitle: suggestion.secondaryText == null
-                                ? null
-                                : Text(
-                                    suggestion.secondaryText!,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _resolvingCurrentLocation
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: _kNavy,
                                     ),
+                                  )
+                                : const Icon(
+                                    Icons.my_location_rounded,
+                                    size: 16,
+                                    color: _kNavy,
                                   ),
-                            onTap: () => widget.onSelect(suggestion.primaryText),
-                          ),
-                        ),
-                      );
-                    } else {
-                      items.addAll(
-                        localResults.map(
-                          (place) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.place_outlined, size: 18),
-                            title: Text(
-                              place,
+                            const SizedBox(width: 8),
+                            Text(
+                              _resolvingCurrentLocation
+                                  ? 'Detecting location…'
+                                  : 'Use current location',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
+                                color: _kNavy,
                               ),
                             ),
-                            trailing: place == widget.selectedLocation
-                                ? const Icon(
-                                    Icons.check,
-                                    size: 18,
-                                    color: Color(0xFF2F426F),
-                                  )
-                                : null,
-                            onTap: () => widget.onSelect(place),
-                          ),
+                          ],
                         ),
-                      );
-                    }
-
-                    if (items.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  // ── Saved / search results section ────────────────
+                  if (_query.isNotEmpty) ...[
+                    // "Use exactly what user typed" row
+                    _LocationRow(
+                      label: 'Use "$_query"',
+                      icon: Icons.edit_location_alt_outlined,
+                      onTap: () => widget.onSelect(_query),
+                    ),
+                    if (showApiMode && apiResults.isNotEmpty)
+                      const _SectionDivider(),
+                  ],
+                  if (_query.isEmpty) ...[
+                    const Text(
+                      'Saved areas',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  if (showApiMode && apiResults.isNotEmpty)
+                    ...apiResults.asMap().entries.map(
+                          (e) => Column(
+                            children: [
+                              _LocationRow(
+                                label: e.value.primaryText,
+                                subtitle: e.value.secondaryText,
+                                icon: Icons.navigation_rounded,
+                                selected: false,
+                                onTap: () =>
+                                    widget.onSelect(e.value.primaryText),
+                              ),
+                              if (e.key < apiResults.length - 1)
+                                const _SectionDivider(),
+                            ],
+                          ),
+                        )
+                  else ...[
+                    if (localResults.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
                         child: Text(
-                          'No locations found. Try a nearby area name.',
+                          'No areas found. Try a nearby neighbourhood name.',
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
                           ),
                         ),
-                      );
-                    }
-
-                    return ListView(children: items);
-                  },
-                ),
-              ),
-              if (_apiError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    _apiError!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFDC2626),
+                      )
+                    else
+                      ...localResults.asMap().entries.map(
+                            (e) => Column(
+                              children: [
+                                _LocationRow(
+                                  label: e.value,
+                                  icon: Icons.navigation_rounded,
+                                  selected:
+                                      e.value == widget.selectedLocation,
+                                  onTap: () => widget.onSelect(e.value),
+                                ),
+                                if (e.key < localResults.length - 1)
+                                  const _SectionDivider(),
+                              ],
+                            ),
+                          ),
+                  ],
+                  if (_apiError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _apiError!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFDC2626),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
+                  ],
+                ],
+              ),
+            ),
+            // ── Bottom CTA ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: GestureDetector(
+                onTap: () {
+                  // Show a simple prompt to type a custom area name
+                  _searchController.clear();
+                  _onSearchChanged('');
+                },
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: _kNavy,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, size: 16, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        'Add new area',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+}
+
+class _LocationRow extends StatelessWidget {
+  const _LocationRow({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.subtitle,
+    this.selected = false,
+  });
+
+  final String label;
+  final String? subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF0FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 16, color: const Color(0xFF2F426F)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check_rounded, size: 18, color: Color(0xFF2F426F))
+            else
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionDivider extends StatelessWidget {
+  const _SectionDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(height: 1, thickness: 1, color: Color(0xFFF0F3FA));
   }
 }
