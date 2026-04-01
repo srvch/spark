@@ -760,8 +760,8 @@ class _HeroPanel extends StatelessWidget {
   }
 }
 
-/// Visual-only search bar. Tapping opens [_SearchModal] — a proper full-screen
-/// TextField free from SliverPersistentHeader coordinate issues on iOS.
+/// Visual-only search bar. Tapping pushes [_SearchScreen] — a Swiggy-style
+/// full-screen search page where the TextField lives in a normal Scaffold.
 class _HeroBannerSearch extends StatelessWidget {
   const _HeroBannerSearch({
     required this.currentQuery,
@@ -772,11 +772,18 @@ class _HeroBannerSearch extends StatelessWidget {
   final ValueChanged<String> onQueryChanged;
 
   Future<void> _openSearch(BuildContext context) async {
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SearchModal(initialQuery: currentQuery),
+    final result = await Navigator.of(context).push<String>(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (_, __, ___) =>
+            _SearchScreen(initialQuery: currentQuery),
+        transitionsBuilder: (_, anim, __, child) => FadeTransition(
+          opacity: anim,
+          child: child,
+        ),
+        transitionDuration: const Duration(milliseconds: 180),
+      ),
     );
     if (result != null) onQueryChanged(result);
   }
@@ -843,22 +850,29 @@ class _HeroBannerSearch extends StatelessWidget {
   }
 }
 
-// ── Full-screen search modal — safe to use autofocus here ──────────────────
-class _SearchModal extends StatefulWidget {
-  const _SearchModal({required this.initialQuery});
+// ── Full-screen search page — Swiggy-style ─────────────────────────────────
+class _SearchScreen extends StatefulWidget {
+  const _SearchScreen({required this.initialQuery});
   final String initialQuery;
 
   @override
-  State<_SearchModal> createState() => _SearchModalState();
+  State<_SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchModalState extends State<_SearchModal> {
+class _SearchScreenState extends State<_SearchScreen> {
   late final TextEditingController _ctrl =
       TextEditingController(text: widget.initialQuery);
+  String _query = '';
 
-  static const _quickTags = [
+  static const _recentTags = [
     'Cricket', 'Coffee', 'Study', 'Cycling', 'Drive', 'Badminton',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _query = widget.initialQuery;
+  }
 
   @override
   void dispose() {
@@ -867,46 +881,44 @@ class _SearchModalState extends State<_SearchModal> {
   }
 
   void _submit(String value) {
-    Navigator.of(context).pop(value.trim().toLowerCase());
+    final q = value.trim();
+    if (q.isNotEmpty) Navigator.of(context).pop(q.toLowerCase());
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Search input row ──────────────────────────────────
-              Row(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Top bar: back + search field ─────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
+              child: Row(
                 children: [
+                  // back arrow
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      size: 22,
+                      color: Colors.black87,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(null),
+                  ),
+                  // search field
                   Expanded(
                     child: Container(
-                      height: 48,
+                      height: 46,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F7FC),
                         borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFDDE3F0),
+                          width: 1.5,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -924,6 +936,8 @@ class _SearchModalState extends State<_SearchModal> {
                               enableSuggestions: false,
                               contextMenuBuilder: null,
                               textInputAction: TextInputAction.search,
+                              onChanged: (v) =>
+                                  setState(() => _query = v.trim()),
                               onSubmitted: _submit,
                               style: const TextStyle(
                                 fontSize: 15,
@@ -934,7 +948,8 @@ class _SearchModalState extends State<_SearchModal> {
                               decoration: const InputDecoration(
                                 border: InputBorder.none,
                                 isCollapsed: true,
-                                hintText: 'Search plans, sports, study, ride…',
+                                hintText:
+                                    'Search plans, sports, study, ride…',
                                 hintStyle: TextStyle(
                                   fontSize: 15,
                                   color: AppColors.textSecondary,
@@ -942,68 +957,95 @@ class _SearchModalState extends State<_SearchModal> {
                               ),
                             ),
                           ),
+                          if (_query.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _ctrl.clear();
+                                setState(() => _query = '');
+                              },
+                              child: const Icon(
+                                Icons.close_rounded,
+                                size: 17,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                         ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(null),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.accent,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              // ── Quick tags ────────────────────────────────────────
-              const Text(
-                'Quick search',
+            ),
+            const SizedBox(height: 24),
+            // ── Recently searched ─────────────────────────────────
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'RECENTLY SEARCHED',
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                   color: AppColors.textSecondary,
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.8,
                 ),
               ),
-              const SizedBox(height: 10),
-              Wrap(
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _quickTags
-                    .map(
-                      (tag) => GestureDetector(
-                        onTap: () => _submit(tag),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            tag,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.accent,
-                            ),
-                          ),
+                children: _recentTags.map((tag) {
+                  final isActive = _query.toLowerCase() == tag.toLowerCase();
+                  return GestureDetector(
+                    onTap: () => _submit(tag),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.accent
+                            : const Color(0xFFF0F3FA),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: isActive
+                              ? AppColors.accent
+                              : const Color(0xFFDDE3F0),
+                          width: 1,
                         ),
                       ),
-                    )
-                    .toList(),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 13,
+                            color: isActive
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            tag,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: isActive
+                                  ? Colors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 4),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
