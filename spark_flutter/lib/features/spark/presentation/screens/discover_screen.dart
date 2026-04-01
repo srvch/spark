@@ -182,16 +182,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           GestureDetector(
                             onTap: () => _showPreferencesSheet(context),
                             child: Container(
-                              width: 38,
-                              height: 38,
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF2F4F8),
-                                borderRadius: BorderRadius.circular(11),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: const Color(0xFFD1D5DB),
+                                  width: 1,
+                                ),
                               ),
                               child: const Icon(
                                 Icons.tune_rounded,
-                                size: 16,
-                                color: Color(0xFF3D5070),
+                                size: 15,
+                                color: Color(0xFF374151),
                               ),
                             ),
                           ),
@@ -210,22 +214,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   builder: (_) => const ActivityScreen(),
                                 ),
                               ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEAF0FF),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: const Text(
-                                  'My activity →',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF2F426F),
-                                  ),
+                              child: const Text(
+                                'My activity →',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.accent,
                                 ),
                               ),
                             ),
@@ -1283,42 +1277,26 @@ class _CategoryChip extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: selected
-                ? AppColors.accent
-                : AppColors.surfaceDim,
+            color: selected ? AppColors.accent : Colors.white,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: selected
-                  ? AppColors.accent
-                  : AppColors.border.withValues(alpha: 0.6),
+              color: selected ? AppColors.accent : const Color(0xFFD1D5DB),
               width: 1,
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 14,
-                color: selected ? Colors.white : AppColors.textSecondary,
-              ),
-              const SizedBox(width: 6),
+              if (selected) ...[
+                Icon(icon, size: 13, color: Colors.white),
+                const SizedBox(width: 5),
+              ],
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? Colors.white : AppColors.textPrimary,
-                  letterSpacing: 0.1,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : const Color(0xFF374151),
                 ),
               ),
             ],
@@ -1661,11 +1639,11 @@ class _LiveHeaderState extends State<_LiveHeader>
         const Text(
           'Happening nearby',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 19,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: Color(0xFF111827),
             fontFamily: 'Manrope',
-            letterSpacing: -0.3,
+            letterSpacing: -0.4,
           ),
         ),
         const SizedBox(width: 8),
@@ -1732,57 +1710,43 @@ class _CreateNudge extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.only(left: 48),
-            child: Text(
-              'Start a plan. Someone nearby might join.',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
+          const SizedBox(height: 6),
+          const Text(
+            'Start a plan. Someone nearby might join.',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+              height: 1.4,
             ),
           ),
-          const SizedBox(height: 14),
-          Padding(
-            padding: const EdgeInsets.only(left: 48),
-            child: GestureDetector(
-              onTap: () {
-                ref.read(bottomTabProvider.notifier).state = 1;
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () {
+              ref.read(bottomTabProvider.notifier).state = 1;
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                  SizedBox(width: 7),
+                  Text(
+                    'Create a spark',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.1,
                     ),
-                  ],
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_rounded, size: 15, color: Colors.white),
-                    SizedBox(width: 6),
-                    Text(
-                      'Create a spark',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
