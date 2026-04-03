@@ -24,15 +24,10 @@ class InviteToGroupSheet extends ConsumerStatefulWidget {
 }
 
 class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
-  // Tab: 0 = Friends, 1 = By phone
-  int _tab = 0;
-
-  // Friends tab
   String _query = '';
   final _search = TextEditingController();
   final _sending = <String>{};
 
-  // Phone tab
   final _phoneCtrl = TextEditingController();
   bool _lookingUp = false;
   MatchedContact? _phoneResult;
@@ -71,8 +66,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
           content: Text('Invite sent to ${friend.displayName}'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.accent,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     } catch (_) {
@@ -100,8 +94,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
           content: Text('Invite sent to $displayName'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.accent,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     } catch (_) {
@@ -137,7 +130,10 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
         _lookingUp = false;
       });
     } catch (_) {
-      setState(() { _lookingUp = false; _phoneResultChecked = true; });
+      setState(() {
+        _lookingUp = false;
+        _phoneResultChecked = true;
+      });
     }
   }
 
@@ -146,7 +142,10 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
     try {
       await ref.read(socialControllerProvider).sendFriendRequest(phone);
       HapticFeedback.lightImpact();
-      setState(() { _requestSent = true; _sendingRequest = false; });
+      setState(() {
+        _requestSent = true;
+        _sendingRequest = false;
+      });
     } catch (_) {
       setState(() => _sendingRequest = false);
       if (mounted) {
@@ -174,10 +173,10 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
             Center(
               child: Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 margin: const EdgeInsets.only(top: 12, bottom: 16),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD1D1D6),
@@ -186,9 +185,8 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
               ),
             ),
 
-            // Title bar
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(20, 0, 16, 16),
               child: Row(
                 children: [
                   const Expanded(
@@ -206,7 +204,8 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
                     child: Container(
-                      width: 28, height: 28,
+                      width: 28,
+                      height: 28,
                       decoration: const BoxDecoration(
                         color: Color(0xFFE5E5EA),
                         shape: BoxShape.circle,
@@ -219,190 +218,11 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
               ),
             ),
 
-            // Tab switcher
+            // ── Phone lookup (always shown at top) ─────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: Container(
-                height: 34,
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE5E5EA),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    _Tab(
-                      label: 'My friends',
-                      selected: _tab == 0,
-                      onTap: () => setState(() {
-                        _tab = 0;
-                        _phoneResult = null;
-                        _phoneResultChecked = false;
-                      }),
-                    ),
-                    _Tab(
-                      label: 'By phone',
-                      selected: _tab == 1,
-                      onTap: () => setState(() { _tab = 1; _query = ''; }),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Tab 0: Friends ─────────────────────────────────────────────
-            if (_tab == 0) ...[
-              if (friends.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                  child: _EmptyNote(
-                    icon: CupertinoIcons.person_2,
-                    text: 'Add friends first to invite them to groups.',
-                  ),
-                )
-              else ...[
-                if (friends.length > 3)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                    child: Container(
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE5E5EA),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: TextField(
-                        controller: _search,
-                        onChanged: (v) => setState(() => _query = v),
-                        style: const TextStyle(
-                            fontSize: 15, color: Color(0xFF000000)),
-                        decoration: const InputDecoration(
-                          hintText: 'Search friends',
-                          hintStyle: TextStyle(
-                              color: Color(0xFF8E8E93), fontSize: 15),
-                          prefixIcon: Icon(CupertinoIcons.search,
-                              size: 16, color: Color(0xFF8E8E93)),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          isDense: true,
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 9),
-                          filled: false,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (eligible.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                    child: _EmptyNote(
-                      icon: CupertinoIcons.checkmark_circle,
-                      text: _query.isNotEmpty
-                          ? 'No friends match your search.'
-                          : 'All your friends are already in this group.',
-                    ),
-                  )
-                else
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight:
-                          MediaQuery.of(context).size.height * 0.45,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        margin:
-                            const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        color: Colors.white,
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          itemCount: eligible.length,
-                          separatorBuilder: (_, i) => const Divider(
-                            height: 1, thickness: 0.5,
-                            indent: 58, color: Color(0xFFE5E5EA),
-                          ),
-                          itemBuilder: (_, i) {
-                            final friend = eligible[i];
-                            final isSending =
-                                _sending.contains(friend.userId);
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              child: Row(
-                                children: [
-                                  PersonAvatar(
-                                      name: friend.displayName,
-                                      radius: 19),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          friend.displayName,
-                                          style: const TextStyle(
-                                            fontSize: 15.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF000000),
-                                            fontFamily: 'Manrope',
-                                          ),
-                                        ),
-                                        Text(
-                                          friend.phoneNumber,
-                                          style: const TextStyle(
-                                            fontSize: 12.5,
-                                            color: Color(0xFF8E8E93),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  isSending
-                                      ? const SizedBox(
-                                          width: 20, height: 20,
-                                          child: CupertinoActivityIndicator(
-                                              radius: 9))
-                                      : GestureDetector(
-                                          onTap: () => _invite(friend),
-                                          child: Container(
-                                            padding:
-                                                const EdgeInsets.symmetric(
-                                                    horizontal: 14,
-                                                    vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.accent
-                                                  .withValues(alpha: 0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(99),
-                                            ),
-                                            child: Text(
-                                              'Invite',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.accent,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ],
-
-            // ── Tab 1: By phone ────────────────────────────────────────────
-            if (_tab == 1) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: Row(children: [
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              child: Row(
+                children: [
                   Expanded(
                     child: Container(
                       height: 44,
@@ -415,7 +235,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                         keyboardType: TextInputType.phone,
                         style: const TextStyle(fontSize: 15),
                         decoration: const InputDecoration(
-                          hintText: '+91 98765 43210',
+                          hintText: 'Search by phone number',
                           hintStyle: TextStyle(
                               color: Color(0xFFC7C7CC), fontSize: 14),
                           border: InputBorder.none,
@@ -433,8 +253,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                     onTap: _lookingUp ? null : _lookupPhone,
                     child: Container(
                       height: 44,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
                       decoration: BoxDecoration(
                         color: AppColors.accent,
                         borderRadius: BorderRadius.circular(12),
@@ -443,42 +262,46 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                         child: _lookingUp
                             ? const CupertinoActivityIndicator(
                                 color: Colors.white)
-                            : const Text('Find',
+                            : const Text(
+                                'Find',
                                 style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 14,
-                                    fontFamily: 'Manrope')),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  fontFamily: 'Manrope',
+                                ),
+                              ),
                       ),
                     ),
                   ),
-                ]),
+                ],
               ),
-              const SizedBox(height: 14),
+            ),
 
-              // Result
-              if (_phoneResultChecked) ...[
-                if (_phoneResult == null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    child: _EmptyNote(
-                      icon: CupertinoIcons.person_badge_minus,
-                      text: 'This number isn\'t on Spark yet.',
+            // Phone lookup result
+            if (_phoneResultChecked) ...[
+              const SizedBox(height: 12),
+              if (_phoneResult == null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+                  child: _EmptyNote(
+                    icon: CupertinoIcons.person_badge_minus,
+                    text: 'This number isn\'t on Spark yet.',
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(children: [
-                        PersonAvatar(
-                            name: _phoneResult!.displayName, radius: 20),
+                    child: Row(
+                      children: [
+                        PersonAvatar(name: _phoneResult!.displayName, radius: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -501,7 +324,6 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                             ],
                           ),
                         ),
-                        // Already a member?
                         if (widget.existingMemberIds
                             .contains(_phoneResult!.userId))
                           const Text('In group',
@@ -509,7 +331,6 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                                   fontSize: 12.5,
                                   color: Color(0xFF8E8E93),
                                   fontWeight: FontWeight.w500))
-                        // Already a friend → show invite button
                         else if (friendIds.contains(_phoneResult!.userId))
                           GestureDetector(
                             onTap: _sending.contains(_phoneResult!.userId)
@@ -521,14 +342,13 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
-                                color: AppColors.accent
-                                    .withValues(alpha: 0.1),
+                                color: AppColors.accent.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(99),
                               ),
-                              child: _sending
-                                      .contains(_phoneResult!.userId)
+                              child: _sending.contains(_phoneResult!.userId)
                                   ? const SizedBox(
-                                      width: 14, height: 14,
+                                      width: 14,
+                                      height: 14,
                                       child: CupertinoActivityIndicator(
                                           radius: 7))
                                   : Text(
@@ -541,7 +361,6 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                                     ),
                             ),
                           )
-                        // Not a friend → show Add friend button
                         else if (_requestSent)
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -564,29 +383,190 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                                     _phoneResult!.phoneNumber),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                  horizontal: 14, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppColors.accent,
                                 borderRadius: BorderRadius.circular(99),
                               ),
                               child: _sendingRequest
                                   ? const SizedBox(
-                                      width: 14, height: 14,
+                                      width: 14,
+                                      height: 14,
                                       child: CupertinoActivityIndicator(
                                           color: Colors.white, radius: 7))
-                                  : const Text('Add friend',
+                                  : const Text(
+                                      'Add friend',
                                       style: TextStyle(
-                                          fontSize: 12.5,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontFamily: 'Manrope')),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
-                      ]),
+                      ],
                     ),
                   ),
-              ] else
-                const SizedBox(height: 24),
+                ),
+            ],
+
+            // ── Friends ────────────────────────────────────────────────────
+            if (eligible.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'FRIENDS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF8E8E93),
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (friends.length > 3)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: Container(
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E5EA),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TextField(
+                      controller: _search,
+                      onChanged: (v) => setState(() => _query = v),
+                      style: const TextStyle(
+                          fontSize: 15, color: Color(0xFF000000)),
+                      decoration: const InputDecoration(
+                        hintText: 'Search friends',
+                        hintStyle:
+                            TextStyle(color: Color(0xFF8E8E93), fontSize: 15),
+                        prefixIcon: Icon(CupertinoIcons.search,
+                            size: 16, color: Color(0xFF8E8E93)),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 9),
+                        filled: false,
+                      ),
+                    ),
+                  ),
+                ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.38,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    color: Colors.white,
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: eligible.length,
+                      separatorBuilder: (_, i) => const Divider(
+                        height: 1,
+                        thickness: 0.5,
+                        indent: 58,
+                        color: Color(0xFFE5E5EA),
+                      ),
+                      itemBuilder: (_, i) {
+                        final friend = eligible[i];
+                        final isSending = _sending.contains(friend.userId);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          child: Row(
+                            children: [
+                              PersonAvatar(
+                                  name: friend.displayName, radius: 19),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      friend.displayName,
+                                      style: const TextStyle(
+                                        fontSize: 15.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF000000),
+                                        fontFamily: 'Manrope',
+                                      ),
+                                    ),
+                                    Text(
+                                      friend.phoneNumber,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: Color(0xFF8E8E93),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              isSending
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CupertinoActivityIndicator(
+                                          radius: 9))
+                                  : GestureDetector(
+                                      onTap: () => _invite(friend),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accent
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(99),
+                                        ),
+                                        child: Text(
+                                          'Invite',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.accent,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ] else if (friends.isEmpty) ...[
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                child: _EmptyNote(
+                  icon: CupertinoIcons.person_2,
+                  text: 'Add friends first to invite them to groups.',
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                child: _EmptyNote(
+                  icon: CupertinoIcons.checkmark_circle,
+                  text: _query.isNotEmpty
+                      ? 'No friends match your search.'
+                      : 'All your friends are already in this group.',
+                ),
+              ),
             ],
           ],
         ),
@@ -595,58 +575,9 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
   }
 }
 
-class _Tab extends StatelessWidget {
-  const _Tab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight:
-                    selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected
-                    ? const Color(0xFF000000)
-                    : const Color(0xFF8E8E93),
-                fontFamily: 'Manrope',
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _EmptyNote extends StatelessWidget {
   const _EmptyNote({required this.icon, required this.text});
+
   final IconData icon;
   final String text;
 
@@ -660,29 +591,13 @@ class _EmptyNote extends StatelessWidget {
           child: Text(
             text,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13.5,
               color: Color(0xFF8E8E93),
-              height: 1.4,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
       ],
     );
   }
-}
-
-Future<void> showInviteToGroupSheet(
-  BuildContext context, {
-  required String groupId,
-  List<String> existingMemberIds = const [],
-}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (_) => InviteToGroupSheet(
-      groupId: groupId,
-      existingMemberIds: existingMemberIds,
-    ),
-  );
 }

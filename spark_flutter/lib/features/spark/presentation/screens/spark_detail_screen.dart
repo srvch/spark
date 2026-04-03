@@ -607,70 +607,72 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Divider(height: 1, color: AppColors.cardDivider),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Text(
-                          'Participants',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.accent,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: const Size(0, 28),
-                          ),
-                          onPressed: () => _openParticipantsSheet(
-                            spark: spark,
-                            currentUserId: currentUserId,
-                            isJoined: joined,
-                          ),
-                          child: const Text(
-                            'See participants',
+                    if (joined) ...[
+                      const SizedBox(height: 12),
+                      const Divider(height: 1, color: AppColors.cardDivider),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          const Text(
+                            'Participants',
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 13,
                               fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        _ParticipantStack(
-                          participants: spark.participants,
-                          currentUserInitials: ref.watch(currentUserInitialsProvider),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Text(
-                            '${spark.participants.length} joined',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textSecondary,
+                          const Spacer(),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.accent,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              minimumSize: const Size(0, 28),
+                            ),
+                            onPressed: () => _openParticipantsSheet(
+                              spark: spark,
+                              currentUserId: currentUserId,
+                              isJoined: joined,
+                            ),
+                            child: const Text(
+                              'See participants',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _ParticipantStack(
+                            participants: spark.participants,
+                            currentUserInitials: ref.watch(currentUserInitialsProvider),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Text(
+                              '${spark.participants.length} joined',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (spark.maxSpots > 0) ...[
                       const SizedBox(height: 12),
                       ClipRRect(

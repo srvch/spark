@@ -9,6 +9,7 @@ import '../../../../shared/widgets/person_avatar.dart';
 import '../../domain/social.dart';
 import '../controllers/social_controller.dart';
 import '../widgets/invite_to_group_sheet.dart';
+import 'friend_profile_screen.dart';
 
 class GroupDetailScreen extends ConsumerStatefulWidget {
   const GroupDetailScreen({super.key, required this.groupId});
@@ -375,7 +376,18 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                               isNudging: _nudging.contains(m.userId),
                               isRemoving: _removing.contains(m.userId),
                               onNudge: group.canEdit && !m.isOwner ? () => _nudge(m) : null,
-                              onTap: group.canEdit && !m.isOwner
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => FriendProfileScreen(
+                                    friend: FriendUser(
+                                      userId: m.userId,
+                                      displayName: m.displayName,
+                                      phoneNumber: m.phoneNumber,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onManage: group.canEdit && !m.isOwner
                                   ? () => _memberActions(group, m)
                                   : null,
                             );
@@ -964,6 +976,7 @@ class _MemberRow extends StatelessWidget {
     required this.isRemoving,
     this.onNudge,
     this.onTap,
+    this.onManage,
   });
 
   final GroupMember member;
@@ -975,11 +988,13 @@ class _MemberRow extends StatelessWidget {
   final bool isRemoving;
   final VoidCallback? onNudge;
   final VoidCallback? onTap;
+  final VoidCallback? onManage;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onManage,
       child: Container(
         color: Colors.white,
         child: Column(

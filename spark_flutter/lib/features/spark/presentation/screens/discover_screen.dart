@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
-import '../../../../features/chat/presentation/screens/chat_inbox_screen.dart';
 import '../../../../features/profile/presentation/screens/profile_screen.dart';
 import '../../../../shared/navigation/root_shell.dart';
 import '../../domain/spark.dart';
@@ -215,33 +214,31 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                             const SizedBox(width: 12),
                           ],
-                          GestureDetector(
-                            onTap: () {
-                              ref.read(chatInboxTabProvider.notifier).state = 1;
-                              ref.read(bottomTabProvider.notifier).state = 2;
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceSubtle,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Text(
-                                pendingInvites > 0
-                                    ? 'Invites ($pendingInvites)'
-                                    : 'Invites',
-                                style: const TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textSecondary,
+                          if (pendingInvites > 0)
+                            GestureDetector(
+                              onTap: () {
+                                ref.read(bottomTabProvider.notifier).state = 2;
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceSubtle,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Text(
+                                  'Invites ($pendingInvites)',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
                           const SizedBox(width: 8),
                           GestureDetector(
                             onTap: () => _showPreferencesSheet(context),

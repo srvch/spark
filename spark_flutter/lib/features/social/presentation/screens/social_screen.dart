@@ -930,7 +930,7 @@ class _GroupsTab extends ConsumerWidget {
                 icon: CupertinoIcons.person_3_fill,
                 title: 'New group',
                 subtitle: 'Create a group to plan sparks together',
-                color: AppColors.action,
+                color: AppColors.accent,
                 onTap: onCreateGroup,
               ),
             ),
@@ -1678,11 +1678,11 @@ class _GroupInviteCard extends StatelessWidget {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: AppColors.action.withValues(alpha: 0.1),
+              color: AppColors.accent.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(CupertinoIcons.person_2_fill,
-                size: 18, color: AppColors.action),
+                size: 18, color: AppColors.accent),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1842,11 +1842,11 @@ class _GroupRow extends StatelessWidget {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
-                    color: AppColors.action.withValues(alpha: 0.1),
+                    color: AppColors.accent.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(CupertinoIcons.person_2_fill,
-                      size: 18, color: AppColors.action),
+                      size: 18, color: AppColors.accent),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
