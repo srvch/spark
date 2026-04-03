@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/profile/presentation/screens/profile_screen.dart';
+import '../../../../shared/navigation/root_shell.dart';
 import '../../../../shared/widgets/person_avatar.dart';
 import '../../domain/social.dart';
 import '../controllers/social_controller.dart';
@@ -100,9 +101,22 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 0),
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
               child: Row(
                 children: [
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      ref.read(bottomTabProvider.notifier).state = 0;
+                    },
+                    child: const Icon(
+                      CupertinoIcons.chevron_left,
+                      color: AppColors.accent,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   const Expanded(
                     child: Text(
                       'People',

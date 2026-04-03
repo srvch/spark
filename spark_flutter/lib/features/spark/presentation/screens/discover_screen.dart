@@ -121,7 +121,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final discoverableSparks = sparks.where((spark) {
       final isMineById = createdSparkIds.contains(spark.id);
       final isMineByHost = spark.createdBy == currentUserId;
-      return !isMineById && !isMineByHost;
+      final isJoined = joinedSparkIds.contains(spark.id);
+      return !isMineById && !isMineByHost && !isJoined;
     }).toList();
     final filtered = _applyFilters(discoverableSparks);
 

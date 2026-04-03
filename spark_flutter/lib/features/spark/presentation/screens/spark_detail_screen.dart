@@ -77,7 +77,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     messenger.showSnackBar(
       SnackBar(
         content: Text('Joined ${widget.spark.title}'),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () => _leaveSpark(showMessage: false),
@@ -85,7 +85,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       ),
     );
     unawaited(
-      Future<void>.delayed(const Duration(seconds: 3), () {
+      Future<void>.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
         messenger.hideCurrentSnackBar();
       }),
