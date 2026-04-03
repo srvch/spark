@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,7 +18,8 @@ class InviteToGroupSheet extends ConsumerStatefulWidget {
   final List<String> existingMemberIds;
 
   @override
-  ConsumerState<InviteToGroupSheet> createState() => _InviteToGroupSheetState();
+  ConsumerState<InviteToGroupSheet> createState() =>
+      _InviteToGroupSheetState();
 }
 
 class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
@@ -31,18 +33,14 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
     super.dispose();
   }
 
-  List<FriendUser> _filtered(List<FriendUser> friends) {
+  List<FriendUser> _eligible(List<FriendUser> friends) {
     final q = _query.toLowerCase();
-    final eligible = friends
+    return friends
         .where((f) => !widget.existingMemberIds.contains(f.userId))
-        .toList();
-    if (q.isEmpty) return eligible;
-    return eligible
-        .where(
-          (f) =>
-              f.displayName.toLowerCase().contains(q) ||
-              f.phoneNumber.contains(q),
-        )
+        .where((f) => q.isEmpty
+            ? true
+            : f.displayName.toLowerCase().contains(q) ||
+                f.phoneNumber.contains(q))
         .toList();
   }
 
@@ -51,18 +49,25 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
     setState(() => _sending.add(friend.userId));
     try {
       await ref.read(socialControllerProvider).inviteFriendToGroup(
-        groupId: widget.groupId,
-        userId: friend.userId,
-      );
+            groupId: widget.groupId, userId: friend.userId);
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invite sent to ${friend.displayName}')),
+        SnackBar(
+          content: Text('Invite sent to ${friend.displayName}'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.accent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not send invite. Try again.')),
+        const SnackBar(
+          content: Text('Could not send invite. Try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       if (mounted) setState(() => _sending.remove(friend.userId));
@@ -72,131 +77,245 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
   @override
   Widget build(BuildContext context) {
     final friends = ref.watch(friendsProvider);
-    final filtered = _filtered(friends);
+    final eligible = _eligible(friends);
 
-    return SafeArea(
-      top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 36,
-            height: 4,
-            margin: const EdgeInsets.only(top: 12, bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(2),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1D1D6),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Invite to group',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      fontFamily: 'Manrope',
+
+            // Title bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 16, 12),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Invite to group',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF000000),
+                        letterSpacing: -0.2,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE5E5EA),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(CupertinoIcons.xmark,
+                          size: 13, color: Color(0xFF8E8E93)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            if (friends.isEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                child: _EmptyNote(
+                  icon: CupertinoIcons.person_2,
+                  text: 'Add friends first to invite them to groups.',
+                ),
+              )
+            else ...[
+              // Search
+              if (friends.length > 3)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: Container(
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E5EA),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TextField(
+                      controller: _search,
+                      onChanged: (v) => setState(() => _query = v),
+                      style: const TextStyle(
+                          fontSize: 15, color: Color(0xFF000000)),
+                      decoration: const InputDecoration(
+                        hintText: 'Search friends',
+                        hintStyle: TextStyle(
+                            color: Color(0xFF8E8E93), fontSize: 15),
+                        prefixIcon: Icon(CupertinoIcons.search,
+                            size: 16, color: Color(0xFF8E8E93)),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding:
+                            EdgeInsets.symmetric(vertical: 9),
+                        filled: false,
+                      ),
                     ),
                   ),
                 ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  color: AppColors.textSecondary,
+
+              if (eligible.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  child: _EmptyNote(
+                    icon: CupertinoIcons.checkmark_circle,
+                    text: _query.isNotEmpty
+                        ? 'No friends match your search.'
+                        : 'All your friends are already in this group.',
+                  ),
+                )
+              else
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight:
+                        MediaQuery.of(context).size.height * 0.45,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      margin:
+                          const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      color: Colors.white,
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: eligible.length,
+                        separatorBuilder: (_, i) => const Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          indent: 58,
+                          color: Color(0xFFE5E5EA),
+                        ),
+                        itemBuilder: (_, i) {
+                          final friend = eligible[i];
+                          final isSending =
+                              _sending.contains(friend.userId);
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            child: Row(
+                              children: [
+                                PersonAvatar(
+                                    name: friend.displayName,
+                                    radius: 19),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        friend.displayName,
+                                        style: const TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF000000),
+                                          fontFamily: 'Manrope',
+                                        ),
+                                      ),
+                                      Text(
+                                        friend.phoneNumber,
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          color: Color(0xFF8E8E93),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                isSending
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CupertinoActivityIndicator(
+                                            radius: 9),
+                                      )
+                                    : GestureDetector(
+                                        onTap: () => _invite(friend),
+                                        child: Container(
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 14,
+                                                  vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accent
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(99),
+                                          ),
+                                          child: Text(
+                                            'Invite',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.accent,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 ),
-              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyNote extends StatelessWidget {
+  const _EmptyNote({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF8E8E93)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF8E8E93),
+              height: 1.4,
             ),
           ),
-          if (friends.isEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-              child: Text(
-                'Add friends first to invite them.',
-                style: const TextStyle(color: AppColors.textSecondary),
-              ),
-            )
-          else ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: TextField(
-                controller: _search,
-                onChanged: (v) => setState(() => _query = v),
-                decoration: InputDecoration(
-                  hintText: 'Search friends',
-                  prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  filled: true,
-                  fillColor: AppColors.surfaceDim,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                ),
-              ),
-            ),
-            if (filtered.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                child: Text(
-                  'No friends match your search.',
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-              )
-            else
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.4,
-                ),
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  shrinkWrap: true,
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) {
-                    final friend = filtered[i];
-                    final isSending = _sending.contains(friend.userId);
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: PersonAvatar(name: friend.displayName, radius: 18),
-                      title: Text(
-                        friend.displayName,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      subtitle: Text(
-                        friend.phoneNumber,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      trailing: isSending
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : TextButton(
-                              onPressed: () => _invite(friend),
-                              child: const Text(
-                                'Invite',
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                    );
-                  },
-                ),
-              ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -208,10 +327,7 @@ Future<void> showInviteToGroupSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColors.background,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
+    backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (_) => InviteToGroupSheet(
       groupId: groupId,

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,7 +14,6 @@ class CreateGroupScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _description = TextEditingController();
   final _phone = TextEditingController();
@@ -29,10 +29,10 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     super.dispose();
   }
 
-  bool get _canCreate => _name.text.trim().isNotEmpty;
+  bool get _canCreate => _name.text.trim().length >= 2;
 
   Future<void> _create() async {
-    if (!_formKey.currentState!.validate() || _isSaving) return;
+    if (!_canCreate || _isSaving) return;
     setState(() => _isSaving = true);
     try {
       final group = await ref.read(socialControllerProvider).createGroup(
@@ -40,19 +40,14 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
         description: _description.text.trim(),
       );
 
-      final friendIds = _selectedFriends.toList();
-      final errors = <String>[];
-      for (final friendId in friendIds) {
+      for (final friendId in _selectedFriends) {
         try {
           await ref.read(socialControllerProvider).inviteFriendToGroup(
             groupId: group.groupId,
             userId: friendId,
           );
-        } catch (_) {
-          errors.add(friendId);
-        }
+        } catch (_) {}
       }
-
       for (final phone in _phoneNumbers) {
         try {
           await ref.read(socialControllerProvider).sendFriendRequest(phone);
@@ -60,63 +55,47 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       }
 
       if (!mounted) return;
-      if (errors.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _selectedFriends.isEmpty && _phoneNumbers.isEmpty
-                  ? '"${group.name}" created. Invite friends any time.'
-                  : '"${group.name}" created. Invites sent!',
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Group created. Some invites could not be sent.',
-            ),
-          ),
-        );
-      }
+      _toast('"${group.name}" created!');
       Navigator.of(context).pop();
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not create group. Please try again.'),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+      _toast('Could not create group. Try again.', error: true);
+      setState(() => _isSaving = false);
     }
   }
 
   void _addPhone() {
-    final value = _phone.text.trim();
-    if (value.isEmpty) return;
-    final clean = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    final raw = _phone.text.trim();
+    if (raw.isEmpty) return;
+    final clean = raw.replaceAll(RegExp(r'[\s\-()]'), '');
     if (!RegExp(r'^[+]?[0-9]{8,15}$').hasMatch(clean)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid phone number')),
-      );
+      _toast('Enter a valid phone number', error: true);
       return;
     }
-    if (_phoneNumbers.contains(value)) return;
-    setState(() {
-      _phoneNumbers.add(value);
-      _phone.clear();
-    });
+    if (!_phoneNumbers.contains(raw)) {
+      setState(() {
+        _phoneNumbers.add(raw);
+        _phone.clear();
+      });
+    }
   }
 
-  void _toggleFriend(String id) {
-    setState(() {
-      if (_selectedFriends.contains(id)) {
-        _selectedFriends.remove(id);
-      } else {
-        _selectedFriends.add(id);
-      }
-    });
+  void _toggleFriend(String id) => setState(() {
+        _selectedFriends.contains(id)
+            ? _selectedFriends.remove(id)
+            : _selectedFriends.add(id);
+      });
+
+  void _toast(String msg, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? AppColors.errorText : AppColors.accent,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -124,283 +103,434 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     final friends = ref.watch(friendsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF2F2F7),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(width: 8),
+              Icon(CupertinoIcons.chevron_left,
+                  color: AppColors.accent, size: 20),
+            ],
+          ),
+        ),
         title: const Text(
-          'Create group',
+          'New group',
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF000000),
             fontFamily: 'Manrope',
           ),
         ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: AppColors.textPrimary,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton(
-              onPressed: (_canCreate && !_isSaving) ? _create : null,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-              ),
+            padding: const EdgeInsets.only(right: 16),
+            child: GestureDetector(
+              onTap: (_canCreate && !_isSaving) ? _create : null,
               child: _isSaving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+                  ? const CupertinoActivityIndicator(radius: 10)
+                  : Text(
+                      'Create',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _canCreate
+                            ? AppColors.accent
+                            : const Color(0xFFC7C7CC),
+                        fontFamily: 'Manrope',
                       ),
-                    )
-                  : const Text('Create'),
+                    ),
             ),
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-          children: [
-            _FieldLabel('Group name'),
-            const SizedBox(height: 6),
-            TextFormField(
-              controller: _name,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'e.g. Cricket crew, Airport gang',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Name is required';
-                if (v.trim().length < 2) return 'At least 2 characters';
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            _FieldLabel('Description (optional)'),
-            const SizedBox(height: 6),
-            TextFormField(
-              controller: _description,
-              minLines: 2,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'What is this group for?',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            if (friends.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              _FieldLabel(
-                'Invite friends  ${_selectedFriends.isNotEmpty ? "(${_selectedFriends.length} selected)" : ""}',
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Select friends to invite right away — you can always add more later.',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...friends.map((friend) {
-                final selected = _selectedFriends.contains(friend.userId);
-                return InkWell(
-                  onTap: () => _toggleFriend(friend.userId),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.accent.withValues(alpha: 0.06)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: selected
-                            ? AppColors.accent.withValues(alpha: 0.4)
-                            : AppColors.border,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        PersonAvatar(name: friend.displayName, radius: 16),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                friend.displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                friend.phoneNumber,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 22,
-                          height: 22,
-                          decoration: BoxDecoration(
-                            color: selected ? AppColors.accent : Colors.transparent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: selected
-                                  ? AppColors.accent
-                                  : AppColors.border,
-                              width: 2,
-                            ),
-                          ),
-                          child: selected
-                              ? const Icon(
-                                  Icons.check_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                )
-                              : null,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ],
-
-            const SizedBox(height: 24),
-            _FieldLabel('Invite by phone number'),
-            const SizedBox(height: 6),
-            const Text(
-              "Add phone numbers for people who aren't on Spark yet.",
-              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+        children: [
+          // ── Group identity ──────────────────────────────────────
+          _SectionHeader('GROUP DETAILS'),
+          _WhiteCard(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _phone,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      hintText: '+91 98XXXXXX10',
-                      border: OutlineInputBorder(),
-                    ),
-                    onSubmitted: (_) => _addPhone(),
-                  ),
+                _InsetField(
+                  controller: _name,
+                  hint: 'Group name',
+                  textCapitalization: TextCapitalization.words,
+                  onChanged: (_) => setState(() {}),
                 ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: FilledButton(
-                    onPressed: _addPhone,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(52, 52),
-                      backgroundColor: AppColors.surfaceDim,
-                      foregroundColor: AppColors.accent,
-                    ),
-                    child: const Icon(Icons.add_rounded),
-                  ),
+                const _Separator(),
+                _InsetField(
+                  controller: _description,
+                  hint: 'Description (optional)',
+                  maxLines: 3,
+                  textCapitalization: TextCapitalization.sentences,
                 ),
               ],
             ),
-            if (_phoneNumbers.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: _phoneNumbers.map((phone) {
-                  return Chip(
-                    avatar: const Icon(
-                      Icons.phone_outlined,
-                      size: 14,
-                      color: AppColors.accent,
-                    ),
-                    label: Text(
-                      phone,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    deleteIcon: const Icon(Icons.close_rounded, size: 14),
-                    onDeleted: () => setState(() => _phoneNumbers.remove(phone)),
-                    backgroundColor: AppColors.accentTint,
-                    side: BorderSide(
-                      color: AppColors.accent.withValues(alpha: 0.3),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+          ),
 
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: (_canCreate && !_isSaving) ? _create : null,
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                backgroundColor: AppColors.accent,
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+          // ── Invite friends ──────────────────────────────────────
+          if (friends.isNotEmpty) ...[
+            _SectionHeader(
+              'INVITE FRIENDS',
+              trailing: _selectedFriends.isNotEmpty
+                  ? '${_selectedFriends.length} selected'
+                  : null,
+            ),
+            _WhiteCard(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(friends.length, (i) {
+                  final friend = friends[i];
+                  final selected = _selectedFriends.contains(friend.userId);
+                  final isLast = i == friends.length - 1;
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _toggleFriend(friend.userId),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 12),
+                            child: Row(
+                              children: [
+                                PersonAvatar(
+                                    name: friend.displayName, radius: 18),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        friend.displayName,
+                                        style: const TextStyle(
+                                          fontSize: 15.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF000000),
+                                          fontFamily: 'Manrope',
+                                        ),
+                                      ),
+                                      Text(
+                                        friend.phoneNumber,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF8E8E93),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: selected
+                                        ? AppColors.accent
+                                        : Colors.transparent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: selected
+                                          ? AppColors.accent
+                                          : const Color(0xFFC7C7CC),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: selected
+                                      ? const Icon(Icons.check_rounded,
+                                          color: Colors.white, size: 14)
+                                      : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    )
-                  : const Text(
-                      'Create group',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                    ),
+                      if (!isLast)
+                        const Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          indent: 58,
+                          color: Color(0xFFE5E5EA),
+                        ),
+                    ],
+                  );
+                }),
+              ),
             ),
           ],
+
+          // ── Invite by phone ─────────────────────────────────────
+          _SectionHeader('INVITE BY PHONE',
+              trailing: 'People not on Spark yet'),
+          _WhiteCard(
+            child: Column(
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _phone,
+                          keyboardType: TextInputType.phone,
+                          style: const TextStyle(
+                              fontSize: 15, color: Color(0xFF000000)),
+                          decoration: const InputDecoration(
+                            hintText: '+91 98765 43210',
+                            hintStyle: TextStyle(
+                                color: Color(0xFF8E8E93), fontSize: 15),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding:
+                                EdgeInsets.symmetric(vertical: 10),
+                            filled: false,
+                          ),
+                          onSubmitted: (_) => _addPhone(),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _addPhone,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(CupertinoIcons.add,
+                              size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_phoneNumbers.isNotEmpty) ...[
+                  const Divider(
+                      height: 1, thickness: 0.5, color: Color(0xFFE5E5EA)),
+                  Padding(
+                    padding:
+                        const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: _phoneNumbers
+                          .map((phone) => _PhoneChip(
+                                label: phone,
+                                onRemove: () => setState(
+                                    () => _phoneNumbers.remove(phone)),
+                              ))
+                          .toList(),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ── Create button ───────────────────────────────────────
+          GestureDetector(
+            onTap: (_canCreate && !_isSaving) ? _create : null,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              height: 52,
+              decoration: BoxDecoration(
+                color: _canCreate ? AppColors.accent : const Color(0xFFC7C7CC),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Center(
+                child: _isSaving
+                    ? const CupertinoActivityIndicator(
+                        color: Colors.white, radius: 10)
+                    : const Text(
+                        'Create group',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.title, {this.trailing});
+  final String title;
+  final String? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 6),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF8E8E93),
+              letterSpacing: 0.3,
+            ),
+          ),
+          if (trailing != null) ...[
+            const Spacer(),
+            Text(
+              trailing!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF8E8E93),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WhiteCard extends StatelessWidget {
+  const _WhiteCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        color: Colors.white,
+        child: child,
+      ),
+    );
+  }
+}
+
+class _InsetField extends StatelessWidget {
+  const _InsetField({
+    required this.controller,
+    required this.hint,
+    this.textCapitalization = TextCapitalization.none,
+    this.maxLines = 1,
+    this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String hint;
+  final TextCapitalization textCapitalization;
+  final int maxLines;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+      child: TextField(
+        controller: controller,
+        textCapitalization: textCapitalization,
+        maxLines: maxLines,
+        minLines: 1,
+        onChanged: onChanged,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Color(0xFF000000),
+          fontFamily: 'Manrope',
+          fontWeight: FontWeight.w400,
+        ),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(
+            color: Color(0xFF8E8E93),
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          filled: false,
         ),
       ),
     );
   }
 }
 
-class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
-  final String text;
+class _Separator extends StatelessWidget {
+  const _Separator();
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        fontFamily: 'Manrope',
+    return const Divider(
+      height: 1,
+      thickness: 0.5,
+      indent: 14,
+      color: Color(0xFFE5E5EA),
+    );
+  }
+}
+
+class _PhoneChip extends StatelessWidget {
+  const _PhoneChip({required this.label, required this.onRemove});
+  final String label;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF000000),
+            ),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(
+              CupertinoIcons.xmark_circle_fill,
+              size: 16,
+              color: Color(0xFF8E8E93),
+            ),
+          ),
+        ],
       ),
     );
   }
