@@ -1,0 +1,104 @@
+The application may be doing too much work on its main thread.
+I/flutter (31372): [analytics] nearby_refresh {location: Indiranagar, radius_km: 5.0, count: 0}
+I/flutter (31372): ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+I/flutter (31372): │ 💡 flutter_map
+I/flutter (31372): │ 💡 flutter_map wants to help keep map data available for everyone.
+I/flutter (31372): │ 💡 We use the OpenStreetMap public tile servers in our code examples & demo app,
+I/flutter (31372): │ 💡 but they are NOT free to use by everyone. Please review whether OSM's tile
+I/flutter (31372): │ 💡 servers are appropriate and the best choice for your app.
+I/flutter (31372): │ 💡 See:
+I/flutter (31372): │ 💡  * https://operations.osmfoundation.org/policies/tiles (OSM Tile Usage Policy)
+I/flutter (31372): │ 💡  * https://docs.fleaflet.dev/osm-warn for more information about this warning
+I/flutter (31372): └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following UnsupportedError was thrown building MapInheritedModel:
+Unsupported operation: Infinity or NaN toInt
+
+The relevant error-causing widget was:
+  MapInheritedModel
+  MapInheritedModel:file:///Users/saurav/.pub-cache/hosted/pub.dev/flutter_map-8.2.2/lib/src/map/widget.dart:103:22
+
+When the exception was thrown, this was the stack:
+#0      double.toInt (dart:core-patch/double.dart)
+#1      double.floor (dart:core-patch/double.dart:201:34)
+#2      _floor (package:flutter_map/src/layer/tile_layer/tile_range.dart:36:43)
+#3      new DiscreteTileRange.fromPixelBounds (package:flutter_map/src/layer/tile_layer/tile_range.dart:61:9)
+#4      TileRangeCalculator.calculate (package:flutter_map/src/layer/tile_layer/tile_range_calculator.dart:31:30)
+#5      _TileLayerState._loadAndPruneInVisibleBounds (package:flutter_map/src/layer/tile_layer/tile_layer.dart:678:51)
+#6      _TileLayerState.didChangeDependencies (package:flutter_map/src/layer/tile_layer/tile_layer.dart:459:22)
+#7      StatefulElement._firstBuild (package:flutter/src/widgets/framework.dart:5968:11)
+#8      ComponentElement.mount (package:flutter/src/widgets/framework.dart:5793:5)
+#9      Element.inflateWidget (package:flutter/src/widgets/framework.dart:4587:20)
+#10     MultiChildRenderObjectElement.inflateWidget (package:flutter/src/widgets/framework.dart:7264:36)
+#11     MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7279:32)
+...     Normal element mounting (60 frames)
+#71     Element.inflateWidget (package:flutter/src/widgets/framework.dart:4587:20)
+#72     Element.updateChild (package:flutter/src/widgets/framework.dart:4059:18)
+#73     _LayoutBuilderElement._rebuildWithConstraints.updateChildCallback (package:flutter/src/widgets/layout_builder.dart:247:18)
+#74     BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3101:19)
+#75     _LayoutBuilderElement._rebuildWithConstraints (package:flutter/src/widgets/layout_builder.dart:270:12)
+#76     RenderAbstractLayoutBuilderMixin.layoutCallback (package:flutter/src/widgets/layout_builder.dart:333:38)
+#77     RenderObjectWithLayoutCallbackMixin.runLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:4162:33)
+#78     RenderObject.invokeLayoutCallback.<anonymous closure> (package:flutter/src/rendering/object.dart:2887:17)
+#79     PipelineOwner._enableMutationsToDirtySubtrees (package:flutter/src/rendering/object.dart:1223:15)
+#80     RenderObject.invokeLayoutCallback (package:flutter/src/rendering/object.dart:2886:14)
+#81     RenderObjectWithLayoutCallbackMixin.runLayoutCallback (package:flutter/src/rendering/object.dart:4162:5)
+#82     _RenderLayoutBuilder.performLayout (package:flutter/src/widgets/layout_builder.dart:447:5)
+#83     RenderObject.layout (package:flutter/src/rendering/object.dart:2768:7)
+#84     RenderProxyBoxMixin.performLayout (package:flutter/src/rendering/proxy_box.dart:118:18)
+#85     RenderObject.layout (package:flutter/src/rendering/object.dart:2768:7)
+#86     ChildLayoutHelper.layoutChild (package:flutter/src/rendering/layout_helper.dart:62:11)
+#87     RenderStack._computeSize (package:flutter/src/rendering/stack.dart:645:43)
+#88     RenderStack.performLayout (package:flutter/src/rendering/stack.dart:680:12)
+#89     RenderObject.layout (package:flutter/src/rendering/object.dart:2768:7)
+#90     RenderSliverToBoxAdapter.performLayout (package:flutter/src/rendering/sliver.dart:2045:12)
+#91     RenderObject.layout (package:flutter/src/rendering/object.dart:2768:7)
+#92     RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#93     RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#94     RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#95     RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2616:7)
+#96     PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1174:18)
+#97     PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1187:15)
+#98     RendererBinding.drawFrame (package:flutter/src/rendering/binding.dart:629:23)
+#99     WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1304:13)
+#100    RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#101    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+#102    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1345:9)
+#103    SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1198:5)
+#104    _invoke (dart:ui/hooks.dart:356:13)
+#105    PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+#106    _drawFrame (dart:ui/hooks.dart:328:31)
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+E/flutter (31372): [ERROR:flutter/runtime/dart_vm_initializer.cc(40)] Unhandled Exception: Unsupported operation: Infinity or NaN toInt
+E/flutter (31372): #0      double.toInt (dart:core-patch/double.dart)
+E/flutter (31372): #1      double.floor (dart:core-patch/double.dart:201:34)
+E/flutter (31372): #2      _floor (package:flutter_map/src/layer/tile_layer/tile_range.dart:36:43)
+E/flutter (31372): #3      new DiscreteTileRange.fromPixelBounds (package:flutter_map/src/layer/tile_layer/tile_range.dart:61:9)
+E/flutter (31372): #4      TileRangeCalculator.calculate (package:flutter_map/src/layer/tile_layer/tile_range_calculator.dart:31:30)
+E/flutter (31372): #5      _TileLayerState._onTileUpdateEvent (package:flutter_map/src/layer/tile_layer/tile_layer.dart:655:51)
+E/flutter (31372): #6      _RootZone.runUnaryGuarded (dart:async/zone.dart:891:10)
+E/flutter (31372): #7      _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+E/flutter (31372): #8      _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+E/flutter (31372): #9      _SinkTransformerStreamSubscription._add (dart:async/stream_transformers.dart:67:11)
+E/flutter (31372): #10     _EventSinkWrapper.add (dart:async/stream_transformers.dart:13:11)
+E/flutter (31372): #11     TileUpdateTransformers.ignoreTapEvents.<anonymous closure> (package:flutter_map/src/layer/tile_layer/tile_update_transformer.dart:54:42)
+E/flutter (31372): #12     _HandlerEventSink.add (dart:async/stream_transformers.dart:230:17)
+E/flutter (31372): #13     _SinkTransformerStreamSubscription._handleData (dart:async/stream_transformers.dart:115:24)
+E/flutter (31372): #14     _RootZone.runUnaryGuarded (dart:async/zone.dart:891:10)
+E/flutter (31372): #15     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+E/flutter (31372): #16     _BufferingStreamSubscription._add (dart:async/stream_impl.dart:312:7)
+E/flutter (31372): #17     _ForwardingStreamSubscription._add (dart:async/stream_pipe.dart:154:11)
+E/flutter (31372): #18     _MapStream._handleData (dart:async/stream_pipe.dart:252:10)
+E/flutter (31372): #19     _ForwardingStreamSubscription._handleData (dart:async/stream_pipe.dart:184:13)
+E/flutter (31372): #20     _RootZone.runUnaryGuarded (dart:async/zone.dart:891:10)
+E/flutter (31372): #21     _BufferingStreamSubscription._sendData (dart:async/stream_impl.dart:381:11)
+E/flutter (31372): #22     _DelayedData.perform (dart:async/stream_impl.dart:573:14)
+E/flutter (31372): #23     _PendingEvents.handleNext (dart:async/stream_impl.dart:678:11)
+E/flutter (31372): #24     _PendingEvents.schedule.<anonymous closure> (dart:async/stream_impl.dart:649:7)
+E/flutter (31372): #25     _microtaskLoop (dart:async/schedule_microtask.dart:40:35)
+E/flutter (31372): #26     _startMicrotaskLoop (dart:async/schedule_microtask.dart:49:5)
+E/flutter (31372): 
+

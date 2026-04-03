@@ -324,7 +324,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ),
               ),
               if (isMapView)
-                SliverToBoxAdapter(
+                SliverFillRemaining(
+                  hasScrollBody: false,
                   child: _DiscoverMapView(
                     sparks: filtered,
                     onSparkTap: (spark) => Navigator.of(context).push(
