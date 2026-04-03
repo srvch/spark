@@ -124,11 +124,9 @@ class QrCodeScreen extends StatelessWidget {
                       primary: true,
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        SharePlus.instance.share(
-                          ShareParams(
-                            text: 'Add me on Spark! $_deepLink',
-                            subject: 'Join me on Spark',
-                          ),
+                        Share.share(
+                          'Add me on Spark! $_deepLink',
+                          subject: 'Join me on Spark',
                         );
                       },
                     ),

@@ -2324,7 +2324,6 @@ class _ErrorBanner extends StatelessWidget {
           ),
           CupertinoButton(
             padding: EdgeInsets.zero,
-            minimumSize: 0,
             onPressed: onDismiss,
             child: const Icon(CupertinoIcons.xmark,
                 size: 14, color: Color(0xFFFF3B30)),
