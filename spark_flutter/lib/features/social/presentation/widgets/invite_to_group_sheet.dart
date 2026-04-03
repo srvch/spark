@@ -8,6 +8,22 @@ import '../../../../shared/widgets/person_avatar.dart';
 import '../../domain/social.dart';
 import '../controllers/social_controller.dart';
 
+Future<void> showInviteToGroupSheet(
+  BuildContext context, {
+  required String groupId,
+  List<String> existingMemberIds = const [],
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => InviteToGroupSheet(
+      groupId: groupId,
+      existingMemberIds: existingMemberIds,
+    ),
+  );
+}
+
 class InviteToGroupSheet extends ConsumerStatefulWidget {
   const InviteToGroupSheet({
     super.key,
