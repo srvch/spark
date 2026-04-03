@@ -283,6 +283,45 @@ public class SocialService {
         return updated;
     }
 
+    @Transactional
+    public void removeMember(UUID groupId, String ownerUserId, String targetUserId) {
+        SparkGroupEntity group = sparkGroupRepository.findById(groupId)
+                .orElseThrow(() -> new EntityNotFoundException("Group not found."));
+        if (!group.getOwnerUserId().equals(ownerUserId)) {
+            throw new IllegalStateException("Only the group owner can remove members.");
+        }
+        if (ownerUserId.equals(targetUserId)) {
+            throw new IllegalArgumentException("Owner cannot remove themselves.");
+        }
+        SparkGroupMemberEntity member = sparkGroupMemberRepository
+                .findByGroupIdAndUserId(groupId, targetUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Member not found."));
+        sparkGroupMemberRepository.delete(member);
+    }
+
+    @Transactional
+    public void unfriend(String userId, String friendUserId) {
+        Optional<FriendRequestEntity> direct = friendRequestRepository
+                .findByFromUserIdAndToUserId(userId, friendUserId);
+        Optional<FriendRequestEntity> inverse = friendRequestRepository
+                .findByFromUserIdAndToUserId(friendUserId, userId);
+        direct.ifPresent(friendRequestRepository::delete);
+        inverse.ifPresent(friendRequestRepository::delete);
+    }
+
+    @Transactional
+    public SparkGroupInviteEntity nudgePendingInvite(UUID groupId, String ownerUserId, String inviteeUserId) {
+        ensureGroupMember(groupId, ownerUserId);
+        SparkGroupInviteEntity invite = sparkGroupInviteRepository
+                .findByGroupIdAndInviteeUserId(groupId, inviteeUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Pending invite not found."));
+        if (invite.getStatus() != GroupInviteStatus.PENDING) {
+            throw new IllegalStateException("Invite is no longer pending.");
+        }
+        invite.setInviterUserId(invite.getInviterUserId());
+        return sparkGroupInviteRepository.save(invite);
+    }
+
     private boolean isFriend(String userA, String userB) {
         Optional<FriendRequestEntity> direct = friendRequestRepository.findByFromUserIdAndToUserId(userA, userB);
         if (direct.isPresent() && direct.get().getStatus() == FriendRequestStatus.ACCEPTED) {

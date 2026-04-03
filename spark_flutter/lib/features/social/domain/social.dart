@@ -1,4 +1,4 @@
-enum FriendRequestDecision { accepted, declined }
+enum InviteDecision { accepted, declined }
 
 class FriendUser {
   const FriendUser({
@@ -44,6 +44,8 @@ class SparkGroup {
   final String ownerUserId;
   final String myRole;
   final int memberCount;
+
+  bool get isOwner => myRole.toUpperCase() == 'OWNER';
 }
 
 class GroupInviteInboxItem {
@@ -76,6 +78,8 @@ class GroupMember {
   final String displayName;
   final String phoneNumber;
   final String role;
+
+  bool get isOwner => role.toUpperCase() == 'OWNER';
 }
 
 class GroupDetail {
@@ -94,6 +98,8 @@ class GroupDetail {
   final String ownerUserId;
   final String myRole;
   final List<GroupMember> members;
+
+  bool get isOwner => myRole.toUpperCase() == 'OWNER';
 }
 
 class GroupSummary {
@@ -113,3 +119,6 @@ class GroupSummary {
   final String myRole;
   final int memberCount;
 }
+
+// Keep backward-compat alias
+typedef FriendRequestDecision = InviteDecision;

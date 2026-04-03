@@ -60,12 +60,39 @@ class SocialController {
 
   Future<void> respondFriendRequest({
     required String requestId,
-    required FriendRequestDecision decision,
+    required InviteDecision decision,
   }) async {
-    await ref
-        .read(socialApiRepositoryProvider)
-        .respondFriendRequest(requestId: requestId, decision: decision);
-    await refreshAll();
+    if (decision == InviteDecision.accepted) {
+      ref.read(incomingFriendRequestsProvider.notifier).update(
+        (list) => list.where((r) => r.requestId != requestId).toList(),
+      );
+    } else {
+      ref.read(incomingFriendRequestsProvider.notifier).update(
+        (list) => list.where((r) => r.requestId != requestId).toList(),
+      );
+    }
+    try {
+      await ref
+          .read(socialApiRepositoryProvider)
+          .respondFriendRequest(requestId: requestId, decision: decision);
+      await refreshAll();
+    } catch (e) {
+      await refreshAll();
+      rethrow;
+    }
+  }
+
+  Future<void> unfriend({required String userId}) async {
+    ref.read(friendsProvider.notifier).update(
+      (list) => list.where((f) => f.userId != userId).toList(),
+    );
+    try {
+      await ref.read(socialApiRepositoryProvider).unfriend(userId: userId);
+      await refreshAll();
+    } catch (e) {
+      await refreshAll();
+      rethrow;
+    }
   }
 
   Future<GroupSummary> createGroup({
@@ -89,18 +116,45 @@ class SocialController {
     await refreshAll();
   }
 
-  Future<void> respondGroupInvite({
+  Future<void> removeMemberFromGroup({
     required String groupId,
-    required String inviteId,
-    required FriendRequestDecision decision,
+    required String userId,
   }) async {
     await ref
         .read(socialApiRepositoryProvider)
-        .respondGroupInvite(
-          groupId: groupId,
-          inviteId: inviteId,
-          decision: decision,
-        );
+        .removeMemberFromGroup(groupId: groupId, userId: userId);
     await refreshAll();
+  }
+
+  Future<void> nudgePendingMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    await ref
+        .read(socialApiRepositoryProvider)
+        .nudgePendingMember(groupId: groupId, userId: userId);
+  }
+
+  Future<void> respondGroupInvite({
+    required String groupId,
+    required String inviteId,
+    required InviteDecision decision,
+  }) async {
+    ref.read(incomingGroupInvitesProvider.notifier).update(
+      (list) => list.where((i) => i.inviteId != inviteId).toList(),
+    );
+    try {
+      await ref
+          .read(socialApiRepositoryProvider)
+          .respondGroupInvite(
+            groupId: groupId,
+            inviteId: inviteId,
+            decision: decision,
+          );
+      await refreshAll();
+    } catch (e) {
+      await refreshAll();
+      rethrow;
+    }
   }
 }

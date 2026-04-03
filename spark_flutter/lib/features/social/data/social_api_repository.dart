@@ -52,16 +52,18 @@ class SocialApiRepository {
 
   Future<void> respondFriendRequest({
     required String requestId,
-    required FriendRequestDecision decision,
+    required InviteDecision decision,
   }) async {
     await _dio.post<dynamic>(
       '/api/v1/social/friends/requests/$requestId/respond',
       data: {
-        'status': decision == FriendRequestDecision.accepted
-            ? 'ACCEPTED'
-            : 'DECLINED',
+        'status': decision == InviteDecision.accepted ? 'ACCEPTED' : 'DECLINED',
       },
     );
+  }
+
+  Future<void> unfriend({required String userId}) async {
+    await _dio.delete<dynamic>('/api/v1/social/friends/$userId');
   }
 
   Future<List<SparkGroup>> fetchGroups() async {
@@ -118,12 +120,12 @@ class SocialApiRepository {
     );
     final data = response.data as Map<String, dynamic>;
     return GroupSummary(
-      groupId: '${data['id']}',
+      groupId: '${data['groupId'] ?? data['id']}',
       name: '${data['name']}',
       description: '${data['description'] ?? ''}',
       ownerUserId: '${data['ownerUserId']}',
       myRole: '${data['myRole']}',
-      memberCount: int.tryParse('${data['memberCount']}') ?? 0,
+      memberCount: int.tryParse('${data['memberCount']}') ?? 1,
     );
   }
 
@@ -134,6 +136,24 @@ class SocialApiRepository {
     await _dio.post<dynamic>(
       '/api/v1/social/groups/$groupId/invite',
       data: {'userId': userId},
+    );
+  }
+
+  Future<void> removeMemberFromGroup({
+    required String groupId,
+    required String userId,
+  }) async {
+    await _dio.delete<dynamic>(
+      '/api/v1/social/groups/$groupId/members/$userId',
+    );
+  }
+
+  Future<void> nudgePendingMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    await _dio.post<dynamic>(
+      '/api/v1/social/groups/$groupId/members/$userId/nudge',
     );
   }
 
@@ -162,14 +182,12 @@ class SocialApiRepository {
   Future<void> respondGroupInvite({
     required String groupId,
     required String inviteId,
-    required FriendRequestDecision decision,
+    required InviteDecision decision,
   }) async {
     await _dio.post<dynamic>(
       '/api/v1/social/groups/$groupId/invites/$inviteId/respond',
       data: {
-        'status': decision == FriendRequestDecision.accepted
-            ? 'ACCEPTED'
-            : 'DECLINED',
+        'status': decision == InviteDecision.accepted ? 'ACCEPTED' : 'DECLINED',
       },
     );
   }

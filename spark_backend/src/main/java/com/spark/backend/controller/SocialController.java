@@ -205,6 +205,47 @@ public class SocialController {
         );
     }
 
+    @DeleteMapping("/groups/{groupId}/members/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeMember(
+            Authentication authentication,
+            @PathVariable UUID groupId,
+            @PathVariable String userId
+    ) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        socialService.removeMember(groupId, currentUser.userId(), userId);
+    }
+
+    @DeleteMapping("/friends/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unfriend(
+            Authentication authentication,
+            @PathVariable String userId
+    ) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        socialService.unfriend(currentUser.userId(), userId);
+    }
+
+    @PostMapping("/groups/{groupId}/members/{userId}/nudge")
+    @ResponseStatus(HttpStatus.OK)
+    public GroupInviteResponse nudgePendingMember(
+            Authentication authentication,
+            @PathVariable UUID groupId,
+            @PathVariable String userId
+    ) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        var invite = socialService.nudgePendingInvite(groupId, currentUser.userId(), userId);
+        return new GroupInviteResponse(
+                invite.getId(),
+                invite.getGroupId(),
+                invite.getInviterUserId(),
+                invite.getInviteeUserId(),
+                invite.getStatus().name(),
+                invite.getCreatedAt(),
+                invite.getActedAt()
+        );
+    }
+
     @ExceptionHandler({EntityNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> notFound(Exception ex) {

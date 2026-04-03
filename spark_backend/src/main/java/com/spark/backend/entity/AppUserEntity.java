@@ -54,4 +54,12 @@ public class AppUserEntity {
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
 }
