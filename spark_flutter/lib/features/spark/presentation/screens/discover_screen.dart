@@ -2283,9 +2283,21 @@ class _DiscoverMapViewState extends State<_DiscoverMapView> {
       );
     }).toList();
 
-    return Stack(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Guard: don't hand flutter_map infinite/zero dimensions – it will
+        // crash with 'picture != null' assertion inside the tile layer.
+        if (!constraints.hasBoundedHeight ||
+            constraints.maxHeight <= 0 ||
+            !constraints.hasBoundedWidth ||
+            constraints.maxWidth <= 0) {
+          return const SizedBox.expand();
+        }
+
+        return Stack(
       children: [
-        FlutterMap(
+        RepaintBoundary(
+          child: FlutterMap(
           options: MapOptions(
             initialCenter: _bangaloreCenter,
             initialZoom: 13,
@@ -2299,6 +2311,7 @@ class _DiscoverMapViewState extends State<_DiscoverMapView> {
             ),
             MarkerLayer(markers: markers),
           ],
+        ),
         ),
 
         // ── OSM attribution ──
@@ -2331,7 +2344,9 @@ class _DiscoverMapViewState extends State<_DiscoverMapView> {
             ),
           ),
       ],
-    );
+        );      // Stack
+      },        // LayoutBuilder builder
+    );          // LayoutBuilder
   }
 }
 
