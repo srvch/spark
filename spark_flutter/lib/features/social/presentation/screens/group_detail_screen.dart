@@ -20,7 +20,6 @@ class GroupDetailScreen extends ConsumerStatefulWidget {
 
 class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   late Future<GroupDetail> _detailFuture;
-  late Future<List<GroupActivityItem>> _activityFuture;
   late Future<List<OutgoingGroupInvite>> _pendingInvitesFuture;
   final _nudging = <String>{};
   final _removing = <String>{};
@@ -31,15 +30,11 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   void initState() {
     super.initState();
     _detailFuture = _load();
-    _activityFuture = _loadActivity();
     _pendingInvitesFuture = _loadPendingInvites();
   }
 
   Future<GroupDetail> _load() =>
       ref.read(socialApiRepositoryProvider).fetchGroupDetail(widget.groupId);
-
-  Future<List<GroupActivityItem>> _loadActivity() =>
-      ref.read(socialApiRepositoryProvider).fetchGroupActivity(widget.groupId);
 
   Future<List<OutgoingGroupInvite>> _loadPendingInvites() =>
       ref.read(socialApiRepositoryProvider).fetchPendingGroupInvites(widget.groupId);
@@ -47,7 +42,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Future<void> _refresh() async {
     setState(() {
       _detailFuture = _load();
-      _activityFuture = _loadActivity();
       _pendingInvitesFuture = _loadPendingInvites();
     });
     await _detailFuture;
@@ -391,7 +385,6 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                     ),
                   ),
                   _PendingInvitesSection(future: _pendingInvitesFuture),
-                  _ActivitySection(future: _activityFuture),
                   const SliverToBoxAdapter(child: SizedBox(height: 48)),
                 ],
               ),
@@ -544,117 +537,6 @@ class _PendingInvitesSection extends StatelessWidget {
   }
 }
 
-class _ActivitySection extends StatelessWidget {
-  const _ActivitySection({required this.future});
-  final Future<List<GroupActivityItem>> future;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: FutureBuilder<List<GroupActivityItem>>(
-        future: future,
-        builder: (context, snap) {
-          final items = snap.data ?? const [];
-          if (items.isEmpty) return const SizedBox.shrink();
-          final limited = items.take(8).toList();
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 6),
-                  child: Text(
-                    'RECENT ACTIVITY',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF8E8E93),
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    children: List.generate(limited.length, (i) {
-                      final item = limited[i];
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: item.isSpark
-                                        ? AppColors.accent.withValues(alpha: 0.1)
-                                        : const Color(0xFF34C759).withValues(alpha: 0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    item.isSpark
-                                        ? CupertinoIcons.bolt_fill
-                                        : CupertinoIcons.person_add_solid,
-                                    size: 15,
-                                    color: item.isSpark ? AppColors.accent : const Color(0xFF34C759),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.isSpark
-                                            ? '${item.displayName} created a Spark'
-                                            : '${item.displayName} joined the group',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF000000),
-                                        ),
-                                      ),
-                                      Text(
-                                        _timeAgo(item.timestamp),
-                                        style: const TextStyle(fontSize: 12, color: Color(0xFF8E8E93)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (i < limited.length - 1)
-                            const Divider(height: 1, thickness: 0.5, indent: 58, color: Color(0xFFE5E5EA)),
-                        ],
-                      );
-                    }),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  String _timeAgo(DateTime dt) {
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).floor()}w ago';
-  }
-}
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 

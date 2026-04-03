@@ -8,6 +8,7 @@ import '../../../../features/profile/presentation/screens/profile_screen.dart';
 import '../../../../shared/widgets/person_avatar.dart';
 import '../../domain/social.dart';
 import '../controllers/social_controller.dart';
+import '../widgets/contact_import_sheet.dart';
 import '../widgets/invite_to_group_sheet.dart';
 import 'create_group_screen.dart';
 import 'friend_profile_screen.dart';
@@ -411,86 +412,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   }
 
   Future<void> _openContactImport() async {
-    final phoneCtrl = TextEditingController();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _BottomSheetCard(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            24, 20, 24,
-            MediaQuery.of(ctx).viewInsets.bottom + 32,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36, height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD1D1D6),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const Text('Find contacts on Spark',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF000000),
-                      letterSpacing: -0.3)),
-              const SizedBox(height: 4),
-              const Text(
-                'Enter phone numbers (one per line) to see who\'s already on Spark.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: TextField(
-                  controller: phoneCtrl,
-                  keyboardType: TextInputType.multiline,
-                  maxLines: 5,
-                  minLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: '+91 98765 43210\n+91 87654 32109\n...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(14),
-                    hintStyle: TextStyle(color: Color(0xFFC7C7CC)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _IosButton(
-                label: 'Find friends',
-                onTap: () {
-                  final phones = phoneCtrl.text
-                      .split('\n')
-                      .map((p) => p.trim())
-                      .where((p) => p.isNotEmpty)
-                      .toList();
-                  if (phones.isEmpty) return;
-                  Navigator.of(ctx).pop();
-                  _toast('Searching for ${phones.length} contacts…');
-                },
-              ),
-              const SizedBox(height: 10),
-              _IosButton(
-                label: 'Cancel',
-                secondary: true,
-                onTap: () => Navigator.of(ctx).pop(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    await showContactImportSheet(context);
   }
 
   Future<void> _showFriendActionSheet(FriendUser friend) async {
