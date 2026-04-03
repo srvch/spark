@@ -65,7 +65,7 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
             : ListView.separated(
                 padding: EdgeInsets.zero,
                 itemCount: available.length,
-                separatorBuilder: (_, _) => Container(
+                separatorBuilder: (_, __) => Container(
                   height: 1,
                   margin: const EdgeInsets.only(left: 72),
                   color: AppColors.cardDivider,
