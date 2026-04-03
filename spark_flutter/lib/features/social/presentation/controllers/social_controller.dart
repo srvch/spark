@@ -11,12 +11,18 @@ final socialApiRepositoryProvider = Provider<SocialApiRepository>((ref) {
 final friendsProvider = StateProvider<List<FriendUser>>((ref) => const []);
 final incomingFriendRequestsProvider =
     StateProvider<List<IncomingFriendRequest>>((ref) => const []);
+final outgoingFriendRequestsProvider =
+    StateProvider<List<OutgoingFriendRequest>>((ref) => const []);
+final friendSuggestionsProvider =
+    StateProvider<List<FriendSuggestion>>((ref) => const []);
 final groupsProvider = StateProvider<List<SparkGroup>>((ref) => const []);
-final incomingGroupInvitesProvider = StateProvider<List<GroupInviteInboxItem>>(
-  (ref) => const [],
-);
+final incomingGroupInvitesProvider =
+    StateProvider<List<GroupInviteInboxItem>>((ref) => const []);
 final socialLoadingProvider = StateProvider<bool>((ref) => false);
 final socialErrorProvider = StateProvider<String?>((ref) => null);
+final myAvailabilityProvider = StateProvider<String>((ref) => 'NONE');
+final friendSortProvider = StateProvider<FriendSort>((ref) => FriendSort.recent);
+final groupSortProvider = StateProvider<GroupSort>((ref) => GroupSort.recent);
 
 final socialControllerProvider = Provider<SocialController>((ref) {
   return SocialController(ref);
@@ -35,15 +41,21 @@ class SocialController {
       final results = await Future.wait([
         api.fetchFriends(),
         api.fetchIncomingFriendRequests(),
+        api.fetchOutgoingFriendRequests(),
         api.fetchGroups(),
         api.fetchIncomingGroupInvites(),
+        api.fetchFriendSuggestions(),
       ]);
       ref.read(friendsProvider.notifier).state = results[0] as List<FriendUser>;
       ref.read(incomingFriendRequestsProvider.notifier).state =
           results[1] as List<IncomingFriendRequest>;
-      ref.read(groupsProvider.notifier).state = results[2] as List<SparkGroup>;
+      ref.read(outgoingFriendRequestsProvider.notifier).state =
+          results[2] as List<OutgoingFriendRequest>;
+      ref.read(groupsProvider.notifier).state = results[3] as List<SparkGroup>;
       ref.read(incomingGroupInvitesProvider.notifier).state =
-          results[3] as List<GroupInviteInboxItem>;
+          results[4] as List<GroupInviteInboxItem>;
+      ref.read(friendSuggestionsProvider.notifier).state =
+          results[5] as List<FriendSuggestion>;
     } catch (e) {
       ref.read(socialErrorProvider.notifier).state = '$e';
     } finally {
@@ -51,30 +63,37 @@ class SocialController {
     }
   }
 
-  Future<void> sendFriendRequest(String phoneNumber) async {
-    await ref
-        .read(socialApiRepositoryProvider)
-        .sendFriendRequest(phoneNumber: phoneNumber);
+  Future<void> sendFriendRequest(String phoneNumber, {String? message}) async {
+    await ref.read(socialApiRepositoryProvider).sendFriendRequest(
+          phoneNumber: phoneNumber,
+          message: message,
+        );
     await refreshAll();
+  }
+
+  Future<void> cancelFriendRequest({required String requestId}) async {
+    ref.read(outgoingFriendRequestsProvider.notifier).update(
+      (list) => list.where((r) => r.requestId != requestId).toList(),
+    );
+    try {
+      await ref.read(socialApiRepositoryProvider).cancelFriendRequest(requestId: requestId);
+    } finally {
+      await refreshAll();
+    }
   }
 
   Future<void> respondFriendRequest({
     required String requestId,
     required InviteDecision decision,
   }) async {
-    if (decision == InviteDecision.accepted) {
-      ref.read(incomingFriendRequestsProvider.notifier).update(
-        (list) => list.where((r) => r.requestId != requestId).toList(),
-      );
-    } else {
-      ref.read(incomingFriendRequestsProvider.notifier).update(
-        (list) => list.where((r) => r.requestId != requestId).toList(),
-      );
-    }
+    ref.read(incomingFriendRequestsProvider.notifier).update(
+      (list) => list.where((r) => r.requestId != requestId).toList(),
+    );
     try {
-      await ref
-          .read(socialApiRepositoryProvider)
-          .respondFriendRequest(requestId: requestId, decision: decision);
+      await ref.read(socialApiRepositoryProvider).respondFriendRequest(
+            requestId: requestId,
+            decision: decision,
+          );
       await refreshAll();
     } catch (e) {
       await refreshAll();
@@ -95,6 +114,27 @@ class SocialController {
     }
   }
 
+  Future<void> setAvailability(String status) async {
+    ref.read(myAvailabilityProvider.notifier).state = status;
+    try {
+      await ref.read(socialApiRepositoryProvider).setAvailability(status: status);
+    } catch (_) {
+      ref.read(myAvailabilityProvider.notifier).state =
+          status == 'OPEN' ? 'NONE' : 'OPEN';
+    }
+  }
+
+  Future<void> blockUser({required String userId}) async {
+    await ref.read(socialApiRepositoryProvider).blockUser(userId: userId);
+    ref.read(friendsProvider.notifier).update(
+      (list) => list.where((f) => f.userId != userId).toList(),
+    );
+  }
+
+  Future<void> reportUser({required String userId, String? reason}) async {
+    await ref.read(socialApiRepositoryProvider).reportUser(userId: userId, reason: reason);
+  }
+
   Future<GroupSummary> createGroup({
     required String name,
     required String description,
@@ -106,13 +146,51 @@ class SocialController {
     return summary;
   }
 
+  Future<void> updateGroup({
+    required String groupId,
+    required String name,
+    required String description,
+  }) async {
+    await ref.read(socialApiRepositoryProvider).updateGroup(
+          groupId: groupId,
+          name: name,
+          description: description,
+        );
+    await refreshAll();
+  }
+
+  Future<void> archiveGroup({required String groupId}) async {
+    ref.read(groupsProvider.notifier).update(
+      (list) => list.where((g) => g.groupId != groupId).toList(),
+    );
+    try {
+      await ref.read(socialApiRepositoryProvider).archiveGroup(groupId: groupId);
+    } finally {
+      await refreshAll();
+    }
+  }
+
+  Future<void> leaveGroup({required String groupId}) async {
+    ref.read(groupsProvider.notifier).update(
+      (list) => list.where((g) => g.groupId != groupId).toList(),
+    );
+    try {
+      await ref.read(socialApiRepositoryProvider).leaveGroup(groupId: groupId);
+      await refreshAll();
+    } catch (e) {
+      await refreshAll();
+      rethrow;
+    }
+  }
+
   Future<void> inviteFriendToGroup({
     required String groupId,
     required String userId,
   }) async {
-    await ref
-        .read(socialApiRepositoryProvider)
-        .inviteFriendToGroup(groupId: groupId, userId: userId);
+    await ref.read(socialApiRepositoryProvider).inviteFriendToGroup(
+          groupId: groupId,
+          userId: userId,
+        );
     await refreshAll();
   }
 
@@ -120,19 +198,41 @@ class SocialController {
     required String groupId,
     required String userId,
   }) async {
-    await ref
-        .read(socialApiRepositoryProvider)
-        .removeMemberFromGroup(groupId: groupId, userId: userId);
+    await ref.read(socialApiRepositoryProvider).removeMemberFromGroup(
+          groupId: groupId,
+          userId: userId,
+        );
     await refreshAll();
+  }
+
+  Future<void> promoteToAdmin({
+    required String groupId,
+    required String userId,
+  }) async {
+    await ref.read(socialApiRepositoryProvider).promoteToAdmin(
+          groupId: groupId,
+          userId: userId,
+        );
+  }
+
+  Future<void> demoteToMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    await ref.read(socialApiRepositoryProvider).demoteToMember(
+          groupId: groupId,
+          userId: userId,
+        );
   }
 
   Future<void> nudgePendingMember({
     required String groupId,
     required String userId,
   }) async {
-    await ref
-        .read(socialApiRepositoryProvider)
-        .nudgePendingMember(groupId: groupId, userId: userId);
+    await ref.read(socialApiRepositoryProvider).nudgePendingMember(
+          groupId: groupId,
+          userId: userId,
+        );
   }
 
   Future<void> respondGroupInvite({
@@ -144,9 +244,7 @@ class SocialController {
       (list) => list.where((i) => i.inviteId != inviteId).toList(),
     );
     try {
-      await ref
-          .read(socialApiRepositoryProvider)
-          .respondGroupInvite(
+      await ref.read(socialApiRepositoryProvider).respondGroupInvite(
             groupId: groupId,
             inviteId: inviteId,
             decision: decision,

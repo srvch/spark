@@ -1,15 +1,23 @@
 enum InviteDecision { accepted, declined }
 
+enum FriendSort { recent, alphabetical }
+
+enum GroupSort { recent, alphabetical, ownerFirst }
+
 class FriendUser {
   const FriendUser({
     required this.userId,
     required this.displayName,
     required this.phoneNumber,
+    this.availabilityStatus = 'NONE',
   });
 
   final String userId;
   final String displayName;
   final String phoneNumber;
+  final String availabilityStatus;
+
+  bool get isAvailable => availabilityStatus == 'OPEN';
 }
 
 class IncomingFriendRequest {
@@ -19,6 +27,7 @@ class IncomingFriendRequest {
     required this.displayName,
     required this.phoneNumber,
     required this.createdAt,
+    this.message,
   });
 
   final String requestId;
@@ -26,6 +35,53 @@ class IncomingFriendRequest {
   final String displayName;
   final String phoneNumber;
   final DateTime createdAt;
+  final String? message;
+}
+
+class OutgoingFriendRequest {
+  const OutgoingFriendRequest({
+    required this.requestId,
+    required this.toUserId,
+    required this.displayName,
+    required this.phoneNumber,
+    required this.createdAt,
+    this.message,
+  });
+
+  final String requestId;
+  final String toUserId;
+  final String displayName;
+  final String phoneNumber;
+  final DateTime createdAt;
+  final String? message;
+}
+
+class FriendSuggestion {
+  const FriendSuggestion({
+    required this.userId,
+    required this.displayName,
+    required this.phoneNumber,
+    required this.mutualGroupCount,
+  });
+
+  final String userId;
+  final String displayName;
+  final String phoneNumber;
+  final int mutualGroupCount;
+}
+
+class MatchedContact {
+  const MatchedContact({
+    required this.userId,
+    required this.displayName,
+    required this.phoneNumber,
+    required this.alreadyFriend,
+  });
+
+  final String userId;
+  final String displayName;
+  final String phoneNumber;
+  final bool alreadyFriend;
 }
 
 class SparkGroup {
@@ -36,6 +92,7 @@ class SparkGroup {
     required this.ownerUserId,
     required this.myRole,
     required this.memberCount,
+    this.archived = false,
   });
 
   final String groupId;
@@ -44,8 +101,11 @@ class SparkGroup {
   final String ownerUserId;
   final String myRole;
   final int memberCount;
+  final bool archived;
 
   bool get isOwner => myRole.toUpperCase() == 'OWNER';
+  bool get isAdmin => myRole.toUpperCase() == 'ADMIN';
+  bool get canEdit => isOwner || isAdmin;
 }
 
 class GroupInviteInboxItem {
@@ -66,6 +126,24 @@ class GroupInviteInboxItem {
   final DateTime createdAt;
 }
 
+class OutgoingGroupInvite {
+  const OutgoingGroupInvite({
+    required this.inviteId,
+    required this.groupId,
+    required this.inviteeUserId,
+    required this.inviteeName,
+    required this.inviteePhone,
+    required this.createdAt,
+  });
+
+  final String inviteId;
+  final String groupId;
+  final String inviteeUserId;
+  final String inviteeName;
+  final String inviteePhone;
+  final DateTime createdAt;
+}
+
 class GroupMember {
   const GroupMember({
     required this.userId,
@@ -80,6 +158,9 @@ class GroupMember {
   final String role;
 
   bool get isOwner => role.toUpperCase() == 'OWNER';
+  bool get isAdmin => role.toUpperCase() == 'ADMIN';
+  bool get canBePromoted => role.toUpperCase() == 'MEMBER';
+  bool get canBeDemoted => role.toUpperCase() == 'ADMIN';
 }
 
 class GroupDetail {
@@ -90,6 +171,7 @@ class GroupDetail {
     required this.ownerUserId,
     required this.myRole,
     required this.members,
+    this.archived = false,
   });
 
   final String groupId;
@@ -98,8 +180,11 @@ class GroupDetail {
   final String ownerUserId;
   final String myRole;
   final List<GroupMember> members;
+  final bool archived;
 
   bool get isOwner => myRole.toUpperCase() == 'OWNER';
+  bool get isAdmin => myRole.toUpperCase() == 'ADMIN';
+  bool get canEdit => isOwner || isAdmin;
 }
 
 class GroupSummary {
@@ -118,6 +203,25 @@ class GroupSummary {
   final String ownerUserId;
   final String myRole;
   final int memberCount;
+}
+
+class GroupActivityItem {
+  const GroupActivityItem({
+    required this.eventId,
+    required this.type,
+    required this.userId,
+    required this.displayName,
+    required this.timestamp,
+  });
+
+  final String eventId;
+  final String type;
+  final String userId;
+  final String displayName;
+  final DateTime timestamp;
+
+  bool get isSpark => type == 'spark';
+  bool get isJoin => type == 'join';
 }
 
 // Keep backward-compat alias

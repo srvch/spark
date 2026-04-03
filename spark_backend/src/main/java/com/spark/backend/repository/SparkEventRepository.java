@@ -15,4 +15,6 @@ public interface SparkEventRepository extends JpaRepository<SparkEventEntity, UU
     long countByHostUserIdAndStatusAndStartsAtAfter(String hostUserId, SparkStatus status, Instant startsAt);
 
     List<SparkEventEntity> findByStatusAndStartsAtBetween(SparkStatus status, Instant from, Instant to);
+
+    List<SparkEventEntity> findByHostUserIdInOrderByStartsAtDesc(java.util.Collection<String> hostUserIds);
 }

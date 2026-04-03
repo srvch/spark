@@ -37,6 +37,9 @@ public class FriendRequestEntity {
     @Column(name = "responded_at")
     private Instant respondedAt;
 
+    @Column(name = "message", length = 280)
+    private String message;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -94,6 +97,14 @@ public class FriendRequestEntity {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
 

@@ -15,6 +15,8 @@ public interface FriendRequestRepository extends JpaRepository<FriendRequestEnti
 
     List<FriendRequestEntity> findByStatusAndToUserIdOrderByCreatedAtDesc(FriendRequestStatus status, String toUserId);
 
+    List<FriendRequestEntity> findByStatusAndFromUserIdOrderByCreatedAtDesc(FriendRequestStatus status, String fromUserId);
+
     @Query("""
             select r
             from FriendRequestEntity r

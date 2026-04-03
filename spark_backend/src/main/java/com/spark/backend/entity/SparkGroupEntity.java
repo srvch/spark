@@ -27,6 +27,12 @@ public class SparkGroupEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "archived", nullable = false)
+    private boolean archived = false;
+
+    @Column(name = "archived_at")
+    private Instant archivedAt;
+
     @PrePersist
     void onCreate() {
         Instant now = Instant.now();
@@ -73,6 +79,22 @@ public class SparkGroupEntity {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
+    }
+
+    public void setArchivedAt(Instant archivedAt) {
+        this.archivedAt = archivedAt;
     }
 }
 

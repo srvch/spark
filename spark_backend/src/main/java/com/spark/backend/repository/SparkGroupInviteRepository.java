@@ -14,5 +14,7 @@ public interface SparkGroupInviteRepository extends JpaRepository<SparkGroupInvi
     Optional<SparkGroupInviteEntity> findByIdAndGroupIdAndInviteeUserId(UUID id, UUID groupId, String inviteeUserId);
 
     List<SparkGroupInviteEntity> findByInviteeUserIdAndStatusOrderByCreatedAtDesc(String inviteeUserId, GroupInviteStatus status);
+
+    List<SparkGroupInviteEntity> findByGroupIdAndStatusOrderByCreatedAtDesc(UUID groupId, GroupInviteStatus status);
 }
 

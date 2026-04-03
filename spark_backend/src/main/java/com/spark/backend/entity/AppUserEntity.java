@@ -24,6 +24,9 @@ public class AppUserEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "availability_status", length = 20)
+    private String availabilityStatus = "NONE";
+
     @PrePersist
     void onCreate() {
         createdAt = Instant.now();
@@ -61,5 +64,13 @@ public class AppUserEntity {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getAvailabilityStatus() {
+        return availabilityStatus == null ? "NONE" : availabilityStatus;
+    }
+
+    public void setAvailabilityStatus(String availabilityStatus) {
+        this.availabilityStatus = availabilityStatus;
     }
 }
