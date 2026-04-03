@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -2204,7 +2206,7 @@ class _MapListToggle extends StatelessWidget {
   }
 }
 
-// ── Full-screen interactive map view ─────────────────────────────────────────
+// ── Real OpenStreetMap map view ───────────────────────────────────────────────
 
 class _DiscoverMapView extends StatefulWidget {
   const _DiscoverMapView({
@@ -2218,235 +2220,272 @@ class _DiscoverMapView extends StatefulWidget {
   State<_DiscoverMapView> createState() => _DiscoverMapViewState();
 }
 
-class _DiscoverMapViewState extends State<_DiscoverMapView>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2200),
-  )..repeat();
+class _DiscoverMapViewState extends State<_DiscoverMapView> {
+  Spark? _selectedSpark;
 
-  Spark? _hoveredSpark;
+  // Centre the map on Bangalore city
+  static const LatLng _bangaloreCenter = LatLng(12.9716, 77.5946);
 
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
+  // Map well-known Bangalore locations to lat/lng
+  static (double lat, double lng) _coordsFor(String location) {
+    final l = location.toLowerCase();
+    if (l.contains('koramangala')) return (12.9352, 77.6245);
+    if (l.contains('indiranagar')) return (12.9784, 77.6408);
+    if (l.contains('whitefield'))  return (12.9698, 77.7499);
+    if (l.contains('electronic'))  return (12.8456, 77.6603);
+    if (l.contains('hsr'))         return (12.9116, 77.6474);
+    if (l.contains('bellandur'))   return (12.9259, 77.6762);
+    if (l.contains('marathon'))    return (12.9591, 77.6971);
+    if (l.contains('jp nagar'))    return (12.9094, 77.5840);
+    if (l.contains('jayanagar'))   return (12.9252, 77.5938);
+    if (l.contains('church'))      return (12.9756, 77.6055);
+    if (l.contains('mg road'))     return (12.9753, 77.6117);
+    if (l.contains('brigade'))     return (12.9714, 77.6120);
+    if (l.contains('ulsoor'))      return (12.9822, 77.6210);
+    if (l.contains('malleshwaram'))return (13.0035, 77.5712);
+    if (l.contains('rajajinagar')) return (12.9894, 77.5512);
+    if (l.contains('hebbal'))      return (13.0358, 77.5971);
+    return (12.9716, 77.5946); // Bangalore city centre fallback
   }
 
-  static Offset sparkPosition(Spark spark, Size size) {
-    final seedA = (spark.id.hashCode * 83).abs();
-    final seedB = (spark.id.hashCode * 149).abs();
-    final x = size.width * (0.08 + (seedA % 1000) / 1000 * 0.84);
-    final y = size.height * (0.08 + (seedB % 1000) / 1000 * 0.78);
-    return Offset(x, y);
+  // Give each spark a small deterministic offset so pins at the same
+  // location don't overlap perfectly.
+  static LatLng _sparkLatLng(Spark spark) {
+    final (lat, lng) = _coordsFor(spark.location);
+    final hashA = (spark.id.hashCode * 37).abs() % 1000;
+    final hashB = (spark.id.hashCode * 71).abs() % 1000;
+    final dLat = (hashA / 1000 - 0.5) * 0.016; // ±0.008°  ≈  ±900 m
+    final dLng = (hashB / 1000 - 0.5) * 0.016;
+    return LatLng(lat + dLat, lng + dLng);
   }
 
-  static Color colorFor(SparkCategory cat) => switch (cat) {
-    SparkCategory.sports => const Color(0xFF22C55E),
-    SparkCategory.study => const Color(0xFF8B5CF6),
-    SparkCategory.ride => const Color(0xFF2563EB),
-    SparkCategory.events => const Color(0xFFF59E0B),
-    SparkCategory.hangout => const Color(0xFF0EA5E9),
-  };
+  // Category → pin colour (delegates to SparkCategory.accentColor)
+  static Color _pinColor(SparkCategory category) => category.accentColor;
 
   @override
   Widget build(BuildContext context) {
-    const mapHeight = 460.0;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          height: mapHeight,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final size = Size(constraints.maxWidth, mapHeight);
-              return Stack(
-                children: [
-                  // Animated map background
-                  Positioned.fill(
-                    child: RepaintBoundary(
-                      child: AnimatedBuilder(
-                        animation: _pulse,
-                        builder: (_, __) => CustomPaint(
-                          painter: _MapTexturePainter(
-                            sparks: widget.sparks,
-                            pulse: _pulse.value,
-                            hoveredId: _hoveredSpark?.id,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Invisible tap targets per spark
-                  for (final spark in widget.sparks)
-                    Builder(builder: (ctx) {
-                      final pos = sparkPosition(spark, size);
-                      const hitArea = 40.0;
-                      return Positioned(
-                        left: pos.dx - hitArea / 2,
-                        top: pos.dy - hitArea / 2,
-                        width: hitArea,
-                        height: hitArea,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            widget.onSparkTap(spark);
-                          },
-                          onTapDown: (_) =>
-                              setState(() => _hoveredSpark = spark),
-                          onTapCancel: () =>
-                              setState(() => _hoveredSpark = null),
-                          onTapUp: (_) =>
-                              setState(() => _hoveredSpark = null),
-                          child: const SizedBox.expand(),
-                        ),
-                      );
-                    }),
-                  // Tooltip above tapped pin
-                  if (_hoveredSpark != null)
-                    Builder(builder: (ctx) {
-                      final spark = _hoveredSpark!;
-                      final pos = sparkPosition(spark, size);
-                      const cardW = 180.0;
-                      final left = (pos.dx - cardW / 2)
-                          .clamp(8.0, size.width - cardW - 8);
-                      final top = pos.dy > size.height * 0.55
-                          ? pos.dy - 76.0
-                          : pos.dy + 16.0;
-                      return Positioned(
-                        left: left,
-                        top: top,
-                        width: cardW,
-                        child: _SparkMapTooltip(spark: spark),
-                      );
-                    }),
-                  // Legend bar
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: SparkCategory.values.map((cat) {
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 7,
-                                height: 7,
-                                decoration: BoxDecoration(
-                                  color: colorFor(cat),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                cat.label,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                  // Count badge
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.92),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '${widget.sparks.length} nearby',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+    final markers = widget.sparks.map((spark) {
+      final pos = _sparkLatLng(spark);
+      final color = _pinColor(spark.category);
+      final isSelected = _selectedSpark?.id == spark.id;
+
+      return Marker(
+        point: pos,
+        width: isSelected ? 44 : 36,
+        height: isSelected ? 54 : 44,
+        child: GestureDetector(
+          onTap: () => setState(() {
+            _selectedSpark = isSelected ? null : spark;
+          }),
+          child: _SparkPin(color: color, selected: isSelected),
+        ),
+      );
+    }).toList();
+
+    return Stack(
+      children: [
+        FlutterMap(
+          options: MapOptions(
+            initialCenter: _bangaloreCenter,
+            initialZoom: 13,
+            onTap: (_, __) => setState(() => _selectedSpark = null),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.spark.app',
+              maxZoom: 19,
+            ),
+            MarkerLayer(markers: markers),
+          ],
+        ),
+
+        // ── OSM attribution ──
+        Positioned(
+          bottom: _selectedSpark != null ? 128 : 8,
+          right: 8,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: const Text(
+              '© OpenStreetMap contributors',
+              style: TextStyle(fontSize: 10, color: Colors.black87),
+            ),
           ),
         ),
-      ),
+
+        // ── Selected-spark bottom card ──
+        if (_selectedSpark != null)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 24,
+            child: _SparkMapCard(
+              spark: _selectedSpark!,
+              onTap: () => widget.onSparkTap(_selectedSpark!),
+              onClose: () => setState(() => _selectedSpark = null),
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _SparkMapTooltip extends StatelessWidget {
-  const _SparkMapTooltip({required this.spark});
-  final Spark spark;
+// ── Pin widget ────────────────────────────────────────────────────────────────
+
+class _SparkPin extends StatelessWidget {
+  const _SparkPin({required this.color, required this.selected});
+  final Color color;
+  final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    final color = _DiscoverMapViewState.colorFor(spark.category);
-    return Material(
-      elevation: 4,
-      shadowColor: const Color(0x22000000),
-      borderRadius: BorderRadius.circular(10),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: selected ? 20 : 16,
+          height: selected ? 20 : 16,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.45),
+                blurRadius: selected ? 12 : 6,
+                spreadRadius: selected ? 3 : 0,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Container(
+          width: 2,
+          height: selected ? 12 : 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Bottom card shown when a spark pin is tapped ──────────────────────────────
+
+class _SparkMapCard extends StatelessWidget {
+  const _SparkMapCard({
+    required this.spark,
+    required this.onTap,
+    required this.onClose,
+  });
+  final Spark spark;
+  final VoidCallback onTap;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(14, 12, 12, 14),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              spark.title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x22000000),
+              blurRadius: 16,
+              offset: Offset(0, 4),
             ),
-            const SizedBox(height: 3),
-            Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Category chip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: spark.category.accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                spark.category.label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: spark.category.accentColor,
                 ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${spark.distanceLabel} · ${spark.timeLabel}',
+              ),
+            ),
+            const SizedBox(width: 10),
+            // Title + meta
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    spark.title,
                     style: const TextStyle(
-                      fontSize: 10.5,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1C1C1E),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 12,
+                        color: Color(0xFF8E8E93),
+                      ),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          spark.location,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8E8E93),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Time badge
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: onClose,
+                  child: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  spark.timeLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF8E8E93),
                   ),
                 ),
               ],
@@ -2456,124 +2495,5 @@ class _SparkMapTooltip extends StatelessWidget {
       ),
     );
   }
-}
 
-class _MapTexturePainter extends CustomPainter {
-  const _MapTexturePainter({
-    required this.sparks,
-    required this.pulse,
-    required this.hoveredId,
-  });
-
-  final List<Spark> sparks;
-  final double pulse;
-  final String? hoveredId;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFFF1F5F9),
-    );
-
-    // Road grid
-    final roadPaint = Paint()
-      ..color = const Color(0xFFDDE3EA)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 7
-      ..strokeCap = StrokeCap.round;
-    final streetPaint = Paint()
-      ..color = const Color(0xFFDDE3EA)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-
-    for (var i = 0; i < 4; i++) {
-      final y = size.height * (0.18 + i * 0.21);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), roadPaint);
-    }
-    for (var i = 0; i < 5; i++) {
-      final x = size.width * (0.12 + i * 0.19);
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), roadPaint);
-    }
-    final d1 = Path()
-      ..moveTo(0, size.height * 0.3)
-      ..quadraticBezierTo(size.width * 0.4, size.height * 0.15, size.width,
-          size.height * 0.45);
-    canvas.drawPath(d1, streetPaint);
-    final d2 = Path()
-      ..moveTo(0, size.height * 0.72)
-      ..quadraticBezierTo(size.width * 0.55, size.height * 0.58, size.width,
-          size.height * 0.8);
-    canvas.drawPath(d2, streetPaint);
-
-    // City blocks
-    final blockPaint = Paint()..color = const Color(0xFFE4ECF5);
-    final rrRadius = const Radius.circular(4);
-    final blocks = [
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.22, size.width * 0.14, size.height * 0.14),
-      Rect.fromLTWH(size.width * 0.33, size.height * 0.22, size.width * 0.16, size.height * 0.14),
-      Rect.fromLTWH(size.width * 0.55, size.height * 0.22, size.width * 0.13, size.height * 0.14),
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.44, size.width * 0.14, size.height * 0.16),
-      Rect.fromLTWH(size.width * 0.33, size.height * 0.44, size.width * 0.16, size.height * 0.16),
-      Rect.fromLTWH(size.width * 0.55, size.height * 0.44, size.width * 0.16, size.height * 0.16),
-      Rect.fromLTWH(size.width * 0.14, size.height * 0.67, size.width * 0.14, size.height * 0.14),
-      Rect.fromLTWH(size.width * 0.33, size.height * 0.67, size.width * 0.16, size.height * 0.14),
-    ];
-    for (final b in blocks) {
-      canvas.drawRRect(RRect.fromRectAndRadius(b, rrRadius), blockPaint);
-    }
-
-    // Spark pins
-    for (final spark in sparks) {
-      final pos = _DiscoverMapViewState.sparkPosition(spark, size);
-      final color = _DiscoverMapViewState.colorFor(spark.category);
-      final isHovered = spark.id == hoveredId;
-      final dotR = isHovered ? 10.0 : 7.5;
-
-      // Pulse ring
-      final phase = (pulse + (spark.id.hashCode.abs() % 100) / 100) % 1.0;
-      canvas.drawCircle(
-        pos,
-        dotR + 5 + 10 * phase,
-        Paint()..color = color.withValues(alpha: 0.18 * (1 - phase)),
-      );
-
-      // Drop shadow
-      canvas.drawCircle(
-        pos + const Offset(0, 1.5),
-        dotR + 1.5,
-        Paint()..color = color.withValues(alpha: 0.22),
-      );
-
-      // Main dot
-      canvas.drawCircle(pos, dotR, Paint()..color = color);
-
-      // White inner circle
-      canvas.drawCircle(pos, dotR * 0.36, Paint()..color = Colors.white.withValues(alpha: 0.9));
-
-      // Participant count
-      final count = spark.participants.length;
-      if (count > 0) {
-        final tp = TextPainter(
-          text: TextSpan(
-            text: '$count',
-            style: const TextStyle(
-              fontSize: 7,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
-        tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _MapTexturePainter old) =>
-      old.pulse != pulse ||
-      old.sparks != sparks ||
-      old.hoveredId != hoveredId;
 }
