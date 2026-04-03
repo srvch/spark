@@ -13,8 +13,10 @@ import '../../../spark/domain/spark.dart';
 import '../../../spark/domain/spark_invite.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../../../spark/presentation/screens/activity_screen.dart';
+import '../controllers/availability_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_preferences_controller.dart';
+import '../widgets/availability_sheet.dart';
 
 const _kNavy = AppColors.accent;
 const _kDivider = AppColors.border;
@@ -291,10 +293,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         label: 'Notification alerts',
                         sublabel:
                             notificationPrefs.notifyStartsSoon ||
-                                notificationPrefs.notifyFillingFast
+                                notificationPrefs.notifyFillingFast ||
+                                notificationPrefs.notifyFriendRequest ||
+                                notificationPrefs.notifyWaitlist ||
+                                notificationPrefs.notifyReminder
                             ? 'Alerts on'
-                            : 'Alerts off',
+                            : 'All alerts off',
                         onTap: () => _showAlertsSheet(context),
+                      ),
+                      _MenuRow(
+                        icon: Icons.calendar_today_outlined,
+                        label: 'My Availability',
+                        sublabel: AvailabilityHelper.summaryLabel(
+                          ref.watch(availabilityProvider),
+                        ),
+                        onTap: () => showAvailabilitySheet(context),
                       ),
 
                       const _Divider(),
@@ -863,10 +876,28 @@ class _AlertsSheet extends ConsumerWidget {
               fontFamily: 'Manrope',
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          const Text(
+            'SPARKS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceLight,
+              letterSpacing: 0.8,
+              fontFamily: 'Manrope',
+            ),
+          ),
+          const SizedBox(height: 10),
+          _AlertToggle(
+            label: '15-min reminder',
+            sublabel: 'Reminded when a joined spark is about to begin',
+            value: prefs.notifyReminder,
+            onChanged: notifier.setReminder,
+          ),
+          const SizedBox(height: 12),
           _AlertToggle(
             label: 'Starts soon',
-            sublabel: 'Remind me when a joined spark is about to begin',
+            sublabel: 'Alert when a nearby spark you saved is starting',
             value: prefs.notifyStartsSoon,
             onChanged: notifier.setStartsSoon,
           ),
@@ -876,6 +907,31 @@ class _AlertsSheet extends ConsumerWidget {
             sublabel: 'Alert when a nearby spark has only 1 spot left',
             value: prefs.notifyFillingFast,
             onChanged: notifier.setFillingFast,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'SOCIAL',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceLight,
+              letterSpacing: 0.8,
+              fontFamily: 'Manrope',
+            ),
+          ),
+          const SizedBox(height: 10),
+          _AlertToggle(
+            label: 'Friend requests',
+            sublabel: 'Notify when someone sends you a friend request',
+            value: prefs.notifyFriendRequest,
+            onChanged: notifier.setFriendRequest,
+          ),
+          const SizedBox(height: 12),
+          _AlertToggle(
+            label: 'Waitlist spot opens',
+            sublabel: 'Alert when a spot opens in a spark you\'re waiting for',
+            value: prefs.notifyWaitlist,
+            onChanged: notifier.setWaitlist,
           ),
         ],
       ),

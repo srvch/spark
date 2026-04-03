@@ -882,6 +882,10 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           ),
                           const SizedBox(height: 8),
                           _OnMyWayButton(sparkId: widget.spark.id),
+                          if (spark.startsInMinutes <= 15) ...[
+                            const SizedBox(height: 8),
+                            _CheckInButton(sparkId: widget.spark.id),
+                          ],
                         ],
                       )),
               ),
@@ -1510,6 +1514,100 @@ class _OnMyWayButton extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckInButton extends ConsumerStatefulWidget {
+  const _CheckInButton({required this.sparkId});
+  final String sparkId;
+
+  @override
+  ConsumerState<_CheckInButton> createState() => _CheckInButtonState();
+}
+
+class _CheckInButtonState extends ConsumerState<_CheckInButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 400),
+  );
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkIn() async {
+    final checkedIn = ref.read(checkedInSparkIdsProvider).contains(widget.sparkId);
+    if (checkedIn) return;
+    HapticFeedback.mediumImpact();
+    final next = {...ref.read(checkedInSparkIdsProvider)}..add(widget.sparkId);
+    ref.read(checkedInSparkIdsProvider.notifier).state = next;
+    await _pulse.forward(from: 0);
+    await _pulse.reverse();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Checked in! See you there.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCheckedIn =
+        ref.watch(checkedInSparkIdsProvider).contains(widget.sparkId);
+    return ScaleTransition(
+      scale: Tween<double>(begin: 1, end: 1.04).animate(
+        CurvedAnimation(parent: _pulse, curve: Curves.easeOut),
+      ),
+      child: GestureDetector(
+        onTap: isCheckedIn ? null : _checkIn,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            color: isCheckedIn
+                ? const Color(0xFFECFDF5)
+                : AppColors.pillSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCheckedIn
+                  ? const Color(0xFF16A34A)
+                  : AppColors.chipBorder,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isCheckedIn
+                    ? Icons.check_circle_rounded
+                    : Icons.location_on_outlined,
+                size: 16,
+                color: isCheckedIn
+                    ? const Color(0xFF16A34A)
+                    : AppColors.textSecondary,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                isCheckedIn ? 'Checked in!' : 'Check in',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: isCheckedIn
+                      ? const Color(0xFF16A34A)
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
