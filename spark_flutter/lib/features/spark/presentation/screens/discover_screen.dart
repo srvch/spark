@@ -579,7 +579,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 }
 
 // ── Heights must match the measured content inside each state ──────────────
-const double _kExpandedHeight = 220.0;
+const double _kExpandedHeight = 258.0;
 const double _kCollapsedHeight = 96.0;
 
 class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -686,11 +686,6 @@ class _HeroPanel extends StatefulWidget {
 }
 
 class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
-  late final AnimationController _shimmerCtrl = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 3),
-  )..repeat();
-
   late final AnimationController _floatCtrl = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 4),
@@ -703,7 +698,6 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _shimmerCtrl.dispose();
     _floatCtrl.dispose();
     _entryCtrl.dispose();
     super.dispose();
@@ -724,111 +718,104 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
         bottomRight: Radius.circular(28),
       ),
       child: AnimatedBuilder(
-        animation: Listenable.merge([_shimmerCtrl, _floatCtrl]),
+        animation: _floatCtrl,
         builder: (context, child) {
-          final shimmerT = _shimmerCtrl.value;
           final floatT = _floatCtrl.value;
           return Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment(-1.0 + shimmerT * 0.3, -0.5),
-                end: Alignment(1.0 + shimmerT * 0.3, 1.0),
-                colors: const [
-                  AppColors.heroBg1,
-                  AppColors.heroBg2,
-                  AppColors.heroBg3,
-                  AppColors.heroBg4,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF0A1628),
+                  Color(0xFF0F1F3D),
+                  Color(0xFF152B50),
+                  Color(0xFF1C3360),
                 ],
-                stops: [0.0, 0.3 + shimmerT * 0.1, 0.6 + shimmerT * 0.05, 1.0],
               ),
             ),
             child: Stack(
               children: [
-                // Depth overlay for a richer premium surface.
+                // Aurora: large blue glow, top-right
+                Positioned(
+                  right: -60 + floatT * 12,
+                  top: -60 + floatT * 8,
+                  child: Container(
+                    width: 240,
+                    height: 240,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFF3B82F6).withValues(alpha: 0.17 + floatT * 0.04),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Aurora: soft green tint, bottom-left
+                Positioned(
+                  left: -50 + floatT * 10,
+                  bottom: -50 + floatT * 8,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFF86EFAC).withValues(alpha: 0.09 + floatT * 0.03),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Subtle vignette bottom
                 Positioned.fill(
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withValues(alpha: 0.07),
                           Colors.transparent,
-                          Colors.black.withValues(alpha: 0.08),
-                        ],
-                        stops: const [0.0, 0.42, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: -30 + floatT * 15,
-                  top: -20 + floatT * 10,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          AppColors.darkAccent.withValues(alpha: 0.12),
-                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.18),
                         ],
                       ),
                     ),
                   ),
                 ),
+                // Floating live activity widget (upper right)
                 Positioned(
-                  left: -40 + floatT * 8,
-                  bottom: -10 + floatT * 12,
+                  right: 18,
+                  top: 42 + floatT * 5,
+                  child: _LiveNearbyBadge(floatT: floatT),
+                ),
+                // Micro sparkle dots
+                Positioned(
+                  right: 88 + floatT * 3,
+                  top: 26 - floatT * 4,
                   child: Container(
-                    width: 100,
-                    height: 100,
+                    width: 3,
+                    height: 3,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          AppColors.orbGreen.withValues(alpha: 0.08),
-                          Colors.transparent,
-                        ],
-                      ),
+                      color: Colors.white.withValues(alpha: 0.22 + floatT * 0.12),
                     ),
                   ),
                 ),
                 Positioned(
-                  right: 60 + floatT * 5,
-                  bottom: 30 - floatT * 8,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(
-                        alpha: 0.15 + floatT * 0.1,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 40 - floatT * 6,
-                  top: 30 + floatT * 4,
+                  right: 148 - floatT * 4,
+                  bottom: 56 + floatT * 5,
                   child: Container(
                     width: 4,
                     height: 4,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.orbGreen.withValues(
-                        alpha: 0.2 + floatT * 0.15,
-                      ),
+                      color: const Color(0xFF86EFAC).withValues(alpha: 0.28 + floatT * 0.14),
                     ),
-                  ),
-                ),
-                Positioned(
-                  right: 10,
-                  top: 44 + floatT * 2,
-                  child: _HeroGraphicCluster(
-                    floatT: floatT,
-                    shimmerT: shimmerT,
                   ),
                 ),
                 child!,
@@ -838,167 +825,143 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
         },
         child: FadeTransition(
           opacity: CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxHeight < 205;
-              return Padding(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  compact ? 8 : 10,
-                  20,
-                  compact ? 10 : 14,
-                ),
-                child: SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '$_greeting, Saurav',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                                color: Colors.white.withValues(alpha: 0.65),
-                                fontFamily: 'Manrope',
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: widget.onProfileTap,
-                            child: Container(
-                              width: compact ? 32 : 36,
-                              height: compact ? 32 : 36,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.person_outline_rounded,
-                                size: compact ? 16 : 18,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                            ),
-                          ),
-                        ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 13, 22, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Greeting row ──────────────────────────────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _greeting,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white.withValues(alpha: 0.52),
+                        fontFamily: 'Manrope',
+                        letterSpacing: 0.1,
                       ),
-                      SizedBox(height: compact ? 3 : 4),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: widget.onLocationTap,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: compact ? 4 : 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.06),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.location_on_rounded,
-                                    size: 12,
-                                    color: AppColors.orbGreen.withValues(
-                                      alpha: 0.9,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    widget.selectedLocation,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '·',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${widget.radius}km',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    size: 14,
-                                    color: Colors.white.withValues(alpha: 0.4),
-                                  ),
-                                ],
-                              ),
-                            ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: widget.onProfileTap,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
                           ),
-                        ],
-                      ),
-                      SizedBox(height: compact ? 6 : 8),
-                      Text(
-                        'Plans happening\nnear you, right now.',
-                        style: TextStyle(
-                          fontSize: compact ? 26 : 30,
-                          height: compact ? 1.06 : 1.1,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          fontFamily: 'Manrope',
-                          letterSpacing: compact ? -0.5 : -0.8,
+                        ),
+                        child: Icon(
+                          Icons.person_outline_rounded,
+                          size: 17,
+                          color: Colors.white.withValues(alpha: 0.78),
                         ),
                       ),
-                      if (!compact) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tiny plans. Real people. Right this minute.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.72),
-                            letterSpacing: 0.1,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                // ── Location pill ─────────────────────────────────────────
+                GestureDetector(
+                  onTap: widget.onLocationTap,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(9, 4, 9, 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF86EFAC),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          widget.selectedLocation,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.82),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '·',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.28),
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${widget.radius}km',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.58),
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 13,
+                          color: Colors.white.withValues(alpha: 0.38),
                         ),
                       ],
-                      SizedBox(height: compact ? 8 : 12),
-                      _HeroBannerSearch(
-                        currentQuery: widget.searchQuery,
-                        onQueryChanged: (v) {
-                          widget.onSearchChanged(v);
-                          widget.onSearchSubmitted(v);
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              );
-            },
+                const SizedBox(height: 14),
+                // ── Headline ──────────────────────────────────────────────
+                const Text(
+                  'Plans happening\nnear you, right now.',
+                  style: TextStyle(
+                    fontSize: 27,
+                    height: 1.12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontFamily: 'Manrope',
+                    letterSpacing: -0.8,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Tiny plans. Real people. Right this minute.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white.withValues(alpha: 0.5),
+                    letterSpacing: 0.05,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 14),
+                // ── Search bar ────────────────────────────────────────────
+                _HeroBannerSearch(
+                  currentQuery: widget.searchQuery,
+                  onQueryChanged: (v) {
+                    widget.onSearchChanged(v);
+                    widget.onSearchSubmitted(v);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1006,163 +969,138 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
   }
 }
 
-class _HeroGraphicCluster extends StatelessWidget {
-  const _HeroGraphicCluster({required this.floatT, required this.shimmerT});
+/// Floating glass card showing live nearby activity — replaces the old
+/// graphic cluster with a cleaner, more information-dense widget.
+class _LiveNearbyBadge extends StatelessWidget {
+  const _LiveNearbyBadge({required this.floatT});
 
   final double floatT;
-  final double shimmerT;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 112,
-      height: 92,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            right: 6,
-            top: 3 + floatT * 2,
-            child: Transform.rotate(
-              angle: 0.09,
-              child: _GlassMiniCard(
-                width: 86,
-                height: 54,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                      child: const Icon(
-                        Icons.sports_cricket_rounded,
-                        size: 13,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Container(
-                          width: 28,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.28),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            bottom: 0,
-            child: Transform.rotate(
-              angle: -0.08,
-              child: _GlassMiniCard(
-                width: 92,
-                height: 48,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.orbGreen.withValues(alpha: 0.28),
-                      ),
-                      child: const Icon(
-                        Icons.flash_on_rounded,
-                        size: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.42),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: 0.55 + (shimmerT * 0.35),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.88),
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GlassMiniCard extends StatelessWidget {
-  const _GlassMiniCard({
-    required this.width,
-    required this.height,
-    required this.child,
-  });
-
-  final double width;
-  final double height;
-  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      width: 136,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
         gradient: LinearGradient(
           colors: [
-            Colors.white.withValues(alpha: 0.14),
-            Colors.white.withValues(alpha: 0.05),
+            Colors.white.withValues(alpha: 0.09),
+            Colors.white.withValues(alpha: 0.03),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: child,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF86EFAC),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF86EFAC).withValues(
+                        alpha: 0.5 + floatT * 0.2,
+                      ),
+                      blurRadius: 5,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Live near you',
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withValues(alpha: 0.75),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          _MiniSparkRow(
+            icon: Icons.sports_cricket_rounded,
+            label: 'Cricket match',
+            sub: '200m · 5 joining',
+          ),
+          const SizedBox(height: 7),
+          _MiniSparkRow(
+            icon: Icons.menu_book_rounded,
+            label: 'DSA sprint',
+            sub: '450m · 3 joining',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniSparkRow extends StatelessWidget {
+  const _MiniSparkRow({
+    required this.icon,
+    required this.label,
+    required this.sub,
+  });
+
+  final IconData icon;
+  final String label;
+  final String sub;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(7),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Icon(icon, size: 11, color: Colors.white.withValues(alpha: 0.72)),
+        ),
+        const SizedBox(width: 7),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Colors.white.withValues(alpha: 0.82),
+              ),
+            ),
+            Text(
+              sub,
+              style: TextStyle(
+                fontSize: 8.5,
+                color: Colors.white.withValues(alpha: 0.42),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
