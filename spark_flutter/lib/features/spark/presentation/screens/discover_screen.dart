@@ -324,13 +324,18 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ),
               ),
               if (isMapView)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _DiscoverMapView(
-                    sparks: filtered,
-                    onSparkTap: (spark) => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => SparkDetailScreen(spark: spark),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    // Give FlutterMap a concrete pixel height so the tile
+                    // engine never receives Infinity. Subtract a generous
+                    // offset for the pinned header + safe area.
+                    height: MediaQuery.of(context).size.height - 130,
+                    child: _DiscoverMapView(
+                      sparks: filtered,
+                      onSparkTap: (spark) => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => SparkDetailScreen(spark: spark),
+                        ),
                       ),
                     ),
                   ),
@@ -2283,35 +2288,26 @@ class _DiscoverMapViewState extends State<_DiscoverMapView> {
       );
     }).toList();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Guard: don't hand flutter_map infinite/zero dimensions – it will
-        // crash with 'picture != null' assertion inside the tile layer.
-        if (!constraints.hasBoundedHeight ||
-            constraints.maxHeight <= 0 ||
-            !constraints.hasBoundedWidth ||
-            constraints.maxWidth <= 0) {
-          return const SizedBox.expand();
-        }
-
-        return Stack(
+    return Stack(
       children: [
+        // The parent SizedBox guarantees finite dimensions, so FlutterMap
+        // receives real pixel bounds and the tile engine never sees Infinity.
         RepaintBoundary(
           child: FlutterMap(
-          options: MapOptions(
-            initialCenter: _bangaloreCenter,
-            initialZoom: 13,
-            onTap: (_, __) => setState(() => _selectedSpark = null),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.spark.app',
-              maxZoom: 19,
+            options: MapOptions(
+              initialCenter: _bangaloreCenter,
+              initialZoom: 13,
+              onTap: (_, __) => setState(() => _selectedSpark = null),
             ),
-            MarkerLayer(markers: markers),
-          ],
-        ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.spark.app',
+                maxZoom: 19,
+              ),
+              MarkerLayer(markers: markers),
+            ],
+          ),
         ),
 
         // ── OSM attribution ──
@@ -2344,9 +2340,7 @@ class _DiscoverMapViewState extends State<_DiscoverMapView> {
             ),
           ),
       ],
-        );      // Stack
-      },        // LayoutBuilder builder
-    );          // LayoutBuilder
+    );
   }
 }
 

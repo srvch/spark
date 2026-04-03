@@ -1,0 +1,128 @@
+/ImeTracker(32291): com.example.spark_flutter:f166c055: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/flutter (32291): [analytics] nearby_refresh {location: Indiranagar, radius_km: 5.0, count: 0}
+I/flutter (32291): [analytics] nearby_refresh {location: Indiranagar, radius_km: 5.0, count: 0}
+
+══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during performLayout():
+LayoutBuilder does not support returning intrinsic dimensions.
+Calculating the intrinsic dimensions would require running the layout callback speculatively, which
+might mutate the live render object tree.
+
+The relevant error-causing widget was:
+  SliverFillRemaining
+  SliverFillRemaining:file:///Users/saurav/Documents/Playground/spark_flutter/lib/features/spark/presentation/screens/discover_screen.dart:327:17
+
+When the exception was thrown, this was the stack:
+#0      _RenderLayoutBuilder._debugThrowIfNotCheckingIntrinsics.<anonymous closure> (package:flutter/src/widgets/layout_builder.dart:477:9)
+#1      _RenderLayoutBuilder._debugThrowIfNotCheckingIntrinsics (package:flutter/src/widgets/layout_builder.dart:484:6)
+#2      _RenderLayoutBuilder.computeMaxIntrinsicHeight (package:flutter/src/widgets/layout_builder.dart:416:12)
+#3      _IntrinsicDimension.memoize.<anonymous closure> (package:flutter/src/rendering/box.dart:1117:51)
+#4      _LinkedHashMapMixin.putIfAbsent (dart:_compact_hash:675:23)
+#5      _IntrinsicDimension.memoize (package:flutter/src/rendering/box.dart:1117:10)
+#6      RenderBox._computeWithTimeline (package:flutter/src/rendering/box.dart:1620:32)
+#7      RenderBox._computeIntrinsics (package:flutter/src/rendering/box.dart:1598:26)
+#8      RenderBox.getMaxIntrinsicHeight (package:flutter/src/rendering/box.dart:1956:12)
+#9      RenderSliverFillRemaining.performLayout (package:flutter/src/rendering/sliver_fill.dart:159:33)
+#10     RenderObject.layout (package:flutter/src/rendering/object.dart:2768:7)
+#11     RenderViewportBase.layoutChildSequence (package:flutter/src/rendering/viewport.dart:673:13)
+#12     RenderViewport._attemptLayout (package:flutter/src/rendering/viewport.dart:1684:12)
+#13     RenderViewport.performLayout (package:flutter/src/rendering/viewport.dart:1575:20)
+#14     RenderObject._layoutWithoutResize (package:flutter/src/rendering/object.dart:2616:7)
+#15     PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1174:18)
+#16     PipelineOwner.flushLayout (package:flutter/src/rendering/object.dart:1187:15)
+#17     RendererBinding.drawFrame (package:flutter/src/rendering/binding.dart:629:23)
+#18     WidgetsBinding.drawFrame (package:flutter/src/widgets/binding.dart:1304:13)
+#19     RendererBinding._handlePersistentFrameCallback (package:flutter/src/rendering/binding.dart:495:5)
+#20     SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430:15)
+#21     SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1345:9)
+#22     SchedulerBinding._handleDrawFrame (package:flutter/src/scheduler/binding.dart:1198:5)
+#23     _invoke (dart:ui/hooks.dart:356:13)
+#24     PlatformDispatcher._drawFrame (dart:ui/platform_dispatcher.dart:444:5)
+#25     _drawFrame (dart:ui/hooks.dart:328:31)
+
+The following RenderObject was being processed when the exception was fired: RenderSliverFillRemaining#bbe3a relayoutBoundary=up1 NEEDS-LAYOUT NEEDS-PAINT NEEDS-COMPOSITING-BITS-UPDATE:
+  creator: _SliverFillRemainingWithoutScrollable ← SliverFillRemaining ← Viewport ←
+    IgnorePointer-[GlobalKey#5b8e2] ← Semantics ← Listener ← _GestureSemantics ←
+    RawGestureDetector-[LabeledGlobalKey<RawGestureDetectorState>#e960e] ← Listener ← _ScrollableScope
+    ← _ScrollSemantics-[GlobalKey#50533] ← NotificationListener<ScrollMetricsNotification> ← ⋯
+  parentData: paintOffset=Offset(0.0, 0.0) (can use size)
+  constraints: SliverConstraints(AxisDirection.down, GrowthDirection.forward, ScrollDirection.idle,
+    scrollOffset: 0.0, precedingScrollExtent: 382.0, remainingPaintExtent: 399.3, crossAxisExtent:
+    411.4, crossAxisDirection: AxisDirection.right, viewportMainAxisExtent: 781.3,
+    remainingCacheExtent: 649.3, cacheOrigin: 0.0)
+  geometry: null
+This RenderObject had the following child:
+    child: _RenderLayoutBuilder#e52e2 NEEDS-LAYOUT NEEDS-PAINT
+════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Another exception was thrown: Null check operator used on a null value
+Another exception was thrown: Null check operator used on a null value
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'package:flutter/src/rendering/layer.dart': Failed assertion: line 894 pos 12: 'picture != null': is not true.
+Another exception was thrown: 'p
