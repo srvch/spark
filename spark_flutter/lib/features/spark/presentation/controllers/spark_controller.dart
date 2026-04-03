@@ -96,9 +96,6 @@ final onMyWaySparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 /// IDs of sparks the current user has checked in to
 final checkedInSparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 
-/// Whether the discover screen is showing map view (vs list view)
-final discoverMapViewProvider = StateProvider<bool>((ref) => false);
-
 /// Tracks how many chat conversations the user has "seen" (for unread badge)
 final seenChatCountProvider = StateProvider<int>((ref) => 0);
 final currentUserIdProvider = Provider<String>((ref) {

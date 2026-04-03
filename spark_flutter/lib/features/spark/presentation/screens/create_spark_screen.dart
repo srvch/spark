@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
@@ -44,11 +43,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   String _lastAiLocation = '';
   String? _lastSeenSelectedLocation;
   String _lastPlanText = '';
-  late final SpeechToText _speechToText;
-  bool _speechReady = false;
-  bool _isListening = false;
-  Timer? _speechSilenceTimer;
-  String _lastVoiceTranscript = '';
 
   bool _isManualMode = true;
   DateTime? _autoTimeOverride;
@@ -70,7 +64,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   @override
   void initState() {
     super.initState();
-    _speechToText = SpeechToText();
     final now = DateTime.now();
     _manualSelectedDate = DateTime(now.year, now.month, now.day);
     _manualHour = _to12Hour(now.hour);
@@ -92,7 +85,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _initSpeech();
       _scheduleAiParse();
       _hydrateManualFromAuto(_effectiveAutoPlan());
       unawaited(ref.read(socialControllerProvider).refreshAll());
@@ -102,8 +94,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   @override
   void dispose() {
     _aiDebounce?.cancel();
-    _speechSilenceTimer?.cancel();
-    _speechToText.stop();
     _planController.removeListener(_onPlanChanged);
     _planController.dispose();
     _manualTitleController.dispose();
@@ -124,28 +114,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     }
     setState(() {});
     _scheduleAiParse();
-  }
-
-  Future<void> _initSpeech() async {
-    try {
-      final available = await _speechToText.initialize(
-        onError: (_) {
-          if (!mounted) return;
-          setState(() => _isListening = false);
-        },
-        onStatus: (status) {
-          if (!mounted) return;
-          if (status == 'done' || status == 'notListening') {
-            setState(() => _isListening = false);
-          }
-        },
-      );
-      if (!mounted) return;
-      setState(() => _speechReady = available);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _speechReady = false);
-    }
   }
 
   @override
@@ -647,63 +615,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     _planController.selection = TextSelection.fromPosition(
       TextPosition(offset: _planController.text.length),
     );
-  }
-
-  Future<void> _toggleVoiceInput() async {
-    if (_isListening) {
-      await _stopVoiceInput();
-      return;
-    }
-    if (!_speechReady) {
-      await _initSpeech();
-      if (!_speechReady) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Voice input is not available on this device.')),
-        );
-        return;
-      }
-    }
-
-    _lastVoiceTranscript = '';
-    setState(() => _isListening = true);
-
-    await _speechToText.listen(
-      onResult: (result) {
-        final spoken = result.recognizedWords.trim();
-        if (spoken.isNotEmpty) {
-          _lastVoiceTranscript = spoken;
-          _setPlanText(spoken);
-        }
-        if (result.finalResult) {
-          _stopVoiceInput();
-          return;
-        }
-        _speechSilenceTimer?.cancel();
-        _speechSilenceTimer = Timer(const Duration(seconds: 2), () {
-          _stopVoiceInput();
-        });
-      },
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 2),
-      listenOptions: SpeechListenOptions(
-        partialResults: true,
-        cancelOnError: true,
-      ),
-    );
-  }
-
-  Future<void> _stopVoiceInput() async {
-    _speechSilenceTimer?.cancel();
-    await _speechToText.stop();
-    if (!mounted) return;
-    final emptyCapture = _lastVoiceTranscript.trim().isEmpty;
-    setState(() => _isListening = false);
-    if (emptyCapture) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't catch that. Try again.")),
-      );
-    }
   }
 
   List<String> _smartSuggestions(String selectedLocation) {
@@ -2369,7 +2280,7 @@ class _SelectField<T> extends StatelessWidget {
     return SizedBox(
       height: 48,
       child: DropdownButtonFormField<T>(
-        initialValue: value,
+        value: value,
         isExpanded: true,
         icon: const Icon(Icons.expand_more, size: 16),
         decoration: InputDecoration(
@@ -2801,51 +2712,6 @@ class _SuggestionChip extends StatelessWidget {
   }
 }
 
-class _MicPulseDot extends StatefulWidget {
-  const _MicPulseDot();
-
-  @override
-  State<_MicPulseDot> createState() => _MicPulseDotState();
-}
-
-class _MicPulseDotState extends State<_MicPulseDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = _controller.value;
-        final size = 8 + (t * 4);
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.5 + (t * 0.5)),
-            shape: BoxShape.circle,
-          ),
-        );
-      },
-    );
-  }
-}
 
 class _InferredPlan {
   const _InferredPlan({

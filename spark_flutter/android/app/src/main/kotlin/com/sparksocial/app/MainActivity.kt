@@ -1,4 +1,4 @@
-package com.example.spark_flutter
+package com.sparksocial.app
 
 import io.flutter.embedding.android.FlutterActivity
 
