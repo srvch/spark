@@ -3,12 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../features/chat/presentation/screens/chat_inbox_screen.dart';
-import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/social/presentation/controllers/social_controller.dart';
+import '../../features/social/presentation/screens/social_screen.dart';
+import '../../features/spark/domain/spark_invite.dart';
 import '../../features/spark/presentation/controllers/spark_controller.dart';
 import '../../features/spark/presentation/screens/create_spark_screen.dart';
 import '../../features/spark/presentation/screens/discover_screen.dart';
 
 final bottomTabProvider = StateProvider<int>((ref) => 0);
+
+void backOrGoDiscover(BuildContext context, WidgetRef ref) {
+  final navigator = Navigator.of(context);
+  if (navigator.canPop()) {
+    navigator.pop();
+    return;
+  }
+  ref.read(bottomTabProvider.notifier).state = 0;
+}
 
 class RootShell extends ConsumerWidget {
   const RootShell({super.key});
@@ -23,13 +34,24 @@ class RootShell extends ConsumerWidget {
     final createdCount = ref.watch(myCreatedSparksProvider).length;
     final chatCount = joinedCount + createdCount;
     final seenCount = ref.watch(seenChatCountProvider);
-    final hasUnreadChat = chatCount > seenCount;
+    final pendingInvitesCount = ref
+        .watch(sparkInvitesProvider)
+        .where((invite) => invite.status == SparkInviteStatus.pending)
+        .length;
+    final hasUnreadChat = chatCount > seenCount || pendingInvitesCount > 0;
+    final incomingFriendCount = ref
+        .watch(incomingFriendRequestsProvider)
+        .length;
+    final incomingGroupInviteCount = ref
+        .watch(incomingGroupInvitesProvider)
+        .length;
+    final hasUnreadPeople = incomingFriendCount + incomingGroupInviteCount > 0;
 
     final screens = const [
       DiscoverScreen(),
       CreateSparkScreen(),
       ChatInboxScreen(),
-      ProfileScreen(),
+      SocialScreen(),
     ];
 
     return Scaffold(
@@ -52,17 +74,15 @@ class RootShell extends ConsumerWidget {
             child: Row(
               children: [
                 _NavItem(
-                  label: 'Discover',
+                  label: 'Sparks',
                   icon: Icons.explore_outlined,
                   activeIcon: Icons.explore_rounded,
                   selected: tab == 0,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 0,
+                  onTap: () => ref.read(bottomTabProvider.notifier).state = 0,
                 ),
                 _CreateNavItem(
                   selected: tab == 1,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 1,
+                  onTap: () => ref.read(bottomTabProvider.notifier).state = 1,
                 ),
                 _NavItem(
                   label: 'Chat',
@@ -76,12 +96,12 @@ class RootShell extends ConsumerWidget {
                   },
                 ),
                 _NavItem(
-                  label: 'Profile',
-                  icon: Icons.person_outline_rounded,
-                  activeIcon: Icons.person_rounded,
+                  label: 'People',
+                  icon: Icons.groups_outlined,
+                  activeIcon: Icons.groups_rounded,
                   selected: tab == 3,
-                  onTap: () =>
-                      ref.read(bottomTabProvider.notifier).state = 3,
+                  showBadge: hasUnreadPeople && tab != 3,
+                  onTap: () => ref.read(bottomTabProvider.notifier).state = 3,
                 ),
               ],
             ),
@@ -167,8 +187,9 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const activeColor = AppColors.accent;
-    final inactiveColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.darkTextSecondary;
+    final inactiveColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.darkTextSecondary;
 
     return Expanded(
       child: GestureDetector(
@@ -184,8 +205,8 @@ class _NavItem extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? (isDark
-                        ? AppColors.darkAccent.withValues(alpha: 0.15)
-                        : AppColors.accent.withValues(alpha: 0.08))
+                          ? AppColors.darkAccent.withValues(alpha: 0.15)
+                          : AppColors.accent.withValues(alpha: 0.08))
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
               ),

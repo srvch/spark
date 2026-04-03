@@ -1,11 +1,14 @@
 import 'package:dio/dio.dart';
 
 import '../domain/spark.dart';
+import '../domain/spark_invite.dart';
 
 class SparkApiRepository {
   SparkApiRepository({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
+
+  static const int defaultInvitePageSize = 20;
 
   Future<NearbySparkPage> fetchNearby({
     required double lat,
@@ -62,6 +65,9 @@ class SparkApiRepository {
     required DateTime startsAt,
     DateTime? endsAt,
     required int maxSpots,
+    SparkVisibility visibility = SparkVisibility.publicSpark,
+    List<String> inviteUserIds = const [],
+    List<String> circleIds = const [],
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/sparks',
@@ -75,6 +81,9 @@ class SparkApiRepository {
         'startsAt': startsAt.toUtc().toIso8601String(),
         'endsAt': endsAt?.toUtc().toIso8601String(),
         'maxSpots': maxSpots,
+        'visibility': _toApiVisibility(visibility),
+        if (inviteUserIds.isNotEmpty) 'inviteUserIds': inviteUserIds,
+        if (circleIds.isNotEmpty) 'circleIds': circleIds,
       },
     );
     return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.3);
@@ -98,6 +107,46 @@ class SparkApiRepository {
     return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.3);
   }
 
+  Future<SparkInvitePage> fetchInvites({
+    int page = 0,
+    int size = defaultInvitePageSize,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/sparks/invites',
+      queryParameters: {
+        'page': page,
+        'size': size,
+      },
+    );
+    final data = response.data ?? const <String, dynamic>{};
+    final items = (data['items'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(_fromInviteJson)
+        .toList();
+    final responsePage = (data['page'] as num?)?.toInt() ?? page;
+    final hasMore = (data['hasMore'] as bool?) ?? false;
+    return SparkInvitePage(
+      items: items,
+      page: responsePage,
+      hasMore: hasMore,
+    );
+  }
+
+  Future<SparkInviteStatus> respondToInvite({
+    required String sparkId,
+    required String inviteId,
+    required SparkInviteStatus status,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/sparks/$sparkId/invite/$inviteId/respond',
+      data: {'status': _toApiInviteStatus(status)},
+    );
+    final data = response.data ?? const <String, dynamic>{};
+    final raw = (data['status'] ?? '').toString();
+    if (raw.isEmpty) return status;
+    return _toInviteStatus(raw);
+  }
+
   Spark _fromNearbyJson(Map<String, dynamic> json) {
     return _buildSpark(
       id: '${json['id']}',
@@ -112,6 +161,7 @@ class SparkApiRepository {
       hostPhoneNumber: _nullableString(json['hostPhoneNumber']),
       joinedCount: (json['joinedCount'] as num?)?.toInt() ?? 0,
       note: null,
+      visibilityRaw: _nullableString(json['visibility']),
     );
   }
 
@@ -129,6 +179,7 @@ class SparkApiRepository {
       hostPhoneNumber: _nullableString(json['hostPhoneNumber']),
       joinedCount: (json['joinedCount'] as num?)?.toInt() ?? 0,
       note: json['note'] as String?,
+      visibilityRaw: _nullableString(json['visibility']),
     );
   }
 
@@ -145,6 +196,7 @@ class SparkApiRepository {
     required String? hostPhoneNumber,
     required int joinedCount,
     required String? note,
+    required String? visibilityRaw,
   }) {
     final startsAt = DateTime.tryParse(startsAtRaw)?.toLocal() ?? DateTime.now();
     final diffMinutes = startsAt.difference(DateTime.now()).inMinutes.clamp(0, 24 * 60);
@@ -171,7 +223,91 @@ class SparkApiRepository {
       participants: _mockParticipants(joinedCount),
       hostPhoneNumber: hostPhoneNumber,
       note: note,
+      visibility: _toVisibility(visibilityRaw),
     );
+  }
+
+  SparkInvite _fromInviteJson(Map<String, dynamic> json) {
+    return SparkInvite(
+      inviteId: '${json['inviteId']}',
+      sparkId: '${json['sparkId']}',
+      fromUserId: '${json['fromUserId']}',
+      status: _toInviteStatus('${json['inviteStatus']}'),
+      invitedAt: DateTime.tryParse('${json['invitedAt']}')?.toLocal() ?? DateTime.now(),
+      actedAt: DateTime.tryParse('${json['actedAt'] ?? ''}')?.toLocal(),
+      title: '${json['title']}',
+      category: _toCategory('${json['category']}'),
+      locationName: '${json['locationName']}',
+      startsAt: DateTime.tryParse('${json['startsAt'] ?? ''}')?.toLocal(),
+      sparkStatus: '${json['sparkStatus']}',
+    );
+  }
+
+  SparkCategory _toCategory(String categoryRaw) {
+    switch (categoryRaw.toLowerCase()) {
+      case 'sports':
+        return SparkCategory.sports;
+      case 'study':
+        return SparkCategory.study;
+      case 'ride':
+        return SparkCategory.ride;
+      case 'events':
+        return SparkCategory.events;
+      case 'hangout':
+        return SparkCategory.hangout;
+      default:
+        return SparkCategory.events;
+    }
+  }
+
+  SparkInviteStatus _toInviteStatus(String raw) {
+    switch (raw.toUpperCase()) {
+      case 'IN':
+        return SparkInviteStatus.inStatus;
+      case 'MAYBE':
+        return SparkInviteStatus.maybe;
+      case 'DECLINED':
+        return SparkInviteStatus.declined;
+      case 'PENDING':
+      default:
+        return SparkInviteStatus.pending;
+    }
+  }
+
+  String _toApiInviteStatus(SparkInviteStatus status) {
+    switch (status) {
+      case SparkInviteStatus.inStatus:
+        return 'IN';
+      case SparkInviteStatus.maybe:
+        return 'MAYBE';
+      case SparkInviteStatus.declined:
+        return 'DECLINED';
+      case SparkInviteStatus.pending:
+        return 'PENDING';
+    }
+  }
+
+  SparkVisibility _toVisibility(String? raw) {
+    switch (raw?.toUpperCase()) {
+      case 'CIRCLE':
+        return SparkVisibility.circle;
+      case 'INVITE':
+        return SparkVisibility.invite;
+      case 'PUBLIC':
+      default:
+        return SparkVisibility.publicSpark;
+    }
+  }
+
+  String _toApiVisibility(SparkVisibility visibility) {
+    switch (visibility) {
+      case SparkVisibility.publicSpark:
+        return 'PUBLIC';
+      case SparkVisibility.circle:
+        return 'CIRCLE';
+      case SparkVisibility.invite:
+        return 'INVITE';
+    }
   }
 
   String? _nullableString(dynamic value) {

@@ -18,7 +18,8 @@ class SparkApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      // Keep visual styling consistent across emulator + physical devices.
+      themeMode: ThemeMode.light,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
           PointerDeviceKind.touch,

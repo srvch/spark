@@ -11,6 +11,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
 import '../../../../shared/widgets/invite_friends_sheet.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../social/presentation/controllers/social_controller.dart';
 import '../../domain/spark.dart';
 import '../controllers/spark_controller.dart';
 import '../widgets/location_picker_sheet.dart';
@@ -59,6 +60,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   late int _manualMinute;
   late String _manualPeriod;
   SparkCategory _manualCategory = SparkCategory.sports;
+  SparkVisibility _manualVisibility = SparkVisibility.publicSpark;
+  final Set<String> _selectedCircleIds = <String>{};
+  final Set<String> _selectedInviteUserIds = <String>{};
+  final Set<String> _manualInvitePhones = <String>{};
   bool _manualOpenGroup = false;
   bool _previewExpanded = false;
 
@@ -90,6 +95,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       _initSpeech();
       _scheduleAiParse();
       _hydrateManualFromAuto(_effectiveAutoPlan());
+      unawaited(ref.read(socialControllerProvider).refreshAll());
     });
   }
 
@@ -170,7 +176,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _CreateScreenHeader(category: _manualCategory),
+              _CreateScreenHeader(
+                category: _manualCategory,
+                onBackTap: () => backOrGoDiscover(context, ref),
+              ),
               const SizedBox(height: 14),
               Expanded(
                 child: SingleChildScrollView(
@@ -247,6 +256,97 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                 .toList(),
                           ),
                         ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Who can see this spark',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _QuickChoiceChip(
+                              label: 'Public',
+                              selected: _manualVisibility == SparkVisibility.publicSpark,
+                              onTap: () => setState(() {
+                                _manualVisibility = SparkVisibility.publicSpark;
+                                _selectedCircleIds.clear();
+                                _selectedInviteUserIds.clear();
+                                _manualInvitePhones.clear();
+                              }),
+                            ),
+                            _QuickChoiceChip(
+                              label: 'Circle only',
+                              selected: _manualVisibility == SparkVisibility.circle,
+                              onTap: () => setState(() {
+                                _manualVisibility = SparkVisibility.circle;
+                                _selectedInviteUserIds.clear();
+                                _manualInvitePhones.clear();
+                              }),
+                            ),
+                            _QuickChoiceChip(
+                              label: 'Invite only',
+                              selected: _manualVisibility == SparkVisibility.invite,
+                              onTap: () => setState(() {
+                                _manualVisibility = SparkVisibility.invite;
+                                _selectedCircleIds.clear();
+                              }),
+                            ),
+                          ],
+                        ),
+                        if (_manualVisibility == SparkVisibility.circle) ...[
+                          const SizedBox(height: 8),
+                          _AudiencePickerRow(
+                            title: 'Groups',
+                            cta: 'Select groups',
+                            value: _selectedCircleIds.isEmpty
+                                ? 'No groups selected'
+                                : '${_selectedCircleIds.length} selected',
+                            onTap: _pickCircles,
+                          ),
+                        ],
+                        if (_manualVisibility == SparkVisibility.invite) ...[
+                          const SizedBox(height: 8),
+                          _AudiencePickerRow(
+                            title: 'Invite users',
+                            cta: 'Select users',
+                            value: _selectedInviteUserIds.isEmpty
+                                ? 'No users selected'
+                                : '${_selectedInviteUserIds.length} selected',
+                            onTap: _pickInviteUsers,
+                          ),
+                          const SizedBox(height: 8),
+                          _AudiencePickerRow(
+                            title: 'Guest phone invites',
+                            cta: 'Add phone',
+                            value: _manualInvitePhones.isEmpty
+                                ? 'No guest phones added'
+                                : '${_manualInvitePhones.length} phones added',
+                            onTap: _addGuestPhoneInvite,
+                          ),
+                          if (_manualInvitePhones.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _manualInvitePhones
+                                  .map(
+                                    (phone) => _RemovablePill(
+                                      text: phone,
+                                      onRemove: () => setState(() {
+                                        _manualInvitePhones.remove(phone);
+                                      }),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ],
+                        ],
                         const SizedBox(height: 10),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -627,6 +727,193 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     ];
   }
 
+  Future<void> _pickCircles() async {
+    final options = _circleOptionsFromState();
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No groups found. Create a group first.')),
+      );
+      return;
+    }
+    final selected = await _showAudiencePicker(
+      title: 'Select groups',
+      options: options,
+      initialSelection: _selectedCircleIds,
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _selectedCircleIds
+        ..clear()
+        ..addAll(selected);
+    });
+  }
+
+  Future<void> _pickInviteUsers() async {
+    final options = _inviteUserOptionsFromState();
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No friends found. Add friends first.')),
+      );
+      return;
+    }
+    final selected = await _showAudiencePicker(
+      title: 'Invite users',
+      options: options,
+      initialSelection: _selectedInviteUserIds,
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _selectedInviteUserIds
+        ..clear()
+        ..addAll(selected);
+    });
+  }
+
+  Future<void> _addGuestPhoneInvite() async {
+    final controller = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add guest phone'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'e.g. +919876543210',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || value == null || value.isEmpty) return;
+    final normalized = _normalizePhone(value);
+    if (normalized == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid phone number.')),
+      );
+      return;
+    }
+    setState(() {
+      _manualInvitePhones.add(normalized);
+    });
+  }
+
+  String? _normalizePhone(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    final keep = trimmed.replaceAll(RegExp(r'[^0-9+]'), '');
+    final digits = keep.replaceAll('+', '');
+    if (digits.length < 8 || digits.length > 15) return null;
+    if (keep.startsWith('+')) return '+$digits';
+    return digits;
+  }
+
+  List<_AudienceOption> _circleOptionsFromState() {
+    final groups = ref.read(groupsProvider);
+    return groups
+        .map((group) => _AudienceOption(id: group.groupId, label: group.name))
+        .toList();
+  }
+
+  List<_AudienceOption> _inviteUserOptionsFromState() {
+    final friends = ref.read(friendsProvider);
+    return friends
+        .map((friend) => _AudienceOption(id: friend.userId, label: friend.displayName))
+        .toList();
+  }
+
+  Future<Set<String>?> _showAudiencePicker({
+    required String title,
+    required List<_AudienceOption> options,
+    required Set<String> initialSelection,
+  }) async {
+    return showModalBottomSheet<Set<String>>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        final selected = {...initialSelection};
+        return StatefulBuilder(
+          builder: (context, setSheetState) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...options.map(
+                    (option) => CheckboxListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: selected.contains(option.id),
+                      title: Text(
+                        option.label,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onChanged: (checked) {
+                        setSheetState(() {
+                          if (checked == true) {
+                            selected.add(option.id);
+                          } else {
+                            selected.remove(option.id);
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(null),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                          ),
+                          onPressed: () => Navigator.of(context).pop(selected),
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _handleCreateTapped(_InferredPlan autoPlan, String? validationMessage) async {
     if (validationMessage == null) {
       await _createSpark();
@@ -969,6 +1256,14 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   String? _manualValidationMessage() {
     if (_manualTitleController.text.trim().isEmpty) return 'Title is required';
+    if (_manualVisibility == SparkVisibility.circle && _selectedCircleIds.isEmpty) {
+      return 'Pick at least one group for circle-only spark.';
+    }
+    if (_manualVisibility == SparkVisibility.invite && _selectedInviteUserIds.isEmpty) {
+      if (_manualInvitePhones.isEmpty) {
+        return 'Pick at least one user or add a guest phone for invite-only spark.';
+      }
+    }
     final location = _manualLocationController.text.trim().isEmpty
         ? ref.read(selectedLocationProvider)
         : _manualLocationController.text.trim();
@@ -995,6 +1290,12 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
             locationName: draft.locationName,
             startsAt: draft.startsAt ?? DateTime.now().add(const Duration(minutes: 30)),
             maxSpots: draft.maxSpots,
+            visibility: _manualVisibility,
+            circleIds: _selectedCircleIds.toList(),
+            inviteUserIds: [
+              ..._selectedInviteUserIds,
+              ..._manualInvitePhones,
+            ],
           );
     } catch (e) {
       if (!mounted) return;
@@ -2107,8 +2408,12 @@ class _SelectField<T> extends StatelessWidget {
 }
 
 class _CreateScreenHeader extends StatelessWidget {
-  const _CreateScreenHeader({required this.category});
+  const _CreateScreenHeader({
+    required this.category,
+    required this.onBackTap,
+  });
   final SparkCategory category;
+  final VoidCallback onBackTap;
 
   static Color _accentColor(SparkCategory cat) => AppColors.accent;
 
@@ -2126,6 +2431,25 @@ class _CreateScreenHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        GestureDetector(
+          onTap: onBackTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppColors.pillSurface,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 16,
+              color: AppColors.onSurfaceEmphasis,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
         const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2170,6 +2494,122 @@ class _CreateScreenHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AudiencePickerRow extends StatelessWidget {
+  const _AudiencePickerRow({
+    required this.title,
+    required this.cta,
+    required this.value,
+    required this.onTap,
+  });
+
+  final String title;
+  final String cta;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: onTap,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.accent,
+              textStyle: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            child: Text(cta),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AudienceOption {
+  const _AudienceOption({required this.id, required this.label});
+  final String id;
+  final String label;
+}
+
+class _RemovablePill extends StatelessWidget {
+  const _RemovablePill({
+    required this.text,
+    required this.onRemove,
+  });
+
+  final String text;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(
+              Icons.close_rounded,
+              size: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

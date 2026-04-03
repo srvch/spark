@@ -7,6 +7,7 @@ import '../../data/plan_parse_api_repository.dart';
 import '../../data/places_autocomplete_service.dart';
 import '../../data/spark_api_repository.dart';
 import '../../domain/spark.dart';
+import '../../domain/spark_invite.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/auth/auth_state.dart';
@@ -82,6 +83,12 @@ final sparksLoadingMoreProvider = StateProvider<bool>((ref) => false);
 final sparksErrorProvider = StateProvider<String?>((ref) => null);
 final nearbyPageProvider = StateProvider<int>((ref) => 0);
 final nearbyHasMoreProvider = StateProvider<bool>((ref) => false);
+final sparkInvitesProvider = StateProvider<List<SparkInvite>>((ref) => const []);
+final sparkInvitesLoadingProvider = StateProvider<bool>((ref) => false);
+final sparkInvitesLoadingMoreProvider = StateProvider<bool>((ref) => false);
+final sparkInvitesErrorProvider = StateProvider<String?>((ref) => null);
+final invitePageProvider = StateProvider<int>((ref) => 0);
+final inviteHasMoreProvider = StateProvider<bool>((ref) => false);
 
 /// IDs of sparks where current user has tapped "On my way"
 final onMyWaySparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
@@ -191,6 +198,7 @@ class SparkDataController {
 
   final Ref ref;
   static const int _nearbyPageSize = 10;
+  static const int _invitePageSize = 20;
 
   Future<void> refreshNearby({double? radiusKm}) async {
     ref.read(sparksLoadingProvider.notifier).state = true;
@@ -262,6 +270,83 @@ class SparkDataController {
     }
   }
 
+  Future<void> refreshInvites() async {
+    ref.read(sparkInvitesLoadingProvider.notifier).state = true;
+    ref.read(sparkInvitesErrorProvider.notifier).state = null;
+    ref.read(invitePageProvider.notifier).state = 0;
+    ref.read(inviteHasMoreProvider.notifier).state = false;
+    try {
+      final page = await ref.read(sparkApiRepositoryProvider).fetchInvites(
+            page: 0,
+            size: _invitePageSize,
+          );
+      ref.read(sparkInvitesProvider.notifier).state = page.items;
+      ref.read(inviteHasMoreProvider.notifier).state = page.hasMore;
+      ref.read(invitePageProvider.notifier).state = page.page;
+    } catch (e) {
+      ref.read(sparkInvitesErrorProvider.notifier).state = '$e';
+    } finally {
+      ref.read(sparkInvitesLoadingProvider.notifier).state = false;
+    }
+  }
+
+  Future<void> fetchNextInvitePage() async {
+    if (ref.read(sparkInvitesLoadingMoreProvider)) return;
+    if (!ref.read(inviteHasMoreProvider)) return;
+    ref.read(sparkInvitesLoadingMoreProvider.notifier).state = true;
+    try {
+      final nextPage = ref.read(invitePageProvider) + 1;
+      final page = await ref.read(sparkApiRepositoryProvider).fetchInvites(
+            page: nextPage,
+            size: _invitePageSize,
+          );
+      ref.read(sparkInvitesProvider.notifier).state = [
+        ...ref.read(sparkInvitesProvider),
+        ...page.items,
+      ];
+      ref.read(invitePageProvider.notifier).state = page.page;
+      ref.read(inviteHasMoreProvider.notifier).state = page.hasMore;
+    } catch (e) {
+      ref.read(sparkInvitesErrorProvider.notifier).state = '$e';
+    } finally {
+      ref.read(sparkInvitesLoadingMoreProvider.notifier).state = false;
+    }
+  }
+
+  Future<void> respondToInvite({
+    required SparkInvite invite,
+    required SparkInviteStatus status,
+  }) async {
+    final previous = ref.read(sparkInvitesProvider);
+    ref.read(sparkInvitesProvider.notifier).state = previous
+        .map((item) => item.inviteId == invite.inviteId
+            ? item.copyWith(status: status, actedAt: DateTime.now())
+            : item)
+        .toList();
+    try {
+      final confirmed = await ref.read(sparkApiRepositoryProvider).respondToInvite(
+            sparkId: invite.sparkId,
+            inviteId: invite.inviteId,
+            status: status,
+          );
+      ref.read(sparkInvitesProvider.notifier).state = ref
+          .read(sparkInvitesProvider)
+          .map((item) => item.inviteId == invite.inviteId
+              ? item.copyWith(status: confirmed, actedAt: DateTime.now())
+              : item)
+          .toList();
+      if (confirmed == SparkInviteStatus.inStatus) {
+        final joined = {...ref.read(joinedSparkIdsProvider)}..add(invite.sparkId);
+        ref.read(joinedSparkIdsProvider.notifier).state = joined;
+        unawaited(refreshNearby());
+      }
+    } catch (e) {
+      ref.read(sparkInvitesProvider.notifier).state = previous;
+      ref.read(sparkInvitesErrorProvider.notifier).state = '$e';
+      rethrow;
+    }
+  }
+
   Future<Spark> createSpark({
     required SparkCategory category,
     required String title,
@@ -269,6 +354,9 @@ class SparkDataController {
     required String locationName,
     required DateTime startsAt,
     required int maxSpots,
+    SparkVisibility visibility = SparkVisibility.publicSpark,
+    List<String> circleIds = const [],
+    List<String> inviteUserIds = const [],
   }) async {
     final myActive = ref.read(myActiveCreatedSparksProvider);
     if (myActive.length >= 5) {
@@ -285,6 +373,9 @@ class SparkDataController {
       longitude: lng,
       startsAt: startsAt,
       maxSpots: maxSpots,
+      visibility: visibility,
+      circleIds: circleIds,
+      inviteUserIds: inviteUserIds,
     );
     ref.read(createdSparksProvider.notifier).state = [
       created,

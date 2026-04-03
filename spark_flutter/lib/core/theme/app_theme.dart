@@ -29,10 +29,10 @@ class AppColors {
   static const surfaceSubtle = Color(0xFFF7F8FC);
   static const mutedIcon     = Color(0xFF6B7280);
   static const cardShadow    = Color(0x0A000000);
-  static const heroBg1       = Color(0xFF19222F);
-  static const heroBg2       = Color(0xFF1D2A3C);
-  static const heroBg3       = Color(0xFF192634);
-  static const heroBg4       = Color(0xFF1D2A38);
+  static const heroBg1       = Color(0xFF223A5D);
+  static const heroBg2       = Color(0xFF254166);
+  static const heroBg3       = Color(0xFF2A4771);
+  static const heroBg4       = Color(0xFF2F4D78);
   static const prefsBg1      = Color(0xFF1A2D50);
   static const prefsBg2      = Color(0xFF243B6A);
   static const chipBg        = Color(0xFFF5F7FC);

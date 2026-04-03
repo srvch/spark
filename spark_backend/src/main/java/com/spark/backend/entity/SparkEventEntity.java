@@ -1,6 +1,7 @@
 package com.spark.backend.entity;
 
 import com.spark.backend.domain.SparkStatus;
+import com.spark.backend.domain.SparkVisibility;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -42,6 +43,10 @@ public class SparkEventEntity {
 
     @Column(name = "max_spots", nullable = false)
     private int maxSpots;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private SparkVisibility visibility = SparkVisibility.PUBLIC;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
@@ -154,6 +159,14 @@ public class SparkEventEntity {
 
     public void setStatus(SparkStatus status) {
         this.status = status;
+    }
+
+    public SparkVisibility getVisibility() {
+        return visibility;
+    }
+
+    public void setVisibility(SparkVisibility visibility) {
+        this.visibility = visibility;
     }
 
     public Instant getCreatedAt() {

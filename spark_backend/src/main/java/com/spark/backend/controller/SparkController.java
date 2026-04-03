@@ -1,6 +1,9 @@
 package com.spark.backend.controller;
 
+import com.spark.backend.domain.SparkInviteStatus;
+import com.spark.backend.domain.SparkVisibility;
 import com.spark.backend.entity.SparkEventEntity;
+import com.spark.backend.entity.SparkInviteEntity;
 import com.spark.backend.repository.AppUserRepository;
 import com.spark.backend.service.SparkService;
 import com.spark.backend.security.CurrentUser;
@@ -15,6 +18,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/sparks")
@@ -31,6 +35,19 @@ public class SparkController {
     @ResponseStatus(HttpStatus.CREATED)
     public SparkResponse create(Authentication authentication, @Valid @RequestBody CreateSparkRequest req) {
         CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        SparkVisibility visibility = req.visibility() == null ? SparkVisibility.PUBLIC : req.visibility();
+        List<UUID> circleIds = req.circleIds() == null
+                ? List.of()
+                : req.circleIds().stream().filter(id -> id != null).distinct().toList();
+        List<String> inviteUserIds = req.inviteUserIds() == null
+                ? List.of()
+                : req.inviteUserIds().stream()
+                .filter(id -> id != null && !id.isBlank())
+                .map(String::trim)
+                .distinct()
+                .collect(Collectors.toList());
+        validateAudience(visibility, circleIds, inviteUserIds);
+
         SparkEventEntity spark = sparkService.createSpark(
                 new SparkService.CreateSparkCommand(
                         currentUser.userId(),
@@ -42,7 +59,10 @@ public class SparkController {
                         req.longitude(),
                         req.startsAt(),
                         req.endsAt(),
-                        req.maxSpots()
+                        req.maxSpots(),
+                        visibility,
+                        circleIds,
+                        inviteUserIds
                 )
         );
         return toResponse(spark, sparkService.joinedCount(spark.getId()), currentUser.userId());
@@ -82,6 +102,34 @@ public class SparkController {
         return new NearbyPageResponse(items, page, size, nearbyPage.hasMore());
     }
 
+    @GetMapping("/invites")
+    public InviteInboxPageResponse invites(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
+    ) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        var inbox = sparkService.listInvitesForUser(currentUser.userId(), currentUser.phoneNumber(), page, size);
+        var items = inbox.items().stream()
+                .map(item -> new InviteInboxItemResponse(
+                        item.inviteId(),
+                        item.sparkId(),
+                        item.fromUserId(),
+                        item.recipientType(),
+                        item.recipientValue(),
+                        item.inviteStatus(),
+                        item.invitedAt(),
+                        item.actedAt(),
+                        item.title(),
+                        item.category(),
+                        item.locationName(),
+                        item.startsAt(),
+                        item.sparkStatus()
+                ))
+                .toList();
+        return new InviteInboxPageResponse(items, page, size, inbox.hasMore());
+    }
+
     @PostMapping("/{sparkId}/join")
     public SparkResponse join(Authentication authentication, @PathVariable UUID sparkId) {
         CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
@@ -96,6 +144,34 @@ public class SparkController {
         return toResponse(spark, sparkService.joinedCount(sparkId), currentUser.userId());
     }
 
+    @PostMapping("/{sparkId}/invite/{inviteId}/respond")
+    public InviteRespondResponse respondToInvite(
+            Authentication authentication,
+            @PathVariable UUID sparkId,
+            @PathVariable UUID inviteId,
+            @Valid @RequestBody InviteRespondRequest req
+    ) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        SparkInviteStatus next = req.status();
+        if (next == SparkInviteStatus.PENDING) {
+            throw new IllegalArgumentException("Status must be IN, MAYBE, or DECLINED.");
+        }
+        SparkInviteEntity updated = sparkService.respondToInvite(
+                sparkId,
+                inviteId,
+                currentUser.userId(),
+                currentUser.phoneNumber(),
+                next
+        );
+        return new InviteRespondResponse(
+                updated.getId(),
+                updated.getSparkId(),
+                updated.getStatus().name(),
+                updated.getActedAt(),
+                updated.getUpdatedAt()
+        );
+    }
+
     @ExceptionHandler({EntityNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> notFound(Exception ex) {
@@ -106,6 +182,36 @@ public class SparkController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> badRequest(Exception ex) {
         return Map.of("error", ex.getMessage());
+    }
+
+    private void validateAudience(
+            SparkVisibility visibility,
+            List<UUID> circleIds,
+            List<String> inviteUserIds
+    ) {
+        switch (visibility) {
+            case PUBLIC -> {
+                if (!circleIds.isEmpty() || !inviteUserIds.isEmpty()) {
+                    throw new IllegalArgumentException("Public sparks cannot have circleIds or inviteUserIds.");
+                }
+            }
+            case CIRCLE -> {
+                if (circleIds.isEmpty()) {
+                    throw new IllegalArgumentException("Circle visibility requires at least one circleId.");
+                }
+                if (!inviteUserIds.isEmpty()) {
+                    throw new IllegalArgumentException("Circle visibility does not support inviteUserIds.");
+                }
+            }
+            case INVITE -> {
+                if (inviteUserIds.isEmpty()) {
+                    throw new IllegalArgumentException("Invite visibility requires at least one inviteUserId.");
+                }
+                if (!circleIds.isEmpty()) {
+                    throw new IllegalArgumentException("Invite visibility does not support circleIds.");
+                }
+            }
+        }
     }
 
     private SparkResponse toResponse(SparkEventEntity spark, long joinedCount, String requesterUserId) {
@@ -136,6 +242,7 @@ public class SparkController {
                 spark.getMaxSpots(),
                 joinedCount,
                 Math.max(spark.getMaxSpots() - (int) joinedCount, 0),
+                spark.getVisibility().name(),
                 spark.getStatus().name(),
                 spark.getCreatedAt(),
                 spark.getUpdatedAt()
@@ -151,7 +258,10 @@ public class SparkController {
             @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0") double longitude,
             @NotNull Instant startsAt,
             Instant endsAt,
-            @Min(1) @Max(1000) int maxSpots
+            @Min(1) @Max(1000) int maxSpots,
+            SparkVisibility visibility,
+            @Size(max = 100) List<UUID> circleIds,
+            @Size(max = 500) List<@NotBlank String> inviteUserIds
     ) {
     }
 
@@ -170,6 +280,7 @@ public class SparkController {
             int maxSpots,
             long joinedCount,
             int spotsLeft,
+            String visibility,
             String status,
             Instant createdAt,
             Instant updatedAt
@@ -195,6 +306,45 @@ public class SparkController {
             int page,
             int size,
             boolean hasMore
+    ) {
+    }
+
+    public record InviteInboxItemResponse(
+            UUID inviteId,
+            UUID sparkId,
+            String fromUserId,
+            String recipientType,
+            String recipientValue,
+            String inviteStatus,
+            Instant invitedAt,
+            Instant actedAt,
+            String title,
+            String category,
+            String locationName,
+            Instant startsAt,
+            String sparkStatus
+    ) {
+    }
+
+    public record InviteInboxPageResponse(
+            List<InviteInboxItemResponse> items,
+            int page,
+            int size,
+            boolean hasMore
+    ) {
+    }
+
+    public record InviteRespondRequest(
+            @NotNull SparkInviteStatus status
+    ) {
+    }
+
+    public record InviteRespondResponse(
+            UUID inviteId,
+            UUID sparkId,
+            String status,
+            Instant actedAt,
+            Instant updatedAt
     ) {
     }
 }

@@ -36,6 +36,12 @@ enum SparkSort {
   final String label;
 }
 
+enum SparkVisibility {
+  publicSpark,
+  circle,
+  invite,
+}
+
 class Spark {
   const Spark({
     required this.id,
@@ -50,6 +56,7 @@ class Spark {
     required this.location,
     required this.createdBy,
     required this.participants,
+    this.visibility = SparkVisibility.publicSpark,
     this.hostPhoneNumber,
     this.note,
   });
@@ -66,6 +73,7 @@ class Spark {
   final String location;
   final String createdBy;
   final List<String> participants;
+  final SparkVisibility visibility;
   final String? hostPhoneNumber;
   final String? note;
 

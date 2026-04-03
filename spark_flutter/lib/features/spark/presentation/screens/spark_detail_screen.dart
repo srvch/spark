@@ -72,15 +72,23 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     if (!mounted) return;
     await _showJoinedSheet();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: Text('Joined ${widget.spark.title}'),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () => _leaveSpark(showMessage: false),
         ),
       ),
+    );
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        messenger.hideCurrentSnackBar();
+      }),
     );
   }
 

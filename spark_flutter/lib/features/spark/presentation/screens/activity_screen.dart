@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/navigation/root_shell.dart';
 import '../../../../features/chat/presentation/screens/chat_screen.dart';
 import '../controllers/spark_controller.dart';
 import '../../domain/spark.dart';
@@ -38,7 +39,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () => backOrGoDiscover(context, ref),
           child: const Icon(Icons.arrow_back_ios_new_rounded,
               size: 18, color: _kNavy),
         ),

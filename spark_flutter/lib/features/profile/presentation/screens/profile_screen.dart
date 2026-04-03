@@ -5,11 +5,13 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../features/chat/presentation/screens/chat_inbox_screen.dart';
+import '../../../../shared/navigation/root_shell.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../spark/domain/spark.dart';
+import '../../../spark/domain/spark_invite.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../../../spark/presentation/screens/activity_screen.dart';
-import '../../../spark/presentation/screens/spark_detail_screen.dart';
 import '../controllers/profile_preferences_controller.dart';
 
 const _kNavy = AppColors.accent;
@@ -31,10 +33,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final AnalyticsService _analytics = AnalyticsService();
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(sparkDataControllerProvider).refreshInvites();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final joined = ref.watch(joinedSparksProvider);
     final created = ref.watch(myCreatedSparksProvider);
     final notificationPrefs = ref.watch(notificationPreferencesProvider);
+    final pendingInvites = ref
+        .watch(sparkInvitesProvider)
+        .where((invite) => invite.status == SparkInviteStatus.pending)
+        .length;
     final recent = _recentItems(created: created, joined: joined);
 
     return Scaffold(
@@ -48,7 +62,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: () => Navigator.of(context).maybePop(),
+                    onTap: () => backOrGoDiscover(context, ref),
                     child: Container(
                       width: 34,
                       height: 34,
@@ -218,13 +232,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       MaterialPageRoute(builder: (_) => const ActivityScreen()),
                     ),
                   ),
+                  _MenuRow(
+                    icon: Icons.mail_outline_rounded,
+                    label: 'Spark Invites',
+                    sublabel: pendingInvites > 0
+                        ? '$pendingInvites pending'
+                        : 'No pending invites',
+                    onTap: () {
+                      ref.read(chatInboxTabProvider.notifier).state = 1;
+                      ref.read(bottomTabProvider.notifier).state = 2;
+                    },
+                  ),
 
                   const _Divider(),
                   _SectionLabel('Preferences'),
                   _MenuRow(
                     icon: Icons.notifications_outlined,
                     label: 'Notification alerts',
-                    sublabel: notificationPrefs.notifyStartsSoon ||
+                    sublabel:
+                        notificationPrefs.notifyStartsSoon ||
                             notificationPrefs.notifyFillingFast
                         ? 'Alerts on'
                         : 'Alerts off',
@@ -247,8 +273,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     icon: Icons.lock_outline_rounded,
                     label: 'Privacy policy',
                     onTap: () {
-                      _analytics.track('legal_link_opened',
-                          properties: {'type': 'privacy'});
+                      _analytics.track(
+                        'legal_link_opened',
+                        properties: {'type': 'privacy'},
+                      );
                       _openLegalFlow(_LegalType.privacy);
                     },
                   ),
@@ -257,8 +285,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     label: 'Community guidelines',
                     isLast: true,
                     onTap: () {
-                      _analytics.track('legal_link_opened',
-                          properties: {'type': 'guidelines'});
+                      _analytics.track(
+                        'legal_link_opened',
+                        properties: {'type': 'guidelines'},
+                      );
                       _openLegalFlow(_LegalType.guidelines);
                     },
                   ),
@@ -277,8 +307,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required List<Spark> created,
     required List<Spark> joined,
   }) {
-    final createdMapped =
-        created.map((spark) => _ProfileRecentItem(spark, 'Created'));
+    final createdMapped = created.map(
+      (spark) => _ProfileRecentItem(spark, 'Created'),
+    );
     final createdIds = created.map((e) => e.id).toSet();
     final joinedMapped = joined
         .where((spark) => !createdIds.contains(spark.id))
@@ -289,32 +320,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _openLegalFlow(_LegalType type) {
     switch (type) {
       case _LegalType.privacy:
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => const _LegalDocumentScreen(
-            title: 'Privacy Policy',
-            paragraphs: [
-              'Spark only stores data needed to run real-time nearby coordination.',
-              'Phone login data, spark participation, and safety reports are stored securely.',
-              'We do not expose private personal details inside spark cards or chat lists.',
-              'Location is used only for discovery, sorting, and relevance.',
-            ],
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const _LegalDocumentScreen(
+              title: 'Privacy Policy',
+              paragraphs: [
+                'Spark only stores data needed to run real-time nearby coordination.',
+                'Phone login data, spark participation, and safety reports are stored securely.',
+                'We do not expose private personal details inside spark cards or chat lists.',
+                'Location is used only for discovery, sorting, and relevance.',
+              ],
+            ),
           ),
-        ));
+        );
       case _LegalType.guidelines:
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => const _LegalDocumentScreen(
-            title: 'Community Guidelines',
-            paragraphs: [
-              'Create real, time-bound sparks only.',
-              'No harassment, abuse, illegal activity, or misleading posts.',
-              'Respect participant safety and keep location details accurate.',
-              'Repeated violations can lead to account restrictions.',
-            ],
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const _LegalDocumentScreen(
+              title: 'Community Guidelines',
+              paragraphs: [
+                'Create real, time-bound sparks only.',
+                'No harassment, abuse, illegal activity, or misleading posts.',
+                'Respect participant safety and keep location details accurate.',
+                'Repeated violations can lead to account restrictions.',
+              ],
+            ),
           ),
-        ));
+        );
       case _LegalType.safety:
-        Navigator.of(context)
-            .push(MaterialPageRoute(builder: (_) => const _SafetyReportScreen()));
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const _SafetyReportScreen()));
     }
   }
 
@@ -324,7 +360,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       'https://spark.app/invite/$_referralCode';
 
   Future<void> _shareInvite() async {
-    _analytics.track('referral_share_tapped', properties: {'code': _referralCode});
+    _analytics.track(
+      'referral_share_tapped',
+      properties: {'code': _referralCode},
+    );
     final box = context.findRenderObject() as RenderBox?;
     final shareOrigin = box != null
         ? box.localToGlobal(Offset.zero) & box.size
@@ -338,7 +377,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _copyInviteCode() async {
     await Clipboard.setData(ClipboardData(text: _referralCode));
-    _analytics.track('referral_code_copied', properties: {'code': _referralCode});
+    _analytics.track(
+      'referral_code_copied',
+      properties: {'code': _referralCode},
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -354,7 +396,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final parts = fullName.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return 'SV';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
+    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'
+        .toUpperCase();
   }
 
   Future<void> _openEditProfileSheet() async {
@@ -627,7 +670,11 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 24, thickness: 4, color: AppColors.pillSurface);
+    return const Divider(
+      height: 24,
+      thickness: 4,
+      color: AppColors.pillSurface,
+    );
   }
 }
 
@@ -679,7 +726,9 @@ class _ReferralBanner extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: _kNavy,
                         borderRadius: BorderRadius.circular(6),
@@ -715,12 +764,15 @@ class _ReferralBanner extends StatelessWidget {
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 9),
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: _kNavy.withValues(alpha: 0.15)),
+                            color: _kNavy.withValues(alpha: 0.15),
+                          ),
                         ),
                         child: Row(
                           children: [
@@ -752,7 +804,9 @@ class _ReferralBanner extends StatelessWidget {
                       onTap: onShare,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 9),
+                          horizontal: 16,
+                          vertical: 9,
+                        ),
                         decoration: BoxDecoration(
                           color: _kNavy,
                           borderRadius: BorderRadius.circular(10),
@@ -857,7 +911,9 @@ class _AlertsSheet extends ConsumerWidget {
                       labelStyle: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: prefs.radiusKm == km ? _kNavy : AppColors.onSurfaceStrong,
+                        color: prefs.radiusKm == km
+                            ? _kNavy
+                            : AppColors.onSurfaceStrong,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -952,7 +1008,7 @@ class _SheetToggleRow extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: _kNavy,
+            activeThumbColor: _kNavy,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         ],
@@ -974,10 +1030,7 @@ class _ProfileRecentItem {
 }
 
 class _LegalDocumentScreen extends StatelessWidget {
-  const _LegalDocumentScreen({
-    required this.title,
-    required this.paragraphs,
-  });
+  const _LegalDocumentScreen({required this.title, required this.paragraphs});
 
   final String title;
   final List<String> paragraphs;
@@ -1055,7 +1108,8 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
                 if (_controller.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text('Please add a short description')),
+                      content: Text('Please add a short description'),
+                    ),
                   );
                   return;
                 }
