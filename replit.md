@@ -51,35 +51,6 @@ lib/
 7. **Nav bar shadow** — Elevated shadow above the bottom bar to clearly separate it from content
 8. **Dark mode** — Full dark theme defined in `AppTheme.dark`; respects system setting automatically
 
-## Social Features (People Section) — All 20 Implemented
-
-**Flutter screens:**
-- `social_screen.dart` — Full revamp: skeleton loaders, who's free? toggle, sent requests section, friend suggestions strip, sort/filter pills (A-Z/Recent/Owner), contact import CTA, onboarding empty state, haptic feedback throughout, swipe-to-archive groups, swipe-to-remove friends
-- `group_detail_screen.dart` — Edit group (name/desc), leave group, archive group, promote/demote admin, block/report member, outgoing invites section, group activity feed, create spark shortcut, skeleton loader
-- `friend_profile_screen.dart` — Tap-through profile with unfriend/block/report/QR share
-- `qr_code_screen.dart` — Custom QR painter + share deeplink via share_plus
-
-**Backend (SocialService + SocialController):** 25+ endpoints including:
-- `GET /friends/requests/outgoing` — Pending sent requests
-- `DELETE /friends/requests/{id}` — Cancel outgoing request
-- `POST /groups/{id}/leave` — Leave group (non-owners)
-- `PATCH /groups/{id}` — Edit group name/description
-- `GET /groups/{id}/invites/pending` — Outgoing group invites tracker
-- `POST /contacts/match` — Contact import matching
-- `GET /friends/suggestions` — Friend suggestions (mutual groups)
-- `PUT /availability` — Who's free? toggle
-- `GET /groups/{id}/activity` — Group activity feed
-- `POST /groups/{id}/members/{uid}/promote` — Admin role promotion
-- `POST /groups/{id}/archive` — Archive group
-- `POST /block/{uid}` / `POST /report/{uid}` — Block and report
-- Friend request now accepts optional `message` field
-
-**New entities:** `UserBlockEntity`, `UserReportEntity`
-**Extended entities:** `FriendRequestEntity.message`, `SparkGroupEntity.archived`, `AppUserEntity.availabilityStatus`, `GroupMemberRole.ADMIN`
-
-**Flutter packages added:** `qr_flutter` (QR display)
-**FCM:** Wired up in `main.dart` (background + foreground message handlers)
-
 ## Backend (`spark_backend/`)
 
 Spring Boot 3, Java 21, Redis (live sparks with TTL + geo-index), PostgreSQL (durable data), Flyway migrations.
