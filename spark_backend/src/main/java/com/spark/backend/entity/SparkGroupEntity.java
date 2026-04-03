@@ -27,7 +27,7 @@ public class SparkGroupEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    @Column(name = "archived", nullable = false)
+    @Column(name = "archived", columnDefinition = "boolean not null default false")
     private boolean archived = false;
 
     @Column(name = "archived_at")
