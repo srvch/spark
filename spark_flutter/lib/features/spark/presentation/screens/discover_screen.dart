@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../features/notifications/presentation/screens/notification_screen.dart';
 import '../../../../features/profile/presentation/screens/profile_screen.dart';
 import '../../../../shared/navigation/root_shell.dart';
 import '../../domain/spark.dart';
@@ -145,6 +147,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   radius: radius,
                   onLocationTap: () => _showLocationSelector(context),
                   onRadiusTap: () => _showPreferencesSheet(context),
+                  onNotificationTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => NotificationScreen()),
+                  ),
                   onProfileTap: () => _openProfile(context),
                   searchQuery: query,
                   onSearchChanged: (v) =>
@@ -452,15 +457,36 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Preferences',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  'Search Preferences',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'Manrope',
+                    letterSpacing: -0.6,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 6),
+                Text(
+                  'Customize your discovery feed',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary.withValues(alpha: 0.7),
+                    fontFamily: 'Manrope',
+                  ),
+                ),
+                const SizedBox(height: 24),
                 const Text(
-                  'Distance',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  'Discovery Radius',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   '$draftRadius km',
                   style: const TextStyle(
@@ -469,39 +495,52 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
-                Slider(
-                  value: draftRadius.toDouble(),
-                  min: 1,
-                  max: 10,
-                  divisions: 9,
-                  onChanged: (value) {
-                    setSheetState(() => draftRadius = value.round());
-                  },
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+                    activeTrackColor: AppColors.accent,
+                    inactiveTrackColor: AppColors.accent.withValues(alpha: 0.1),
+                    thumbColor: AppColors.accent,
+                  ),
+                  child: Slider(
+                    value: draftRadius.toDouble(),
+                    min: 1,
+                    max: 10,
+                    divisions: 9,
+                    onChanged: (value) {
+                      setSheetState(() => draftRadius = value.round());
+                    },
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'Spark type',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  'Activity Type',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    ChoiceChip(
-                      label: const Text('Any'),
+                    _SelectionChip(
+                      label: 'Any',
                       selected: draftCategory == null,
-                      onSelected: (_) =>
-                          setSheetState(() => draftCategory = null),
+                      onTap: () => setSheetState(() => draftCategory = null),
                     ),
                     ...SparkCategory.values
                         .where((c) => c != SparkCategory.hangout)
                         .map(
-                          (category) => ChoiceChip(
-                            label: Text(category.label),
+                          (category) => _SelectionChip(
+                            label: category.label,
                             selected: draftCategory == category,
-                            onSelected: (_) =>
-                                setSheetState(() => draftCategory = category),
+                            onTap: () => setSheetState(() => draftCategory = category),
                           ),
                         ),
                   ],
@@ -509,63 +548,83 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 const SizedBox(height: 12),
                 const Text(
                   'Timing',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: 0.2,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    ChoiceChip(
-                      label: const Text('All'),
+                    _SelectionChip(
+                      label: 'All',
                       selected: draftTiming == 'all',
-                      onSelected: (_) =>
-                          setSheetState(() => draftTiming = 'all'),
+                      onTap: () => setSheetState(() => draftTiming = 'all'),
                     ),
-                    ChoiceChip(
-                      label: const Text('Now (≤30 min)'),
+                    _SelectionChip(
+                      label: 'Now',
                       selected: draftTiming == 'now',
-                      onSelected: (_) =>
-                          setSheetState(() => draftTiming = 'now'),
+                      onTap: () => setSheetState(() => draftTiming = 'now'),
                     ),
-                    ChoiceChip(
-                      label: const Text('Soon (≤2 hrs)'),
+                    _SelectionChip(
+                      label: 'Soon',
                       selected: draftTiming == 'soon',
-                      onSelected: (_) =>
-                          setSheetState(() => draftTiming = 'soon'),
+                      onTap: () => setSheetState(() => draftTiming = 'soon'),
                     ),
-                    ChoiceChip(
-                      label: const Text('Tonight'),
+                    _SelectionChip(
+                      label: 'Tonight',
                       selected: draftTiming == 'tonight',
-                      onSelected: (_) =>
-                          setSheetState(() => draftTiming = 'tonight'),
+                      onTap: () => setSheetState(() => draftTiming = 'tonight'),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Container(
+                    width: double.infinity,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: 0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      radius = draftRadius;
-                      selectedCategory = draftCategory;
-                      _timingTab = draftTiming;
-                    });
-                    ref
-                        .read(sparkDataControllerProvider)
-                        .refreshNearby(radiusKm: draftRadius.toDouble());
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text(
-                    'APPLY',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          radius = draftRadius;
+                          selectedCategory = draftCategory;
+                          _timingTab = draftTiming;
+                        });
+                        ref
+                            .read(sparkDataControllerProvider)
+                            .refreshNearby(radiusKm: draftRadius.toDouble());
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Apply Preferences'),
+                    ),
                   ),
                 ),
               ],
@@ -578,7 +637,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 }
 
 // ── Heights must match the measured content inside each state ──────────────
-const double _kExpandedHeight = 258.0;
+const double _kExpandedHeight = 315.0;
 const double _kCollapsedHeight = 96.0;
 
 class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -587,6 +646,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.radius,
     required this.onLocationTap,
     required this.onRadiusTap,
+    required this.onNotificationTap,
     required this.onProfileTap,
     required this.searchQuery,
     required this.onSearchChanged,
@@ -597,6 +657,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final int radius;
   final VoidCallback onLocationTap;
   final VoidCallback onRadiusTap;
+  final VoidCallback onNotificationTap;
   final VoidCallback onProfileTap;
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
@@ -621,7 +682,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final t = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
-    final collapsed = t > 0.55;
+    final collapsed = t > 0.4;
 
     // ClipRect + fixed SizedBox ensures the Column never overflows the
     // pinned header as shrinkOffset reduces the available height.
@@ -636,6 +697,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
               ? _HeroCollapsed(
                   key: const ValueKey('c'),
                   selectedLocation: selectedLocation,
+                  onNotificationTap: onNotificationTap,
                   onProfileTap: onProfileTap,
                   searchQuery: searchQuery,
                   onSearchChanged: onSearchChanged,
@@ -647,6 +709,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
                   radius: radius,
                   onLocationTap: onLocationTap,
                   onRadiusTap: onRadiusTap,
+                  onNotificationTap: onNotificationTap,
                   onProfileTap: onProfileTap,
                   searchQuery: searchQuery,
                   onSearchChanged: onSearchChanged,
@@ -665,6 +728,7 @@ class _HeroPanel extends StatefulWidget {
     required this.radius,
     required this.onLocationTap,
     required this.onRadiusTap,
+    required this.onNotificationTap,
     required this.onProfileTap,
     required this.searchQuery,
     required this.onSearchChanged,
@@ -675,6 +739,7 @@ class _HeroPanel extends StatefulWidget {
   final int radius;
   final VoidCallback onLocationTap;
   final VoidCallback onRadiusTap;
+  final VoidCallback onNotificationTap;
   final VoidCallback onProfileTap;
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
@@ -713,8 +778,8 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(28),
-        bottomRight: Radius.circular(28),
+        bottomLeft: Radius.circular(32),
+        bottomRight: Radius.circular(32),
       ),
       child: AnimatedBuilder(
         animation: _floatCtrl,
@@ -723,100 +788,75 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
           return Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: [0.0, 0.7, 1.0],
                 colors: [
-                  Color(0xFF0A1628),
-                  Color(0xFF0F1F3D),
-                  Color(0xFF152B50),
-                  Color(0xFF1C3360),
+                  Color(0xFF003366),
+                  Color(0xFF002244),
+                  Color(0xFF001122),
                 ],
               ),
             ),
             child: Stack(
               children: [
-                // Aurora: large blue glow, top-right
+                // Deep Purple Glow - Top Left
                 Positioned(
-                  right: -60 + floatT * 12,
-                  top: -60 + floatT * 8,
+                  left: -80 + floatT * 15,
+                  top: -80 - floatT * 10,
                   child: Container(
-                    width: 240,
-                    height: 240,
+                    width: 300,
+                    height: 300,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF3B82F6).withValues(alpha: 0.17 + floatT * 0.04),
+                          const Color(0xFF4F46E5).withValues(alpha: 0.12 + floatT * 0.04),
                           Colors.transparent,
                         ],
                       ),
                     ),
                   ),
                 ),
-                // Aurora: soft green tint, bottom-left
+                // Soft Indigo Glow - Bottom Right
                 Positioned(
-                  left: -50 + floatT * 10,
-                  bottom: -50 + floatT * 8,
+                  right: -100 - floatT * 20,
+                  bottom: -100 + floatT * 15,
                   child: Container(
-                    width: 200,
-                    height: 200,
+                    width: 350,
+                    height: 350,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF86EFAC).withValues(alpha: 0.09 + floatT * 0.03),
+                          const Color(0xFF6366F1).withValues(alpha: 0.1 + floatT * 0.05),
                           Colors.transparent,
                         ],
                       ),
                     ),
                   ),
                 ),
-                // Subtle vignette bottom
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.18),
+                // Magical "Sparkle" Orbs
+                for (var i = 0; i < 3; i++)
+                  Positioned(
+                    left: 40.0 + (i * 100) + (floatT * 20 * (i.isEven ? 1 : -1)),
+                    top: 60.0 + (i * 40) - (floatT * 15 * (i.isOdd ? 1 : -1)),
+                    child: Container(
+                      width: 2 + (i.toDouble()),
+                      height: 2 + (i.toDouble()),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.4 + floatT * 0.3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            blurRadius: 4 + i.toDouble(),
+                            spreadRadius: 1,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                // Floating live activity widget (upper right)
-                Positioned(
-                  right: 18,
-                  top: 42 + floatT * 5,
-                  child: _LiveNearbyBadge(floatT: floatT),
-                ),
-                // Micro sparkle dots
-                Positioned(
-                  right: 88 + floatT * 3,
-                  top: 26 - floatT * 4,
-                  child: Container(
-                    width: 3,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.22 + floatT * 0.12),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 148 - floatT * 4,
-                  bottom: 56 + floatT * 5,
-                  child: Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: const Color(0xFF86EFAC).withValues(alpha: 0.28 + floatT * 0.14),
-                    ),
-                  ),
-                ),
                 child!,
               ],
             ),
@@ -824,282 +864,184 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
         },
         child: FadeTransition(
           opacity: CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(22, 13, 22, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Greeting row ──────────────────────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      _greeting,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white.withValues(alpha: 0.52),
-                        fontFamily: 'Manrope',
-                        letterSpacing: 0.1,
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: widget.onProfileTap,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.person_outline_rounded,
-                          size: 17,
-                          color: Colors.white.withValues(alpha: 0.78),
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 13, 22, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Greeting row ──────────────────────────────────────────
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        _greeting,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white.withValues(alpha: 0.52),
+                          fontFamily: 'Manrope',
+                          letterSpacing: 0.1,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 7),
-                // ── Location pill ─────────────────────────────────────────
-                GestureDetector(
-                  onTap: widget.onLocationTap,
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(9, 4, 9, 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: widget.onNotificationTap,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: Icon(
+                          Icons.notifications_outlined,
+                          size: 21,
+                          color: Colors.white.withValues(alpha: 0.65),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: widget.onProfileTap,
+                        child: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
-                            color: Color(0xFF86EFAC),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.person_outline_rounded,
+                            size: 17,
+                            color: Colors.white.withValues(alpha: 0.78),
                           ),
                         ),
-                        const SizedBox(width: 5),
-                        Text(
-                          widget.selectedLocation,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.82),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '·',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.28),
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${widget.radius}km',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.58),
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 13,
-                          color: Colors.white.withValues(alpha: 0.38),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                // ── Headline ──────────────────────────────────────────────
-                const Text(
-                  'Plans happening\nnear you, right now.',
-                  style: TextStyle(
-                    fontSize: 27,
-                    height: 1.12,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    fontFamily: 'Manrope',
-                    letterSpacing: -0.8,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Tiny plans. Real people. Right this minute.',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white.withValues(alpha: 0.5),
-                    letterSpacing: 0.05,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 14),
-                // ── Search bar ────────────────────────────────────────────
-                _HeroBannerSearch(
-                  currentQuery: widget.searchQuery,
-                  onQueryChanged: (v) {
-                    widget.onSearchChanged(v);
-                    widget.onSearchSubmitted(v);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Floating glass card showing live nearby activity — replaces the old
-/// graphic cluster with a cleaner, more information-dense widget.
-class _LiveNearbyBadge extends StatelessWidget {
-  const _LiveNearbyBadge({required this.floatT});
-
-  final double floatT;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 136,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
-        gradient: LinearGradient(
-          colors: [
-            Colors.white.withValues(alpha: 0.09),
-            Colors.white.withValues(alpha: 0.03),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF86EFAC),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF86EFAC).withValues(
-                        alpha: 0.5 + floatT * 0.2,
                       ),
-                      blurRadius: 5,
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  // ── Location pill ─────────────────────────────────────────
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      GestureDetector(
+                        onTap: widget.onLocationTap,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(9, 6, 9, 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Color(0xFF86EFAC),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                widget.selectedLocation,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                size: 14,
+                                color: Colors.white.withValues(alpha: 0.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: widget.onRadiusTap,
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${widget.radius}km',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.tune_rounded,
+                                size: 12,
+                                color: Colors.white.withValues(alpha: 0.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  // ── Headline ──────────────────────────────────────────────
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Colors.white, Color(0xFFA5B4FC)],
+                    ).createShader(bounds),
+                    child: const Text(
+                      'Explore what\'s\nhappening near you.',
+                      style: TextStyle(
+                        fontSize: 28,
+                        height: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontFamily: 'Manrope',
+                        letterSpacing: -1.0,
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Real people. Real plans. Right now.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontFamily: 'Manrope',
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _HeroBannerSearch(
+                    currentQuery: widget.searchQuery,
+                    onQueryChanged: (v) {
+                      widget.onSearchChanged(v);
+                      widget.onSearchSubmitted(v);
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(width: 5),
-              Text(
-                'Live near you',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.75),
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 9),
-          _MiniSparkRow(
-            icon: Icons.sports_cricket_rounded,
-            label: 'Cricket match',
-            sub: '200m · 5 joining',
-          ),
-          const SizedBox(height: 7),
-          _MiniSparkRow(
-            icon: Icons.menu_book_rounded,
-            label: 'DSA sprint',
-            sub: '450m · 3 joining',
-          ),
-        ],
+        ),
       ),
-    );
-  }
-}
-
-class _MiniSparkRow extends StatelessWidget {
-  const _MiniSparkRow({
-    required this.icon,
-    required this.label,
-    required this.sub,
-  });
-
-  final IconData icon;
-  final String label;
-  final String sub;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          ),
-          child: Icon(icon, size: 11, color: Colors.white.withValues(alpha: 0.72)),
-        ),
-        const SizedBox(width: 7),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.82),
-              ),
-            ),
-            Text(
-              sub,
-              style: TextStyle(
-                fontSize: 8.5,
-                color: Colors.white.withValues(alpha: 0.42),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -1135,53 +1077,38 @@ class _HeroBannerSearch extends StatelessWidget {
     return GestureDetector(
       onTap: () => _openSearch(context),
       child: Container(
-        height: 40,
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Row(
           children: [
-            const SizedBox(width: 12),
             Icon(
-              Icons.search_rounded,
-              size: 16,
-              color: Colors.black.withValues(alpha: hasQuery ? 0.55 : 0.28),
+              CupertinoIcons.search,
+              size: 20,
+              color: AppColors.textSecondary,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                hasQuery ? currentQuery : 'Search plans, sports, study, ride…',
+                hasQuery ? currentQuery : 'Search activities, sports, study...',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: hasQuery ? FontWeight.w600 : FontWeight.w400,
-                  color: Colors.black.withValues(alpha: hasQuery ? 0.75 : 0.28),
+                  fontSize: 15,
+                  color: hasQuery ? AppColors.textPrimary : AppColors.textSecondary.withValues(alpha: 0.7),
+                  fontFamily: 'Manrope',
+                  letterSpacing: -0.2,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (hasQuery)
-              GestureDetector(
-                onTap: () => onQueryChanged(''),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 15,
-                    color: Colors.black.withValues(alpha: 0.4),
-                  ),
-                ),
-              )
-            else
-              const SizedBox(width: 10),
           ],
         ),
       ),
@@ -1404,6 +1331,7 @@ class _HeroCollapsed extends StatelessWidget {
   const _HeroCollapsed({
     super.key,
     required this.selectedLocation,
+    required this.onNotificationTap,
     required this.onProfileTap,
     required this.searchQuery,
     required this.onSearchChanged,
@@ -1411,6 +1339,7 @@ class _HeroCollapsed extends StatelessWidget {
   });
 
   final String selectedLocation;
+  final VoidCallback onNotificationTap;
   final VoidCallback onProfileTap;
   final String searchQuery;
   final ValueChanged<String> onSearchChanged;
@@ -1474,6 +1403,17 @@ class _HeroCollapsed extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              IconButton(
+                onPressed: onNotificationTap,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  size: 20,
+                  color: Colors.white.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: onProfileTap,
                 child: Container(
@@ -1503,6 +1443,7 @@ class _HeroCollapsed extends StatelessWidget {
               onSearchSubmitted(v);
             },
           ),
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -1517,33 +1458,51 @@ class _SortToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: SparkSort.values.map((sort) {
-        final isSelected = sort == selected;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => onSelect(sort),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              margin: const EdgeInsets.only(right: 6),
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.accent : AppColors.pillSurface,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                sort.label,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : AppColors.textMuted,
+    return Container(
+      height: 38,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: AppColors.pillSurface.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: SparkSort.values.map((sort) {
+          final isSelected = sort == selected;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onSelect(sort),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  sort.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? AppColors.textPrimary : AppColors.textMuted,
+                    fontFamily: 'Manrope',
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }
@@ -1566,47 +1525,63 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEmpty = count != null && count! == 0;
+    
+    const activeBg = AppColors.accent;
+    const activeText = Colors.white;
+    const iconColor = Colors.white;
+
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 10),
       child: GestureDetector(
         onTap: isEmpty ? null : onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          padding: const EdgeInsets.fromLTRB(14, 9, 14, 9),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.accent
+                ? activeBg
                 : isEmpty
-                ? AppColors.pillSurface
-                : Colors.white,
-            borderRadius: BorderRadius.circular(999),
+                    ? AppColors.pillSurface.withValues(alpha: 0.5)
+                    : Colors.white,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? AppColors.accent
+                  ? activeBg
                   : isEmpty
-                  ? AppColors.separator
-                  : AppColors.separator,
+                      ? AppColors.border.withValues(alpha: 0.3)
+                      : AppColors.border.withValues(alpha: 0.8),
               width: 1,
             ),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: activeBg.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (selected) ...[
-                Icon(icon, size: 13, color: Colors.white),
-                const SizedBox(width: 5),
+                Icon(icon, size: 14, color: iconColor),
+                const SizedBox(width: 6),
               ],
               Text(
                 count != null ? '$label ($count)' : label,
                 style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: selected
-                      ? Colors.white
+                      ? activeText
                       : isEmpty
-                      ? AppColors.textMuted
-                      : AppColors.chipText,
+                          ? AppColors.textMuted
+                          : AppColors.textPrimary,
+                  fontFamily: 'Manrope',
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -1615,6 +1590,8 @@ class _CategoryChip extends StatelessWidget {
       ),
     );
   }
+
+
 }
 
 class _EmptyState extends StatelessWidget {
@@ -1703,9 +1680,6 @@ class _NearbyCardState extends State<_NearbyCard> {
 
   static const _avatarInitials = ['A', 'J', 'S', 'M', 'R', 'K', 'P', 'D'];
 
-  static const _iconBg = AppColors.iconBg;
-  static const _iconFg = AppColors.iconFg;
-
   @override
   void initState() {
     super.initState();
@@ -1721,12 +1695,16 @@ class _NearbyCardState extends State<_NearbyCard> {
   }
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
-    SparkCategory.sports => Icons.directions_run_rounded,
-    SparkCategory.study => Icons.auto_stories_rounded,
-    SparkCategory.ride => Icons.drive_eta_rounded,
-    SparkCategory.events => Icons.confirmation_number_outlined,
-    SparkCategory.hangout => Icons.coffee_outlined,
+    SparkCategory.sports => CupertinoIcons.sportscourt,
+    SparkCategory.study => CupertinoIcons.book,
+    SparkCategory.ride => CupertinoIcons.car,
+    SparkCategory.events => CupertinoIcons.ticket,
+    SparkCategory.hangout => CupertinoIcons.person_3,
   };
+
+  static Color _catColor(SparkCategory cat) => AppColors.accent;
+
+  static Color _catBg(SparkCategory cat) => AppColors.accent.withValues(alpha: 0.08);
 
   String _countdown() {
     final mins = widget.spark.startsInMinutes;
@@ -1750,154 +1728,109 @@ class _NearbyCardState extends State<_NearbyCard> {
   Widget build(BuildContext context) {
     final spark = widget.spark;
     final icon = _categoryIcon(spark.category);
-    final isLowSpots = spark.spotsLeft <= 2;
-    final isJoined = widget.ctaLabel == 'Chat';
-    final avatars = _avatars();
-    final isNow = spark.startsInMinutes <= 0;
-    final isHappeningNow = spark.startsInMinutes <= 5;
+    final isHappeningNow = spark.startsInMinutes <= 15;
 
     return GestureDetector(
       onTap: widget.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 36,
-              height: 36,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: _iconBg,
-                shape: BoxShape.circle,
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _catBg(spark.category),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: _iconFg, size: 17),
+              child: Icon(
+                icon,
+                size: 22,
+                color: _catColor(spark.category),
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          spark.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                      ),
-                      if (isHappeningNow) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            isNow ? 'Now' : 'Starting',
-                            style: const TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+                  Text(
+                    spark.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      fontFamily: 'Manrope',
+                      letterSpacing: -0.4,
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Row(
                     children: [
                       Icon(
-                        Icons.schedule_rounded,
-                        size: 11,
-                        color: isNow ? AppColors.success : AppColors.textMuted,
+                        CupertinoIcons.time_solid,
+                        size: 13,
+                        color: isHappeningNow
+                            ? AppColors.action.withValues(alpha: 0.8)
+                            : AppColors.textSecondary.withValues(alpha: 0.5),
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: 4),
                       Text(
                         _countdown(),
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: isNow
-                              ? AppColors.success
-                              : AppColors.textMuted,
+                          fontWeight: isHappeningNow ? FontWeight.w800 : FontWeight.w600,
+                          color: isHappeningNow ? AppColors.action : AppColors.textSecondary,
+                          fontFamily: 'Manrope',
                         ),
                       ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4),
-                        child: Text(
-                          '·',
-                          style: TextStyle(
-                            color: AppColors.separator,
-                            fontSize: 12,
-                          ),
-                        ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        CupertinoIcons.location_solid,
+                        size: 13,
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
                       ),
-                      const Icon(
-                        Icons.near_me_rounded,
-                        size: 11,
-                        color: AppColors.textMuted,
-                      ),
-                      const SizedBox(width: 3),
-                      Flexible(
-                        child: Text(
-                          spark.distanceLabel,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textMuted,
-                          ),
+                      const SizedBox(width: 4),
+                      Text(
+                        spark.distanceLabel,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          fontFamily: 'Manrope',
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       _AvatarStack(
-                        avatars: avatars,
+                        avatars: _avatars(),
                         total: spark.participants.length,
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 8),
                       Text(
                         '${spark.participants.length} joining',
                         style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                          fontFamily: 'Manrope',
                         ),
                       ),
-                      if (isLowSpots) ...[
-                        const SizedBox(width: 7),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.errorSurface,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${spark.spotsLeft} left',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.errorText,
-                            ),
+                      if (spark.spotsLeft <= 2) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          '· ${spark.spotsLeft} spots',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.errorText,
+                            fontFamily: 'Manrope',
                           ),
                         ),
                       ],
@@ -1906,23 +1839,10 @@ class _NearbyCardState extends State<_NearbyCard> {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: isJoined
-                    ? AppColors.pillSurface
-                    : AppColors.accentSurface,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                widget.ctaLabel,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: isJoined ? AppColors.textMuted : AppColors.accent,
-                ),
-              ),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 14,
+              color: AppColors.textSecondary.withValues(alpha: 0.25),
             ),
           ],
         ),
@@ -2181,3 +2101,52 @@ class _MapListToggle extends StatelessWidget {
   }
 }
 
+
+class _SelectionChip extends StatelessWidget {
+  const _SelectionChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.accent : AppColors.chipBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? AppColors.accent : AppColors.chipBorder,
+            width: 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            color: selected ? Colors.white : AppColors.textPrimary,
+            fontFamily: 'Manrope',
+          ),
+        ),
+      ),
+    );
+  }
+}

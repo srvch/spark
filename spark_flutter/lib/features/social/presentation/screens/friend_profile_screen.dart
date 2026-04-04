@@ -143,159 +143,175 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     final sharedGroups = groups.where((g) => true).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            backgroundColor: const Color(0xFFF2F2F7),
-            scrolledUnderElevation: 0,
-            elevation: 0,
-            pinned: true,
-            leading: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
+              child: Row(
                 children: [
-                  SizedBox(width: 8),
-                  Icon(CupertinoIcons.chevron_left, color: AppColors.accent, size: 20),
+                   IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'Profile',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        letterSpacing: -0.6,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      showCupertinoModalPopup<void>(
+                        context: context,
+                        builder: (ctx) => CupertinoActionSheet(
+                          actions: [
+                            CupertinoActionSheetAction(
+                              onPressed: () {
+                                Navigator.of(ctx).pop();
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => QrCodeScreen(userId: widget.friend.userId, name: widget.friend.displayName),
+                                ));
+                              },
+                              child: const Text('Share profile'),
+                            ),
+                            CupertinoActionSheetAction(
+                              isDestructiveAction: true,
+                              onPressed: () { Navigator.of(ctx).pop(); _report(); },
+                              child: const Text('Report'),
+                            ),
+                            CupertinoActionSheetAction(
+                              isDestructiveAction: true,
+                              onPressed: () { Navigator.of(ctx).pop(); _block(); },
+                              child: const Text('Block'),
+                            ),
+                          ],
+                          cancelButton: CupertinoActionSheetAction(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(CupertinoIcons.ellipsis_circle, color: AppColors.accent, size: 24),
+                  ),
                 ],
               ),
             ),
-            actions: [
-              CupertinoButton(
-                padding: const EdgeInsets.only(right: 12),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  showCupertinoModalPopup<void>(
-                    context: context,
-                    builder: (ctx) => CupertinoActionSheet(
-                      actions: [
-                        CupertinoActionSheetAction(
-                          onPressed: () {
-                            Navigator.of(ctx).pop();
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => QrCodeScreen(userId: widget.friend.userId, name: widget.friend.displayName),
-                            ));
-                          },
-                          child: const Text('Share profile'),
-                        ),
-                        CupertinoActionSheetAction(
-                          isDestructiveAction: true,
-                          onPressed: () { Navigator.of(ctx).pop(); _report(); },
-                          child: const Text('Report'),
-                        ),
-                        CupertinoActionSheetAction(
-                          isDestructiveAction: true,
-                          onPressed: () { Navigator.of(ctx).pop(); _block(); },
-                          child: const Text('Block'),
-                        ),
-                      ],
-                      cancelButton: CupertinoActionSheetAction(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        child: const Text('Cancel'),
-                      ),
-                    ),
-                  );
-                },
-                child: const Icon(CupertinoIcons.ellipsis_circle, color: AppColors.accent, size: 22),
-              ),
-            ],
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  PersonAvatar(name: widget.friend.displayName, radius: 44),
-                  const SizedBox(height: 14),
-                  Text(
-                    widget.friend.displayName,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF000000),
-                      letterSpacing: -0.5,
-                      fontFamily: 'Manrope',
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.friend.phoneNumber,
-                    style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
-                  ),
-                  const SizedBox(height: 8),
-                  if (widget.friend.isAvailable)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF34C759).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Column(
                         children: [
-                          Icon(CupertinoIcons.circle_fill, size: 8, color: Color(0xFF34C759)),
-                          SizedBox(width: 5),
-                          Text('Open to plans',
-                              style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF34C759),
-                                  fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          PersonAvatar(name: widget.friend.displayName, radius: 44),
+                          const SizedBox(height: 14),
+                          Text(
+                            widget.friend.displayName,
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF000000),
+                              letterSpacing: -0.5,
+                              fontFamily: 'Manrope',
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.friend.phoneNumber,
+                            style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
+                          ),
+                          const SizedBox(height: 8),
+                          if (widget.friend.isAvailable)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF34C759).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(CupertinoIcons.circle_fill, size: 8, color: Color(0xFF34C759)),
+                                  SizedBox(width: 5),
+                                  Text('Open to plans',
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF34C759),
+                                          fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+                          _ActionRow(
+                            onMessage: () {
+                              HapticFeedback.lightImpact();
+                              _toast('Messaging coming soon');
+                            },
+                            onQr: () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => QrCodeScreen(userId: widget.friend.userId, name: widget.friend.displayName),
+                            )),
+                            onRemove: _unfriend,
+                            unfriending: _unfriending,
+                            blocking: _blocking,
+                          ),
+                          const SizedBox(height: 28),
                         ],
                       ),
                     ),
-                  const SizedBox(height: 24),
-                  _ActionRow(
-                    onMessage: () {
-                      HapticFeedback.lightImpact();
-                      _toast('Messaging coming soon');
-                    },
-                    onQr: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => QrCodeScreen(userId: widget.friend.userId, name: widget.friend.displayName),
-                    )),
-                    onRemove: _unfriend,
-                    unfriending: _unfriending,
-                    blocking: _blocking,
                   ),
-                  const SizedBox(height: 28),
+                  if (sharedGroups.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
+                        child: Text(
+                          'SHARED GROUPS',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF8E8E93),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, i) {
+                            final g = sharedGroups[i];
+                            final isFirst = i == 0;
+                            final isLast = i == sharedGroups.length - 1;
+                            return _GroupRow(group: g, isFirst: isFirst, isLast: isLast);
+                          },
+                          childCount: sharedGroups.length,
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                  ],
                 ],
               ),
             ),
-          ),
-          if (sharedGroups.isNotEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
-                child: Text(
-                  'SHARED GROUPS',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF8E8E93),
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    final g = sharedGroups[i];
-                    final isFirst = i == 0;
-                    final isLast = i == sharedGroups.length - 1;
-                    return _GroupRow(group: g, isFirst: isFirst, isLast: isLast);
-                  },
-                  childCount: sharedGroups.length,
-                ),
-              ),
-            ),
           ],
-          const SliverToBoxAdapter(child: SizedBox(height: 40)),
-        ],
+        ),
       ),
     );
   }

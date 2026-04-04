@@ -1,4 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -55,55 +58,60 @@ class RootShell extends ConsumerWidget {
     ];
 
     return Scaffold(
+      extendBody: true,
       body: screens[tab],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: bg,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: bg.withValues(alpha: isDark ? 0.78 : 0.88),
+              border: Border(
+                top: BorderSide(
+                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+                  width: 0.5,
+                ),
+              ),
             ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 64,
-            child: Row(
-              children: [
-                _NavItem(
-                  label: 'Sparks',
-                  icon: Icons.explore_outlined,
-                  activeIcon: Icons.explore_rounded,
-                  selected: tab == 0,
-                  onTap: () => ref.read(bottomTabProvider.notifier).state = 0,
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 72,
+                child: Row(
+                  children: [
+                    _NavItem(
+                      label: 'Explore',
+                      icon: CupertinoIcons.compass,
+                      activeIcon: CupertinoIcons.compass_fill,
+                      selected: tab == 0,
+                      onTap: () => ref.read(bottomTabProvider.notifier).state = 0,
+                    ),
+                    _CreateNavItem(
+                      selected: tab == 1,
+                      onTap: () => ref.read(bottomTabProvider.notifier).state = 1,
+                    ),
+                    _NavItem(
+                      label: 'Chat',
+                      icon: CupertinoIcons.bubble_left,
+                      activeIcon: CupertinoIcons.bubble_left_fill,
+                      selected: tab == 2,
+                      showBadge: hasUnreadChat && tab != 2,
+                      onTap: () {
+                        ref.read(bottomTabProvider.notifier).state = 2;
+                        ref.read(seenChatCountProvider.notifier).state = chatCount;
+                      },
+                    ),
+                    _NavItem(
+                      label: 'People',
+                      icon: CupertinoIcons.person_2,
+                      activeIcon: CupertinoIcons.person_2_fill,
+                      selected: tab == 3,
+                      showBadge: hasUnreadPeople && tab != 3,
+                      onTap: () => ref.read(bottomTabProvider.notifier).state = 3,
+                    ),
+                  ],
                 ),
-                _CreateNavItem(
-                  selected: tab == 1,
-                  onTap: () => ref.read(bottomTabProvider.notifier).state = 1,
-                ),
-                _NavItem(
-                  label: 'Chat',
-                  icon: Icons.chat_bubble_outline_rounded,
-                  activeIcon: Icons.chat_bubble_rounded,
-                  selected: tab == 2,
-                  showBadge: hasUnreadChat && tab != 2,
-                  onTap: () {
-                    ref.read(bottomTabProvider.notifier).state = 2;
-                    ref.read(seenChatCountProvider.notifier).state = chatCount;
-                  },
-                ),
-                _NavItem(
-                  label: 'People',
-                  icon: Icons.groups_outlined,
-                  activeIcon: Icons.groups_rounded,
-                  selected: tab == 3,
-                  showBadge: hasUnreadPeople && tab != 3,
-                  onTap: () => ref.read(bottomTabProvider.notifier).state = 3,
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -120,42 +128,54 @@ class _CreateNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = AppColors.accent;
-    const inactiveColor = AppColors.darkTextSecondary;
-
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          onTap();
+        },
         behavior: HitTestBehavior.opaque,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              width: 40,
-              height: 40,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.elasticOut,
+              width: 44,
+              height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: selected
-                    ? AppColors.accent
-                    : AppColors.accent.withValues(alpha: 0.1),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: selected
+                      ? [AppColors.accent, AppColors.accentLight]
+                      : [AppColors.accent.withValues(alpha: 0.1), AppColors.accent.withValues(alpha: 0.05)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: selected ? 0.3 : 0),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                Icons.add_rounded,
-                size: 22,
-                color: selected ? Colors.white : activeColor,
+                CupertinoIcons.add,
+                size: 24,
+                color: selected ? Colors.white : AppColors.accent,
               ),
             ),
             const SizedBox(height: 3),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                color: selected ? activeColor : inactiveColor,
-                letterSpacing: selected ? 0.2 : 0,
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                color: selected ? AppColors.accent : AppColors.textSecondary,
+                fontFamily: 'Manrope',
+                letterSpacing: selected ? 0.1 : 0,
               ),
               child: const Text('Create'),
             ),

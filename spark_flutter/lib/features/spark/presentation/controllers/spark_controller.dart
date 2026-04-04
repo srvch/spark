@@ -96,6 +96,24 @@ final onMyWaySparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 /// IDs of sparks the current user has checked in to
 final checkedInSparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 
+final sparkParticipantsProvider = StateNotifierProvider.family<SparkParticipantsNotifier, List<String>, String>((ref, sparkId) {
+  return SparkParticipantsNotifier(ref.watch(sparkApiRepositoryProvider), sparkId);
+});
+
+class SparkParticipantsNotifier extends StateNotifier<List<String>> {
+  SparkParticipantsNotifier(this._repository, this._sparkId) : super([]) {
+    fetch();
+  }
+  final SparkApiRepository _repository;
+  final String _sparkId;
+
+  Future<void> fetch() async {
+    try {
+      state = await _repository.fetchParticipants(_sparkId);
+    } catch (_) {}
+  }
+}
+
 /// Tracks how many chat conversations the user has "seen" (for unread badge)
 final seenChatCountProvider = StateProvider<int>((ref) => 0);
 final currentUserIdProvider = Provider<String>((ref) {
@@ -361,6 +379,9 @@ class SparkDataController {
     List<String> circleIds = const [],
     List<String> inviteUserIds = const [],
   }) async {
+    if (visibility == SparkVisibility.publicSpark && (circleIds.isNotEmpty || inviteUserIds.isNotEmpty)) {
+      throw Exception('Public sparks cannot have specific circles or invitees. Change visibility to "Circle" or "Invite" first.');
+    }
     final myActive = ref.read(myActiveCreatedSparksProvider);
     if (myActive.length >= 5) {
       throw Exception('You already have 5 active sparks. Please close one before creating another.');
@@ -430,6 +451,13 @@ class SparkDataController {
     }
   }
 
+  Future<void> fetchSparkDetail(String sparkId) async {
+    try {
+      final updated = await ref.read(sparkApiRepositoryProvider).fetchSparkDetail(sparkId);
+      _mergeSpark(updated);
+    } catch (_) {}
+  }
+
   Future<void> cancelSpark(String sparkId) async {
     // Remove from created list
     ref.read(createdSparksProvider.notifier).state = ref
@@ -448,6 +476,10 @@ class SparkDataController {
       'spark_cancelled',
       properties: {'spark_id': sparkId},
     );
+    try {
+      await ref.read(sparkApiRepositoryProvider).cancelSpark(sparkId: sparkId);
+      unawaited(refreshNearby());
+    } catch (_) {}
   }
 
   Future<void> leaveSpark(String sparkId) async {

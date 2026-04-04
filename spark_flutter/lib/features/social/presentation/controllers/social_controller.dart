@@ -170,6 +170,14 @@ class SocialController {
     }
   }
 
+  Future<void> unarchiveGroup({required String groupId}) async {
+    try {
+      await ref.read(socialApiRepositoryProvider).unarchiveGroup(groupId: groupId);
+    } finally {
+      await refreshAll();
+    }
+  }
+
   Future<void> leaveGroup({required String groupId}) async {
     ref.read(groupsProvider.notifier).update(
       (list) => list.where((g) => g.groupId != groupId).toList(),

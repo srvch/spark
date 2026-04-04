@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/phone_privacy.dart';
 import '../../../../features/profile/presentation/screens/profile_screen.dart';
 import '../../../../shared/navigation/root_shell.dart';
 import '../../../../shared/widgets/person_avatar.dart';
@@ -95,25 +96,33 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     final groupSort = ref.watch(groupSortProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 16, 16, 0),
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 16, 16, 14),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.cardDivider,
+                    width: 0.5,
+                  ),
+                ),
+              ),
               child: Row(
                 children: [
-                  CupertinoButton(
-                    padding: EdgeInsets.zero,
+                  IconButton(
                     onPressed: () {
                       HapticFeedback.lightImpact();
                       ref.read(bottomTabProvider.notifier).state = 0;
                     },
-                    child: const Icon(
-                      CupertinoIcons.chevron_left,
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
                       color: AppColors.accent,
-                      size: 22,
+                      size: 28,
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -121,10 +130,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     child: Text(
                       'People',
                       style: TextStyle(
-                        fontSize: 34,
+                        fontSize: 28,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF000000),
-                        letterSpacing: -0.5,
+                        color: Colors.black,
+                        letterSpacing: -0.8,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -139,7 +148,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                       ));
                     },
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   _HeaderButton(
                     icon: CupertinoIcons.arrow_clockwise,
                     onTap: () {
@@ -148,7 +157,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     },
                     loading: loading,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   _ProfileButton(
                     badge: totalBadge,
                     onTap: () {
@@ -409,6 +418,27 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                         SnackBar(content: Text(msg)),
                       );
                     }
+                  },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: Color(0xFFE5E5EA))),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text('or', style: TextStyle(fontSize: 13, color: Color(0xFF8E8E93))),
+                    ),
+                    const Expanded(child: Divider(color: Color(0xFFE5E5EA))),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _IosButton(
+                  label: 'Choose from contacts',
+                  secondary: true,
+                  icon: CupertinoIcons.person_crop_circle_badge_plus,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    showContactImportSheet(context);
                   },
                 ),
                 const SizedBox(height: 10),
@@ -1113,14 +1143,14 @@ class _WhosFreeBanner extends StatelessWidget {
               Container(
                 width: 8, height: 8,
                 decoration: BoxDecoration(
-                  color: _isOpen ? const Color(0xFF34C759) : const Color(0xFFD1D1D6),
+                  color: _isOpen ? AppColors.accent : const Color(0xFFD1D1D6),
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _isOpen ? 'You\'re open to plans' : 'Who\'s free tonight?',
+                  _isOpen ? 'You\'re open to plans' : 'Tell friends you\'re free',
                   style: const TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w600,
@@ -1131,8 +1161,9 @@ class _WhosFreeBanner extends StatelessWidget {
               ),
               CupertinoSwitch(
                 value: _isOpen,
-                activeTrackColor: const Color(0xFF34C759),
                 onChanged: (_) => onToggle(),
+                activeTrackColor: AppColors.accent,
+                trackColor: const Color(0xFFE5E5EA),
               ),
             ],
           ),
@@ -1800,9 +1831,13 @@ class _FriendRow extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF000000),
                               fontFamily: 'Manrope')),
-                      Text(friend.phoneNumber,
-                          style: const TextStyle(
-                              fontSize: 13, color: Color(0xFF8E8E93))),
+                      Text(
+                        PhonePrivacy.mask(friend.phoneNumber, hide: friend.hidePhoneNumber),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -2179,14 +2214,17 @@ class _IosButton extends StatelessWidget {
     this.onTap,
     this.secondary = false,
     this.loading = false,
+    this.icon,
   });
   final String label;
   final VoidCallback? onTap;
   final bool secondary;
   final bool loading;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
+    final fgColor = secondary ? const Color(0xFF000000) : Colors.white;
     return SizedBox(
       width: double.infinity,
       child: CupertinoButton(
@@ -2202,15 +2240,32 @@ class _IosButton extends StatelessWidget {
           child: loading
               ? CupertinoActivityIndicator(
                   color: secondary ? AppColors.accent : Colors.white)
-              : Text(
-                  label,
-                  style: TextStyle(
-                    color: secondary ? const Color(0xFF000000) : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'Manrope',
-                  ),
-                ),
+              : icon != null
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(icon, size: 18, color: fgColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            color: fgColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      label,
+                      style: TextStyle(
+                        color: fgColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
         ),
       ),
     );
@@ -2293,8 +2348,12 @@ class _SegmentedControl extends StatelessWidget {
       height: 36,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5EA),
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.cardDivider,
+          width: 0.5,
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -2309,13 +2368,13 @@ class _SegmentedControl extends StatelessWidget {
                 width: segW,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(7),
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(9),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+                        color: AppColors.accent.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
@@ -2335,14 +2394,15 @@ class _SegmentedControl extends StatelessWidget {
                             Text(
                               labels[i],
                               style: TextStyle(
-                                fontSize: 13.5,
+                                fontSize: 13,
                                 fontWeight: i == selected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
                                 color: i == selected
-                                    ? const Color(0xFF000000)
-                                    : const Color(0xFF8E8E93),
+                                    ? Colors.white
+                                    : AppColors.textSecondary,
                                 fontFamily: 'Manrope',
+                                letterSpacing: -0.2,
                               ),
                             ),
                             if (badges[i] > 0) ...[

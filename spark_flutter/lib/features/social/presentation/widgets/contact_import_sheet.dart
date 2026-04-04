@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/person_avatar.dart';
@@ -30,6 +31,7 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
   bool _scanning = false;
   bool _checking = false;
   List<MatchedContact>? _results;
+  List<Contact> _allContacts = [];
   String? _error;
   final _sending = <String>{};
   final _sent = <String>{};
@@ -52,6 +54,7 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
         return;
       }
       final contacts = await FlutterContacts.getContacts(withProperties: true);
+      _allContacts = contacts;
       final phones = contacts
           .expand((c) => c.phones)
           .map((p) => p.number.replaceAll(RegExp(r'[\s\-\(\)\.]+'), ''))
@@ -297,18 +300,17 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
               // ── Results ────────────────────────────────────────────────────
               if (_results != null) ...[
                 const SizedBox(height: 22),
-                Text(
-                  _results!.isEmpty
-                      ? 'No contacts found on Spark yet.'
-                      : '${_results!.length} contact${_results!.length == 1 ? '' : 's'} on Spark',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                if (_results!.isNotEmpty) ...[
+                  const Text(
+                    'ON SPARK',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
                       color: Color(0xFF8E8E93),
-                      letterSpacing: 0.2),
-                ),
-                const SizedBox(height: 10),
-                if (_results!.isNotEmpty)
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFF2F2F7),
@@ -345,54 +347,15 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
                                   ),
                                 ),
                                 if (isFriend)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                    child: const Text('Friends',
-                                        style: TextStyle(
-                                            fontSize: 12.5,
-                                            color: Colors.green,
-                                            fontWeight: FontWeight.w600)),
-                                  )
+                                  _StatusChip(text: 'Friends', color: Colors.green)
                                 else if (isSent)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF2F2F7),
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                    child: const Text('Sent',
-                                        style: TextStyle(
-                                            fontSize: 12.5,
-                                            color: Color(0xFF8E8E93),
-                                            fontWeight: FontWeight.w600)),
-                                  )
+                                  _StatusChip(text: 'Sent', color: Colors.grey)
                                 else
                                   GestureDetector(
                                     onTap: () => _addFriend(c),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.accent,
-                                        borderRadius: BorderRadius.circular(99),
-                                      ),
-                                      child: isSending
-                                          ? const SizedBox(
-                                              width: 14, height: 14,
-                                              child: CupertinoActivityIndicator(
-                                                  color: Colors.white, radius: 7))
-                                          : const Text('Add',
-                                              style: TextStyle(
-                                                  fontSize: 13,
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontFamily: 'Manrope')),
+                                    child: _ActionBtn(
+                                      label: 'Add',
+                                      loading: isSending,
                                     ),
                                   ),
                               ]),
@@ -406,6 +369,90 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
                       }),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                ],
+
+                if (_allContacts.isNotEmpty) ...[
+                  const Text(
+                    'INVITE TO SPARK',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF8E8E93),
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Builder(builder: (context) {
+                      final matchedPhones = _results!.map((r) => r.phoneNumber).toSet();
+                      final others = _allContacts.where((local) {
+                        return local.phones.isNotEmpty &&
+                            !matchedPhones.contains(
+                                local.phones.first.number.replaceAll(RegExp(r'[\s\-()]+'), ''));
+                      }).toList();
+
+                      if (others.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'All contacts are already on Spark!',
+                              style: TextStyle(fontSize: 13, color: Color(0xFF898989)),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: List.generate(others.length, (i) {
+                          final c = others[i];
+                          final phone = c.phones.first.number;
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 11),
+                                child: Row(children: [
+                                  PersonAvatar(name: c.displayName, radius: 20),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(c.displayName,
+                                            style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                fontFamily: 'Manrope')),
+                                        Text(phone,
+                                            style: const TextStyle(
+                                                fontSize: 12.5,
+                                                color: Color(0xFF8E8E93))),
+                                      ],
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => _inviteSms(c.displayName, phone),
+                                    child: const _ActionBtn(label: 'Invite'),
+                                  ),
+                                ]),
+                              ),
+                              if (i < others.length - 1)
+                                const Divider(
+                                    height: 1, thickness: 0.5,
+                                    indent: 58, color: Color(0xFFE5E5EA)),
+                            ],
+                          );
+                        }),
+                      );
+                    }),
+                  ),
+                ],
               ],
 
               const SizedBox(height: 8),
@@ -415,4 +462,50 @@ class _ContactImportSheetState extends ConsumerState<ContactImportSheet> {
       ),
     );
   }
+
+  Future<void> _inviteSms(String name, String phone) async {
+    final message = 'Hey $name, join me on Spark! It helps me plan meetups with friends easily. Get it here: https://spark.app';
+    HapticFeedback.lightImpact();
+    await Share.share(message, subject: 'Spark App Invite');
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.text, required this.color});
+  final String text;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(text,
+            style: TextStyle(
+                fontSize: 12.5, color: color, fontWeight: FontWeight.w600)),
+      );
+}
+
+class _ActionBtn extends StatelessWidget {
+  const _ActionBtn({required this.label, this.loading = false});
+  final String label;
+  final bool loading;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+            color: AppColors.accent, borderRadius: BorderRadius.circular(99)),
+        child: loading
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CupertinoActivityIndicator(color: Colors.white, radius: 7))
+            : Text(label,
+                style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Manrope')),
+      );
 }

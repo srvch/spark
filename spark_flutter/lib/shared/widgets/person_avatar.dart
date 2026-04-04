@@ -21,8 +21,9 @@ class PersonAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initials = _initials(name);
-    final bg = backgroundColor ?? _colorForName(name);
-    final fg = foregroundColor ?? Colors.white;
+    final colors = _colorsForName(name);
+    final bg = backgroundColor ?? colors.$1;
+    final fg = foregroundColor ?? colors.$2;
     final fs = fontSize ?? (radius * 0.7).clamp(10.0, 24.0);
 
     return CircleAvatar(
@@ -33,8 +34,9 @@ class PersonAvatar extends StatelessWidget {
         style: TextStyle(
           color: fg,
           fontSize: fs,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           fontFamily: 'Manrope',
+          letterSpacing: -0.3,
         ),
       ),
     );
@@ -49,19 +51,23 @@ class PersonAvatar extends StatelessWidget {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  static Color _colorForName(String name) {
-    const palette = [
-      Color(0xFF1E3A5F),
-      Color(0xFF2F426F),
-      Color(0xFF0F766E),
-      Color(0xFF6D28D9),
-      Color(0xFFB45309),
-      Color(0xFFBE185D),
-      Color(0xFF15803D),
-      Color(0xFF1D4ED8),
-    ];
-    if (name.isEmpty) return AppColors.accent;
-    final index = name.codeUnits.fold(0, (a, b) => a + b) % palette.length;
-    return palette[index];
+  // Apple-style: (pastel bg, deeper fg) pairs
+  static const _palette = [
+    (Color(0xFFFFE5E5), Color(0xFFBF2E2E)), // red
+    (Color(0xFFFFEDD5), Color(0xFFB84D00)), // orange
+    (Color(0xFFFFF9C2), Color(0xFF8A6900)), // yellow
+    (Color(0xFFD9F5E5), Color(0xFF1A7A45)), // green
+    (Color(0xFFD1F0FA), Color(0xFF0A6A9B)), // teal
+    (Color(0xFFDCEEFF), Color(0xFF1249A0)), // blue
+    (Color(0xFFEAE0FF), Color(0xFF5B28C4)), // purple
+    (Color(0xFFFFE0F3), Color(0xFFAA1C72)), // pink
+    (Color(0xFFE0F7EE), Color(0xFF18735A)), // mint
+    (Color(0xFFF0E8FF), Color(0xFF6B3FA0)), // lavender
+  ];
+
+  static (Color, Color) _colorsForName(String name) {
+    if (name.isEmpty) return (AppColors.accentSurface, AppColors.accent);
+    final index = name.codeUnits.fold(0, (a, b) => a + b) % _palette.length;
+    return _palette[index];
   }
 }

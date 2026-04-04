@@ -58,6 +58,7 @@ class Spark {
     required this.participants,
     this.visibility = SparkVisibility.publicSpark,
     this.hostPhoneNumber,
+    this.hideHostPhoneNumber = false,
     this.note,
   });
 
@@ -75,6 +76,7 @@ class Spark {
   final List<String> participants;
   final SparkVisibility visibility;
   final String? hostPhoneNumber;
+  final bool hideHostPhoneNumber;
   final String? note;
 
   int get joinedCount => participants.length;

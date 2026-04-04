@@ -107,6 +107,12 @@ class SparkApiRepository {
     return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.3);
   }
 
+  Future<void> cancelSpark({
+    required String sparkId,
+  }) async {
+    await _dio.delete('/api/v1/sparks/$sparkId');
+  }
+
   Future<SparkInvitePage> fetchInvites({
     int page = 0,
     int size = defaultInvitePageSize,
@@ -147,6 +153,17 @@ class SparkApiRepository {
     return _toInviteStatus(raw);
   }
 
+  Future<Spark> fetchSparkDetail(String sparkId) async {
+    final response = await _dio.get<Map<String, dynamic>>('/api/v1/sparks/$sparkId');
+    return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.1);
+  }
+
+  Future<List<String>> fetchParticipants(String sparkId) async {
+    final response = await _dio.get<dynamic>('/api/v1/sparks/$sparkId/participants');
+    final rows = response.data is List ? response.data as List : const [];
+    return rows.map((e) => '$e').toList();
+  }
+
   Spark _fromNearbyJson(Map<String, dynamic> json) {
     return _buildSpark(
       id: '${json['id']}',
@@ -162,6 +179,7 @@ class SparkApiRepository {
       joinedCount: (json['joinedCount'] as num?)?.toInt() ?? 0,
       note: null,
       visibilityRaw: _nullableString(json['visibility']),
+      hideHostPhoneNumber: json['hideHostPhoneNumber'] == true,
     );
   }
 
@@ -180,6 +198,7 @@ class SparkApiRepository {
       joinedCount: (json['joinedCount'] as num?)?.toInt() ?? 0,
       note: json['note'] as String?,
       visibilityRaw: _nullableString(json['visibility']),
+      hideHostPhoneNumber: json['hideHostPhoneNumber'] == true,
     );
   }
 
@@ -197,6 +216,7 @@ class SparkApiRepository {
     required int joinedCount,
     required String? note,
     required String? visibilityRaw,
+    required bool hideHostPhoneNumber,
   }) {
     final startsAt = DateTime.tryParse(startsAtRaw)?.toLocal() ?? DateTime.now();
     final diffMinutes = startsAt.difference(DateTime.now()).inMinutes.clamp(0, 24 * 60);
@@ -220,8 +240,9 @@ class SparkApiRepository {
       maxSpots: maxSpots == 0 ? 1 : maxSpots,
       location: locationName,
       createdBy: hostUserId,
-      participants: _mockParticipants(joinedCount),
+      participants: const [], // Participants now fetched separately
       hostPhoneNumber: hostPhoneNumber,
+      hideHostPhoneNumber: hideHostPhoneNumber,
       note: note,
       visibility: _toVisibility(visibilityRaw),
     );
@@ -321,13 +342,6 @@ class SparkApiRepository {
     if (distanceKm <= 0) return 'Nearby';
     if (distanceKm < 1) return '${(distanceKm * 1000).round()}m away';
     return '${distanceKm.toStringAsFixed(1)}km away';
-  }
-
-  List<String> _mockParticipants(int joinedCount) {
-    const pool = ['AA', 'RK', 'SN', 'VK', 'TJ', 'PS', 'MD', 'AN'];
-    if (joinedCount <= 0) return const [];
-    final count = joinedCount > pool.length ? pool.length : joinedCount;
-    return pool.take(count).toList();
   }
 }
 

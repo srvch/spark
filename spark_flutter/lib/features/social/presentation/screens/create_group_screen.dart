@@ -104,273 +104,277 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(width: 8),
-              Icon(CupertinoIcons.chevron_left,
-                  color: AppColors.accent, size: 20),
-            ],
-          ),
-        ),
-        title: const Text(
-          'New group',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF000000),
-            fontFamily: 'Manrope',
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: GestureDetector(
-              onTap: (_canCreate && !_isSaving) ? _create : null,
-              child: _isSaving
-                  ? const CupertinoActivityIndicator(radius: 10)
-                  : Text(
-                      'Create',
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'New group',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: _canCreate
-                            ? AppColors.accent
-                            : const Color(0xFFC7C7CC),
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.5,
                         fontFamily: 'Manrope',
                       ),
                     ),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-        children: [
-          // ── Group identity ──────────────────────────────────────
-          _SectionHeader('GROUP DETAILS'),
-          _WhiteCard(
-            child: Column(
-              children: [
-                _InsetField(
-                  controller: _name,
-                  hint: 'Group name',
-                  textCapitalization: TextCapitalization.words,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const _Separator(),
-                _InsetField(
-                  controller: _description,
-                  hint: 'Description (optional)',
-                  maxLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-              ],
-            ),
-          ),
-
-          // ── Invite friends ──────────────────────────────────────
-          if (friends.isNotEmpty) ...[
-            _SectionHeader(
-              'INVITE FRIENDS',
-              trailing: _selectedFriends.isNotEmpty
-                  ? '${_selectedFriends.length} selected'
-                  : null,
-            ),
-            _WhiteCard(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(friends.length, (i) {
-                  final friend = friends[i];
-                  final selected = _selectedFriends.contains(friend.userId);
-                  final isLast = i == friends.length - 1;
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => _toggleFriend(friend.userId),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 12),
-                            child: Row(
-                              children: [
-                                PersonAvatar(
-                                    name: friend.displayName, radius: 18),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        friend.displayName,
-                                        style: const TextStyle(
-                                          fontSize: 15.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF000000),
-                                          fontFamily: 'Manrope',
-                                        ),
-                                      ),
-                                      Text(
-                                        friend.phoneNumber,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Color(0xFF8E8E93),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: selected
-                                        ? AppColors.accent
-                                        : Colors.transparent,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: selected
-                                          ? AppColors.accent
-                                          : const Color(0xFFC7C7CC),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: selected
-                                      ? const Icon(Icons.check_rounded,
-                                          color: Colors.white, size: 14)
-                                      : null,
-                                ),
-                              ],
+                  ),
+                  GestureDetector(
+                    onTap: (_canCreate && !_isSaving) ? _create : null,
+                    child: _isSaving
+                        ? const CupertinoActivityIndicator(radius: 10)
+                        : Text(
+                            'Create',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: _canCreate
+                                  ? AppColors.accent
+                                  : const Color(0xFFC7C7CC),
+                              fontFamily: 'Manrope',
                             ),
                           ),
-                        ),
-                      ),
-                      if (!isLast)
-                        const Divider(
-                          height: 1,
-                          thickness: 0.5,
-                          indent: 58,
-                          color: Color(0xFFE5E5EA),
-                        ),
-                    ],
-                  );
-                }),
+                  ),
+                ],
               ),
             ),
-          ],
-
-          // ── Invite by phone ─────────────────────────────────────
-          _SectionHeader('INVITE BY PHONE',
-              trailing: 'People not on Spark yet'),
-          _WhiteCard(
-            child: Column(
-              children: [
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _phone,
-                          keyboardType: TextInputType.phone,
-                          style: const TextStyle(
-                              fontSize: 15, color: Color(0xFF000000)),
-                          decoration: const InputDecoration(
-                            hintText: '+91 98765 43210',
-                            hintStyle: TextStyle(
-                                color: Color(0xFF8E8E93), fontSize: 15),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            isDense: true,
-                            contentPadding:
-                                EdgeInsets.symmetric(vertical: 10),
-                            filled: false,
-                          ),
-                          onSubmitted: (_) => _addPhone(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                children: [
+                  // ── Group identity ──────────────────────────────────────
+                  _SectionHeader('GROUP DETAILS'),
+                  _WhiteCard(
+                    child: Column(
+                      children: [
+                        _InsetField(
+                          controller: _name,
+                          hint: 'Group name',
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: (_) => setState(() {}),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: _addPhone,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(CupertinoIcons.add,
-                              size: 16, color: Colors.white),
+                        const _Separator(),
+                        _InsetField(
+                          controller: _description,
+                          hint: 'Description (optional)',
+                          maxLines: 3,
+                          textCapitalization: TextCapitalization.sentences,
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                if (_phoneNumbers.isNotEmpty) ...[
-                  const Divider(
-                      height: 1, thickness: 0.5, color: Color(0xFFE5E5EA)),
-                  Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: _phoneNumbers
-                          .map((phone) => _PhoneChip(
-                                label: phone,
-                                onRemove: () => setState(
-                                    () => _phoneNumbers.remove(phone)),
-                              ))
-                          .toList(),
+
+                  // ── Invite friends ──────────────────────────────────────
+                  if (friends.isNotEmpty) ...[
+                    _SectionHeader(
+                      'INVITE FRIENDS',
+                      trailing: _selectedFriends.isNotEmpty
+                          ? '${_selectedFriends.length} selected'
+                          : null,
+                    ),
+                    _WhiteCard(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(friends.length, (i) {
+                          final friend = friends[i];
+                          final selected = _selectedFriends.contains(friend.userId);
+                          final isLast = i == friends.length - 1;
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _toggleFriend(friend.userId),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        PersonAvatar(
+                                            name: friend.displayName, radius: 18),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                friend.displayName,
+                                                style: const TextStyle(
+                                                  fontSize: 15.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF000000),
+                                                  fontFamily: 'Manrope',
+                                                ),
+                                              ),
+                                              Text(
+                                                friend.phoneNumber,
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  color: Color(0xFF8E8E93),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            color: selected
+                                                ? AppColors.accent
+                                                : Colors.transparent,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: selected
+                                                  ? AppColors.accent
+                                                  : const Color(0xFFC7C7CC),
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: selected
+                                              ? const Icon(Icons.check_rounded,
+                                                  color: Colors.white, size: 14)
+                                              : null,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (!isLast)
+                                const Divider(
+                                  height: 1,
+                                  thickness: 0.5,
+                                  indent: 58,
+                                  color: Color(0xFFE5E5EA),
+                                ),
+                            ],
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+
+                  // ── Invite by phone ─────────────────────────────────────
+                  _SectionHeader('INVITE BY PHONE',
+                      trailing: 'People not on Spark yet'),
+                  _WhiteCard(
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _phone,
+                                  keyboardType: TextInputType.phone,
+                                  style: const TextStyle(
+                                      fontSize: 15, color: Color(0xFF000000)),
+                                  decoration: const InputDecoration(
+                                    hintText: '+91 98765 43210',
+                                    hintStyle: TextStyle(
+                                        color: Color(0xFF8E8E93), fontSize: 15),
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding:
+                                        EdgeInsets.symmetric(vertical: 10),
+                                    filled: false,
+                                  ),
+                                  onSubmitted: (_) => _addPhone(),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: _addPhone,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(CupertinoIcons.add,
+                                      size: 16, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_phoneNumbers.isNotEmpty) ...[
+                          const Divider(
+                              height: 1, thickness: 0.5, color: Color(0xFFE5E5EA)),
+                          Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: _phoneNumbers
+                                  .map((phone) => _PhoneChip(
+                                        label: phone,
+                                        onRemove: () => setState(
+                                            () => _phoneNumbers.remove(phone)),
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // ── Create button ───────────────────────────────────────
+                  GestureDetector(
+                    onTap: (_canCreate && !_isSaving) ? _create : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: _canCreate ? AppColors.accent : const Color(0xFFC7C7CC),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Center(
+                        child: _isSaving
+                            ? const CupertinoActivityIndicator(
+                                color: Colors.white, radius: 10)
+                            : const Text(
+                                'Create group',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontFamily: 'Manrope',
+                                ),
+                              ),
+                      ),
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── Create button ───────────────────────────────────────
-          GestureDetector(
-            onTap: (_canCreate && !_isSaving) ? _create : null,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              height: 52,
-              decoration: BoxDecoration(
-                color: _canCreate ? AppColors.accent : const Color(0xFFC7C7CC),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Center(
-                child: _isSaving
-                    ? const CupertinoActivityIndicator(
-                        color: Colors.white, radius: 10)
-                    : const Text(
-                        'Create group',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                          fontFamily: 'Manrope',
-                        ),
-                      ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

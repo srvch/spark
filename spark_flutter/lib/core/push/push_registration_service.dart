@@ -45,8 +45,9 @@ class PushRegistrationService {
           },
         ),
       );
-    } catch (_) {
-      // Firebase may be unconfigured in local dev. Ignore quietly.
+    } catch (e) {
+      // Firebase may be unconfigured in local dev. Log for visibility.
+      debugPrint('Push token registration failed: $e');
     }
   }
 }

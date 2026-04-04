@@ -180,8 +180,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen>
                         ),
                       ),
                     ),
-
-                  const Spacer(),
+                  const SizedBox(height: 32),
 
                   // Primary CTA
                   FadeTransition(

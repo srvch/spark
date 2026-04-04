@@ -16,6 +16,7 @@ import '../../../spark/presentation/screens/activity_screen.dart';
 import '../controllers/availability_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_preferences_controller.dart';
+import '../../data/safety_api_repository.dart';
 import '../widgets/availability_sheet.dart';
 
 const _kNavy = AppColors.accent;
@@ -57,33 +58,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => backOrGoDiscover(context, ref),
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AppColors.pillSurface,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        size: 18,
-                        color: AppColors.onSurfaceEmphasis,
-                      ),
+                  IconButton(
+                    onPressed: () => backOrGoDiscover(context, ref),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 4),
                   const Expanded(
                     child: Text(
                       'Account',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
                         color: Colors.black,
+                        letterSpacing: -0.6,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -291,12 +285,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _MenuRow(
                         icon: Icons.notifications_outlined,
                         label: 'Notification alerts',
-                        sublabel:
-                            notificationPrefs.notifyStartsSoon ||
+                        sublabel: notificationPrefs.notifyStarts15 ||
+                                notificationPrefs.notifyStarts60 ||
                                 notificationPrefs.notifyFillingFast ||
-                                notificationPrefs.notifyFriendRequest ||
-                                notificationPrefs.notifyWaitlist ||
-                                notificationPrefs.notifyReminder
+                                notificationPrefs.notifyJoin ||
+                                notificationPrefs.notifyLeaveHost ||
+                                notificationPrefs.notifyNewNearby
                             ? 'Alerts on'
                             : 'All alerts off',
                         onTap: () => _showAlertsSheet(context),
@@ -308,6 +302,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ref.watch(availabilityProvider),
                         ),
                         onTap: () => showAvailabilitySheet(context),
+                      ),
+
+                      const _Divider(),
+                      _SectionLabel('Privacy'),
+                      _PrivacyToggle(
+                        label: 'Hide phone number from others',
+                        sublabel: 'Only show first 2 digits and xxxxx on your profile and sparks',
+                        value: profile.hidePhoneNumber,
+                        onChanged: (val) => ref.read(profileProvider.notifier).toggleHidePhoneNumber(val),
                       ),
 
                       const _Divider(),
@@ -392,20 +395,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           MaterialPageRoute(
             builder: (_) => const _LegalDocumentScreen(
               title: 'Community Guidelines',
+              useApi: true,
               paragraphs: [
-                'Create real, time-bound sparks only.',
-                'No harassment, abuse, illegal activity, or misleading posts.',
-                'Respect participant safety and keep location details accurate.',
-                'Repeated violations can lead to account restrictions.',
+                'Be respectful and kind to others.',
+                'No harassment or illegal content.',
+                'Stay safe and meet in public.',
               ],
             ),
           ),
         );
       case _LegalType.safety:
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const _SafetyReportScreen()),
+          MaterialPageRoute(
+            builder: (_) => const _LegalDocumentScreen(
+              title: 'Safety Tips',
+              paragraphs: [
+                'Always meet in well-lit public areas.',
+                'Verify spark hosts by checking their profiles.',
+                'Share your coordination status with a trusted contact.',
+                'If you feel uncomfortable, leave and report via SOS.',
+              ],
+            ),
+          ),
         );
     }
+  }
+
+  void _openSafetyReport() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const _SafetyReportScreen()),
+    );
   }
 
   String _inviteMessage(String code) =>
@@ -889,28 +908,28 @@ class _AlertsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           _AlertToggle(
-            label: '15-min reminder',
-            sublabel: 'Reminded when a joined spark is about to begin',
-            value: prefs.notifyReminder,
-            onChanged: notifier.setReminder,
+            label: 'Starts in 15 min',
+            sublabel: 'Alert when a joined spark is about to begin',
+            value: prefs.notifyStarts15,
+            onChanged: notifier.setNotifyStarts15,
           ),
           const SizedBox(height: 12),
           _AlertToggle(
-            label: 'Starts soon',
-            sublabel: 'Alert when a nearby spark you saved is starting',
-            value: prefs.notifyStartsSoon,
-            onChanged: notifier.setStartsSoon,
+            label: 'Starts in 60 min',
+            sublabel: 'Early reminder for upcoming sparks',
+            value: prefs.notifyStarts60,
+            onChanged: notifier.setNotifyStarts60,
           ),
           const SizedBox(height: 12),
           _AlertToggle(
             label: 'Filling fast',
             sublabel: 'Alert when a nearby spark has only 1 spot left',
             value: prefs.notifyFillingFast,
-            onChanged: notifier.setFillingFast,
+            onChanged: notifier.setNotifyFillingFast,
           ),
           const SizedBox(height: 20),
           const Text(
-            'SOCIAL',
+            'SOCIAL & NEARBY',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -921,17 +940,24 @@ class _AlertsSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           _AlertToggle(
-            label: 'Friend requests',
-            sublabel: 'Notify when someone sends you a friend request',
-            value: prefs.notifyFriendRequest,
-            onChanged: notifier.setFriendRequest,
+            label: 'New Sparks nearby',
+            sublabel: 'Notify when a new spark is created in your radius',
+            value: prefs.notifyNewNearby,
+            onChanged: notifier.setNotifyNewNearby,
           ),
           const SizedBox(height: 12),
           _AlertToggle(
-            label: 'Waitlist spot opens',
-            sublabel: 'Alert when a spot opens in a spark you\'re waiting for',
-            value: prefs.notifyWaitlist,
-            onChanged: notifier.setWaitlist,
+            label: 'Someone joined',
+            sublabel: 'Alert when a participant joins your spark',
+            value: prefs.notifyJoin,
+            onChanged: notifier.setNotifyJoin,
+          ),
+          const SizedBox(height: 12),
+          _AlertToggle(
+            label: 'Host left',
+            sublabel: 'Alert when the host leaves a spark you joined',
+            value: prefs.notifyLeaveHost,
+            onChanged: notifier.setNotifyLeaveHost,
           ),
         ],
       ),
@@ -992,32 +1018,49 @@ class _AlertToggle extends StatelessWidget {
 
 enum _LegalType { privacy, guidelines, safety }
 
-class _LegalDocumentScreen extends StatelessWidget {
+class _LegalDocumentScreen extends ConsumerWidget {
   const _LegalDocumentScreen({
     required this.title,
     required this.paragraphs,
+    this.useApi = false,
   });
 
   final String title;
   final List<String> paragraphs;
+  final bool useApi;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: paragraphs.length,
-        itemBuilder: (context, index) => Padding(
-          padding: const EdgeInsets.only(bottom: 14),
-          child: Text(
-            paragraphs[index],
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.5,
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
+      body: useApi
+          ? FutureBuilder<List<String>>(
+              future: ref.read(safetyApiRepositoryProvider).fetchGuidelines(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final list = snapshot.data ?? paragraphs;
+                return _buildList(list);
+              },
+            )
+          : _buildList(paragraphs),
+    );
+  }
+
+  Widget _buildList(List<String> items) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: items.length,
+      itemBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Text(
+          items[index],
+          style: const TextStyle(
+            fontSize: 14,
+            height: 1.5,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -1025,14 +1068,14 @@ class _LegalDocumentScreen extends StatelessWidget {
   }
 }
 
-class _SafetyReportScreen extends StatefulWidget {
+class _SafetyReportScreen extends ConsumerStatefulWidget {
   const _SafetyReportScreen();
 
   @override
-  State<_SafetyReportScreen> createState() => _SafetyReportScreenState();
+  ConsumerState<_SafetyReportScreen> createState() => _SafetyReportScreenState();
 }
 
-class _SafetyReportScreenState extends State<_SafetyReportScreen> {
+class _SafetyReportScreenState extends ConsumerState<_SafetyReportScreen> {
   final _controller = TextEditingController();
   var _submitting = false;
 
@@ -1075,7 +1118,8 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
               onPressed: _submitting
                   ? null
                   : () async {
-                      if (_controller.text.trim().isEmpty) {
+                      final note = _controller.text.trim();
+                      if (note.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Please add a short description'),
@@ -1084,18 +1128,87 @@ class _SafetyReportScreenState extends State<_SafetyReportScreen> {
                         return;
                       }
                       setState(() => _submitting = true);
-                      await Future.delayed(const Duration(milliseconds: 600));
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Safety report submitted'),
-                        ),
-                      );
-                      Navigator.of(context).pop();
+                      try {
+                        await ref.read(safetyApiRepositoryProvider).triggerSos(
+                              sparkId: '00000000-0000-0000-0000-000000000000', // Global
+                              locationName: 'Profile Report',
+                              note: note,
+                            );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Safety report submitted'),
+                          ),
+                        );
+                        Navigator.of(context).pop();
+                      } catch (e) {
+                        if (!mounted) return;
+                        setState(() => _submitting = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
                     },
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PrivacyToggle extends StatelessWidget {
+  const _PrivacyToggle({
+    required this.label,
+    required this.sublabel,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String sublabel;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                    fontFamily: 'Manrope',
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  sublabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.accent,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
       ),
     );
   }

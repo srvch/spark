@@ -46,6 +46,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     required String currentUserId,
     required String currentUserName,
     required List<ChatMessage> thread,
+    required List<String> participantIds,
   }) {
     final map = <String, _ChatUser>{};
 
@@ -65,18 +66,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       );
     }
 
-    // Participants from spark model
-    for (var i = 0; i < spark.participants.length; i++) {
-      final id = 'p_$i';
+    // Real participants from provider
+    for (final id in participantIds) {
       if (!map.containsKey(id)) {
         map[id] = _ChatUser(
           id: id,
-          name: _nameFromInitial(spark.participants[i], i),
+          name: 'User ${id.substring(0, 4)}',
         );
       }
     }
 
-    // Participants from chat thread (catches senders not in spark.participants)
+    // Participants from chat thread
     for (final msg in thread) {
       if (!map.containsKey(msg.senderId)) {
         map[msg.senderId] = _ChatUser(
@@ -109,22 +109,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ...moderation.removedUserIds,
     };
 
-    final allThreads = ref.watch(chatThreadsProvider);
-    final initial = _initialMessages(
-      spark: widget.spark,
-      currentUserId: currentUserId,
-      currentUserName: currentUserName,
-    );
-    final thread = allThreads[widget.spark.id] ?? initial;
+    final thread = ref.watch(chatThreadsProvider(widget.spark.id));
     final messages = thread
         .where((msg) => !hiddenUserIds.contains(msg.senderId))
         .toList();
 
+    final participantIds = ref.watch(sparkParticipantsProvider(widget.spark.id));
     final participants = _buildParticipants(
       spark: widget.spark,
       currentUserId: currentUserId,
       currentUserName: currentUserName,
       thread: thread,
+      participantIds: participantIds,
     );
     final visibleCount =
         participants.where((p) => !hiddenUserIds.contains(p.id)).length;
@@ -387,6 +383,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         spark.createdBy == currentUserId ? currentUserName : 'Spark host';
     return [
       ChatMessage(
+        id: 'init_1',
         senderId: spark.createdBy,
         sender: hostName,
         text: 'I am at the location.',
@@ -395,6 +392,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         isHost: true,
       ),
       ChatMessage(
+        id: 'init_2',
         senderId: currentUserId,
         sender: currentUserName,
         text: 'Running 10 min late',
@@ -403,6 +401,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         isHost: spark.createdBy == currentUserId,
       ),
       ChatMessage(
+        id: 'init_3',
         senderId: 'p_1',
         sender: _nameFromInitial('SN', 1),
         text: 'Got it. Reaching in 5.',
@@ -415,25 +414,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _sendMessage(String currentUserId, String currentUserName) {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
-    final map = {...ref.read(chatThreadsProvider)};
-    final current = [
-      ...(map[widget.spark.id] ??
-          _initialMessages(
-            spark: widget.spark,
-            currentUserId: currentUserId,
-            currentUserName: currentUserName,
-          ))
-    ];
-    current.add(ChatMessage(
-      senderId: currentUserId,
-      sender: currentUserName,
-      text: text,
-      isMine: true,
-      timeLabel: _formatNow(),
-      isHost: widget.spark.createdBy == currentUserId,
-    ));
-    map[widget.spark.id] = current;
-    ref.read(chatThreadsProvider.notifier).state = map;
+    
+    ref.read(chatThreadsProvider(widget.spark.id).notifier).sendMessage(text);
+    
     ref.read(analyticsServiceProvider).track(
       'chat_message_sent',
       properties: {'spark_id': widget.spark.id, 'length': text.length},

@@ -33,34 +33,39 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: GestureDetector(
-          onTap: () => backOrGoDiscover(context, ref),
-          child: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: _kNavy),
-        ),
-        title: const Text(
-          'My Activity',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: _kNavy,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.cardDivider),
-        ),
-      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => backOrGoDiscover(context, ref),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'My Activity',
+                      style: TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.5,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppColors.cardDivider),
             // ── Segmented tab row ──────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -102,17 +107,16 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
                                 builder: (_) => ChatScreen(spark: spark),
                               ),
                             ),
-                            onLeave: () {
-                              final next = {
-                                ...ref.read(joinedSparkIdsProvider),
-                              }..remove(spark.id);
-                              ref
-                                  .read(joinedSparkIdsProvider.notifier)
-                                  .state = next;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('You left this spark')),
-                              );
+                            onLeave: () async {
+                              await ref
+                                  .read(sparkDataControllerProvider)
+                                  .leaveSpark(spark.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('You left this spark')),
+                                );
+                              }
                             },
                             onCancel: () async {
                               final confirmed = await showDialog<bool>(

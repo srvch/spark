@@ -17,7 +17,9 @@ Future<void> main() async {
     await Firebase.initializeApp();
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await _configureFcm();
-  } catch (_) {
+  } catch (e, stack) {
+    debugPrint('Firebase initialization failed: $e');
+    debugPrint(stack.toString());
   }
 
   runApp(const ProviderScope(child: SparkApp()));

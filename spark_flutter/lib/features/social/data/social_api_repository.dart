@@ -17,6 +17,7 @@ class SocialApiRepository {
           displayName: '${json['displayName']}',
           phoneNumber: '${json['phoneNumber']}',
           availabilityStatus: '${json['availabilityStatus'] ?? 'NONE'}',
+          hidePhoneNumber: json['hidePhoneNumber'] == true,
         )).toList();
   }
 
@@ -30,6 +31,7 @@ class SocialApiRepository {
           phoneNumber: '${json['phoneNumber']}',
           createdAt: DateTime.tryParse('${json['createdAt']}')?.toLocal() ?? DateTime.now(),
           message: json['message'] as String?,
+          hidePhoneNumber: json['hidePhoneNumber'] == true,
         )).toList();
   }
 
@@ -43,6 +45,7 @@ class SocialApiRepository {
           phoneNumber: '${json['phoneNumber']}',
           createdAt: DateTime.tryParse('${json['createdAt']}')?.toLocal() ?? DateTime.now(),
           message: json['message'] as String?,
+          hidePhoneNumber: json['hidePhoneNumber'] == true,
         )).toList();
   }
 
@@ -87,6 +90,7 @@ class SocialApiRepository {
           displayName: '${json['displayName']}',
           phoneNumber: '${json['phoneNumber']}',
           mutualGroupCount: (json['mutualGroupCount'] as num?)?.toInt() ?? 0,
+          hidePhoneNumber: json['hidePhoneNumber'] == true,
         )).toList();
   }
 
@@ -101,6 +105,7 @@ class SocialApiRepository {
           displayName: '${json['displayName']}',
           phoneNumber: '${json['phoneNumber']}',
           alreadyFriend: json['alreadyFriend'] == true,
+          hidePhoneNumber: json['hidePhoneNumber'] == true,
         )).toList();
   }
 
@@ -152,6 +157,7 @@ class SocialApiRepository {
               displayName: '${json['displayName']}',
               phoneNumber: '${json['phoneNumber']}',
               role: '${json['role']}',
+              hidePhoneNumber: json['hidePhoneNumber'] == true,
             ))
         .toList();
     return GroupDetail(
@@ -197,6 +203,10 @@ class SocialApiRepository {
 
   Future<void> archiveGroup({required String groupId}) async {
     await _dio.post<dynamic>('/api/v1/social/groups/$groupId/archive');
+  }
+
+  Future<void> unarchiveGroup({required String groupId}) async {
+    await _dio.post<dynamic>('/api/v1/social/groups/$groupId/unarchive');
   }
 
   Future<void> leaveGroup({required String groupId}) async {

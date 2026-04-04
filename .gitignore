@@ -1,0 +1,8 @@
+# Maven build output
+spark_backend/target/
+
+# Flutter/Dart build output
+spark_flutter/build/
+
+# CocoaPods
+spark_flutter/ios/Pods/

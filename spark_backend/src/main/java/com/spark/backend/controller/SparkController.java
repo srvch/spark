@@ -144,6 +144,18 @@ public class SparkController {
         return toResponse(spark, sparkService.joinedCount(sparkId), currentUser.userId());
     }
 
+    @DeleteMapping("/{sparkId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancel(Authentication authentication, @PathVariable UUID sparkId) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        sparkService.cancelSpark(sparkId, currentUser.userId());
+    }
+
+    @GetMapping("/{sparkId}/participants")
+    public List<String> participants(@PathVariable UUID sparkId) {
+        return sparkService.listParticipants(sparkId);
+    }
+
     @PostMapping("/{sparkId}/invite/{inviteId}/respond")
     public InviteRespondResponse respondToInvite(
             Authentication authentication,

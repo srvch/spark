@@ -273,20 +273,12 @@ class _LocationPickerSheetState extends State<LocationPickerSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6FA),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        size: 18,
-                        color: Colors.black87,
-                      ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      size: 28,
+                      color: AppColors.accent,
                     ),
                   ),
                   const SizedBox(width: 12),

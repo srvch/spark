@@ -157,13 +157,32 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                       children: [
                         const SizedBox(height: 4),
                         _LabeledField(
-                          label: 'Title',
+                          label: 'What\'s the spark about?',
                           child: TextField(
                             controller: _manualTitleController,
                             onChanged: (_) => setState(() {}),
                             maxLines: 1,
-                            decoration: const InputDecoration(
-                              hintText: 'e.g. Cricket at 6 near Central Park',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'e.g. Cricket at Central Park',
+                              hintStyle: TextStyle(
+                                color: AppColors.textPrimary.withValues(alpha: 0.35),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              filled: true,
+                              fillColor: AppColors.background,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
                           ),
                         ),
@@ -206,13 +225,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                 .map(
                                   (c) => Padding(
                                     padding: const EdgeInsets.only(right: 8),
-                                    child: ChoiceChip(
-                                      label: Text(c.label),
-                                      showCheckmark: false,
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: VisualDensity.compact,
+                                    child: _QuickChoiceChip(
+                                      label: c.label,
                                       selected: c == _manualCategory,
-                                      onSelected: (_) => setState(() {
+                                      onTap: () => setState(() {
                                         _manualCategory = c;
                                         if (_manualCategory == SparkCategory.ride) {
                                           _manualOpenGroup = false;
@@ -374,31 +390,34 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: () => _showLocationPicker(context),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _showLocationPicker(context);
+                          },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: AppColors.border),
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.place_outlined, size: 14, color: AppColors.textSecondary),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isNearYou ? 'Near you' : manualLocation,
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textSecondary,
+                                const Icon(Icons.location_on_rounded, size: 18, color: AppColors.accent),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    isNearYou ? 'Near you' : manualLocation,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                      fontFamily: 'Manrope',
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.expand_more, size: 14, color: AppColors.textSecondary),
+                                const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
                               ],
                             ),
                           ),
@@ -470,21 +489,22 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             },
                           ),
                         const SizedBox(height: 10),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: _editManualNote,
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _editManualNote();
+                          },
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: AppColors.border),
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.notes_outlined, size: 14, color: AppColors.textSecondary),
-                                const SizedBox(width: 6),
+                                const Icon(Icons.notes_rounded, size: 18, color: AppColors.accent),
+                                const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     _manualNoteController.text.trim().isEmpty
@@ -492,10 +512,13 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                         : _manualNoteController.text.trim(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textSecondary,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: _manualNoteController.text.trim().isEmpty
+                                          ? AppColors.textPrimary.withValues(alpha: 0.4)
+                                          : AppColors.textPrimary,
+                                      fontFamily: 'Manrope',
                                     ),
                                   ),
                                 ),
@@ -531,21 +554,31 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                         if (!_previewExpanded)
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.accent.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: AppColors.accent.withValues(alpha: 0.15)),
                             ),
-                            child: Text(
-                              '${manualPlan.title} • ${isNearYou ? "Near you" : manualLocation} • ${_previewRelativeTime(manualPlan.startsAt ?? DateTime.now())} • ${_manualOpenGroup ? "Open group" : "${_manualSpotsValue()} people"}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
-                              ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.accent),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    '${manualPlan.title} • ${isNearYou ? "Near you" : manualLocation} • ${_previewRelativeTime(manualPlan.startsAt ?? DateTime.now())}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.accent.withValues(alpha: 0.8),
+                                      fontFamily: 'Manrope',
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         if (_previewExpanded)
@@ -1695,35 +1728,72 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   Future<void> _editManualNote() async {
     final controller = TextEditingController(text: _manualNoteController.text.trim());
-    final result = await showDialog<String>(
+    final result = await showModalBottomSheet<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Add details'),
-        content: TextField(
-          controller: controller,
-          minLines: 1,
-          maxLines: 2,
-          inputFormatters: [_WordLimitFormatter(maxWords: 15)],
-          decoration: const InputDecoration(hintText: 'Optional note (max 15 words)'),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _BottomSheetCard(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            24, 20, 24,
+            MediaQuery.of(ctx).viewInsets.bottom + 32,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36, height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1D1D6),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const Text(
+                'Add details',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF000000),
+                  letterSpacing: -0.3,
+                  fontFamily: 'Manrope',
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Add any extra information about your spark.',
+                style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: controller,
+                minLines: 3,
+                maxLines: 5,
+                autofocus: true,
+                inputFormatters: [_WordLimitFormatter(maxWords: 50)],
+                decoration: InputDecoration(
+                  hintText: 'e.g. Meeting at the north gate, look for the red flag.',
+                  hintStyle: const TextStyle(color: Color(0xFFC7C7CC), fontSize: 14),
+                  fillColor: const Color(0xFFF2F2F7),
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+              ),
+              const SizedBox(height: 24),
+              PrimaryButton(
+                label: 'Save',
+                onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+              ),
+            ],
+          ),
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        buttonPadding: EdgeInsets.zero,
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-              child: const Text('Save'),
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ),
-        ],
       ),
     );
     if (result == null || !mounted) return;
@@ -2209,9 +2279,11 @@ class _LabeledField extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 12.5,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
             color: AppColors.textSecondary,
+            fontFamily: 'Manrope',
+            letterSpacing: -0.2,
           ),
         ),
         const SizedBox(height: 6),
@@ -2342,47 +2414,25 @@ class _CreateScreenHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        GestureDetector(
-          onTap: onBackTap,
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: AppColors.pillSurface,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 16,
-              color: AppColors.onSurfaceEmphasis,
-            ),
+        IconButton(
+          onPressed: onBackTap,
+          icon: const Icon(
+            Icons.chevron_left_rounded,
+            size: 28,
+            color: AppColors.accent,
           ),
         ),
         const SizedBox(width: 10),
         const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "What's your plan?",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Plan something tiny, nearby, right now.',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+          child: Text(
+            "What's your plan?",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+              letterSpacing: -0.6,
+              fontFamily: 'Manrope',
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -2532,18 +2582,21 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: child,
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      padding: const EdgeInsets.all(16),
+      child: child,
     );
   }
 }
@@ -2561,22 +2614,38 @@ class _QuickChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.accent : Colors.white,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: selected ? AppColors.accent : AppColors.border),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? AppColors.accent : AppColors.border,
+            width: 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             color: selected ? Colors.white : AppColors.textSecondary,
+            fontFamily: 'Manrope',
           ),
         ),
       ),
@@ -2598,41 +2667,60 @@ class _PeopleStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          IconButton(
-            onPressed: onDecrease,
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.remove, size: 16),
-            color: AppColors.textSecondary,
-          ),
+          _StepButton(icon: Icons.remove_rounded, onTap: onDecrease),
           Expanded(
             child: Text(
               '$value people',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 13.5,
+                fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
+                fontFamily: 'Manrope',
               ),
             ),
           ),
-          IconButton(
-            onPressed: onIncrease,
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.add, size: 16),
-            color: AppColors.textSecondary,
-          ),
+          _StepButton(icon: Icons.add_rounded, onTap: onIncrease),
         ],
+      ),
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      icon: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 18, color: AppColors.accent),
       ),
     );
   }
@@ -2784,4 +2872,18 @@ class _WordLimitFormatter extends TextInputFormatter {
     if (count <= maxWords) return newValue;
     return oldValue;
   }
+}
+
+class _BottomSheetCard extends StatelessWidget {
+  const _BottomSheetCard({required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    child: SafeArea(child: child),
+  );
 }

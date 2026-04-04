@@ -56,7 +56,7 @@ public class SafetyController {
     }
 
     public record SosRequest(
-            UUID sparkId,
+            UUID sparkId, // Can be null for global safety reports
             @NotBlank @Size(max = 180) String locationName,
             @Size(max = 500) String note
     ) {

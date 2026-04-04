@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/phone_privacy.dart';
 import '../../../../features/chat/presentation/screens/chat_screen.dart';
 import '../../../../shared/widgets/invite_friends_sheet.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -29,16 +30,27 @@ class SparkDetailScreen extends ConsumerStatefulWidget {
 
 class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _joinPulseController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 380),
-  );
-  late final Animation<double> _joinScale = Tween<double>(begin: 1, end: 1.015)
-      .animate(CurvedAnimation(parent: _joinPulseController, curve: Curves.easeOut));
+  AnimationController? _joinPulseController;
+  Animation<double>? _joinScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _joinPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _joinScale = Tween<double>(begin: 1, end: 1.015).animate(
+      CurvedAnimation(parent: _joinPulseController!, curve: Curves.easeOut),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(sparkDataControllerProvider).fetchSparkDetail(widget.spark.id);
+    });
+  }
 
   @override
   void dispose() {
-    _joinPulseController.dispose();
+    _joinPulseController?.dispose();
     super.dispose();
   }
 
@@ -67,8 +79,8 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       return;
     }
 
-    await _joinPulseController.forward(from: 0);
-    await _joinPulseController.reverse();
+    await _joinPulseController?.forward(from: 0);
+    await _joinPulseController?.reverse();
     if (!mounted) return;
     await _showJoinedSheet();
     if (!mounted) return;
@@ -310,36 +322,52 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       1.0,
     ).toDouble();
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          spark.category.label,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-        ),
-        actions: [
-          IconButton(
-            onPressed: _copyShareLink,
-            icon: const Icon(Icons.ios_share_rounded, size: 20),
-            tooltip: 'Share',
-          ),
-        ],
-      ),
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ScaleTransition(
-                scale: _joinScale,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      spark.category.label,
+                      style: const TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.5,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _copyShareLink,
+                    icon: const Icon(Icons.ios_share_rounded, size: 20, color: AppColors.textPrimary),
+                    tooltip: 'Share',
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: joined ? AppColors.accent : AppColors.border,
-                      width: joined ? 1.3 : 1,
-                    ),
+                    border: Border.all(color: AppColors.border),
                     boxShadow: const [
                       BoxShadow(
                         color: AppColors.cardShadow,
@@ -348,166 +376,210 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                       ),
                     ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.neutralSurface,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            spark.category.label.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              letterSpacing: 0.6,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        if (joined)
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 10,
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.accentSurface,
+                              color: AppColors.neutralSurface,
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.check_circle_rounded,
-                                    size: 12, color: AppColors.accent),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Joined',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.accent,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              spark.category.label.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                letterSpacing: 0.6,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          )
-                        else if (spark.startsInMinutes <= 30)
-                          _CountdownBadge(minutes: spark.startsInMinutes),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      spark.title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        height: 1.15,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                          ),
+                          const Spacer(),
+                          if (joined)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.accentSurface,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_rounded,
+                                      size: 12, color: AppColors.accent),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Joined',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.accent,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (spark.startsInMinutes <= 30)
+                            _CountdownBadge(minutes: spark.startsInMinutes),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (spark.note != null && spark.note!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 10),
                       Text(
-                        spark.note!,
+                        spark.title,
                         style: const TextStyle(
-                          fontSize: 13.5,
-                          height: 1.35,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textSecondary,
+                          fontSize: 22,
+                          height: 1.15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 10),
-                    ],
-                    Row(
-                      children: [
-                        _StatPill(
-                          icon: Icons.schedule_rounded,
-                          text: spark.timeLabel,
-                          color: AppColors.accent,
-                          bg: AppColors.neutralSurface,
+                      if (spark.note != null && spark.note!.trim().isNotEmpty) ...[
+                        Text(
+                          spark.note!,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        _StatPill(
-                          icon: Icons.near_me_rounded,
-                          text: spark.distanceLabel,
-                          color: AppColors.accent,
-                          bg: AppColors.neutralSurface,
-                        ),
+                        const SizedBox(height: 10),
                       ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
+                      Row(
                         children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            alignment: Alignment.center,
-                            decoration: const BoxDecoration(
-                              color: AppColors.iconBg,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              size: 15,
-                              color: AppColors.accent,
-                            ),
+                          _StatPill(
+                            icon: Icons.schedule_rounded,
+                            text: spark.timeLabel,
+                            color: AppColors.accent,
+                            bg: AppColors.neutralSurface,
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Created by $creatorLabel',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.accentSurface,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              'Reliable host',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.accent,
-                              ),
-                            ),
+                          const SizedBox(width: 8),
+                          _StatPill(
+                            icon: Icons.near_me_rounded,
+                            text: spark.distanceLabel,
+                            color: AppColors.accent,
+                            bg: AppColors.neutralSurface,
                           ),
                         ],
                       ),
-                    ),
-                    if (spark.hostPhoneNumber != null &&
-                        spark.hostPhoneNumber!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              decoration: const BoxDecoration(
+                                color: AppColors.iconBg,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.person_outline,
+                                size: 15,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Created by $creatorLabel',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.accentSurface,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                'Reliable host',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (spark.hostPhoneNumber != null &&
+                          spark.hostPhoneNumber!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                alignment: Alignment.center,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.iconBg,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.phone_outlined,
+                                  size: 15,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  PhonePrivacy.mask(spark.hostPhoneNumber!,
+                                      hide: spark.hideHostPhoneNumber),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.accent,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                ),
+                                onPressed: () => _callHost(spark.hostPhoneNumber!),
+                                child: const Text(
+                                  'Call host',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.all(10),
@@ -527,7 +599,7 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.phone_outlined,
+                                Icons.location_on_outlined,
                                 size: 15,
                                 color: AppColors.accent,
                               ),
@@ -535,11 +607,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                spark.hostPhoneNumber!,
+                                locationLabel,
                                 style: const TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ),
@@ -548,207 +620,156 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                                 foregroundColor: AppColors.accent,
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                               ),
-                              onPressed: () => _callHost(spark.hostPhoneNumber!),
+                              onPressed: () => _openInMaps(context),
                               child: const Text(
-                                'Call host',
+                                'View map',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            alignment: Alignment.center,
-                            decoration: const BoxDecoration(
-                              color: AppColors.iconBg,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.location_on_outlined,
-                              size: 15,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              locationLabel,
-                              style: const TextStyle(
+                      if (joined) ...[
+                        const SizedBox(height: 12),
+                        const Divider(height: 1, color: AppColors.cardDivider),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Text(
+                              'Participants',
+                              style: TextStyle(
                                 fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.accent,
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                minimumSize: const Size(0, 28),
+                              ),
+                              onPressed: () => _openParticipantsSheet(
+                                spark: spark,
+                                currentUserId: currentUserId,
+                                isJoined: joined,
+                              ),
+                              child: const Text(
+                                'See participants',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _ParticipantStack(
+                              participants:
+                                  ref.watch(sparkParticipantsProvider(spark.id)),
+                              currentUserInitials:
+                                  ref.watch(currentUserInitialsProvider),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Text(
+                                '${ref.watch(sparkParticipantsProvider(spark.id)).length} joined',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (spark.maxSpots > 0) ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(999),
+                          child: LinearProgressIndicator(
+                            value: fillRatio,
+                            minHeight: 7,
+                            backgroundColor: AppColors.border,
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppColors.accent),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Text(
+                              '${spark.maxSpots - spark.spotsLeft}/${spark.maxSpots} spots filled',
+                              style: const TextStyle(
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                          ),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.accent,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                            ),
-                            onPressed: () => _openInMaps(context),
-                            child: const Text(
-                              'View map',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (joined) ...[
-                      const SizedBox(height: 12),
-                      const Divider(height: 1, color: AppColors.cardDivider),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Text(
-                            'Participants',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const Spacer(),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppColors.accent,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              minimumSize: const Size(0, 28),
-                            ),
-                            onPressed: () => _openParticipantsSheet(
-                              spark: spark,
-                              currentUserId: currentUserId,
-                              isJoined: joined,
-                            ),
-                            child: const Text(
-                              'See participants',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 5),
+                              child: Text(
+                                '·',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _ParticipantStack(
-                            participants: spark.participants,
-                            currentUserInitials: ref.watch(currentUserInitialsProvider),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Text(
-                              '${spark.participants.length} joined',
+                            Text(
+                              '${spark.spotsLeft} ${spark.spotsLeft == 1 ? 'spot' : 'spots'} left',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
+                                color: AppColors.accent,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (spark.maxSpots > 0) ...[
-                      const SizedBox(height: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: fillRatio,
-                          minHeight: 7,
-                          backgroundColor: AppColors.border,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            '${spark.maxSpots - spark.spotsLeft}/${spark.maxSpots} spots filled',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.groups_rounded,
+                              size: 14,
                               color: AppColors.textSecondary,
                             ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 5),
-                            child: Text(
-                              '·',
+                            const SizedBox(width: 5),
+                            const Text(
+                              'Open group · anyone can join',
                               style: TextStyle(
-                                color: AppColors.textSecondary,
                                 fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                          ),
-                          Text(
-                            '${spark.spotsLeft} ${spark.spotsLeft == 1 ? 'spot' : 'spots'} left',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.groups_rounded,
-                            size: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 5),
-                          const Text(
-                            'Open group · anyone can join',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                            ],
-                          ),
+                          ],
                         ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
-              const Spacer(),
-              AnimatedSwitcher(
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
                 child: (!joined && !isCreator)
                     ? (spark.spotsLeft == 0
                         ? SizedBox(
@@ -835,62 +856,62 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             ],
                           )
                         : Column(
-                        key: const ValueKey('joined-actions'),
-                        children: [
-                          Row(
+                            key: const ValueKey('joined-actions'),
                             children: [
-                              Expanded(
-                                child: PrimaryButton(
-                                  label: 'Open Chat',
-                                  compact: true,
-                                  backgroundColor: AppColors.accent,
-                                  onPressed: () {
-                                    ref.read(analyticsServiceProvider).track(
-                                      'open_chat_from_detail',
-                                      properties: {'spark_id': widget.spark.id},
-                                    );
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => ChatScreen(spark: widget.spark),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: PrimaryButton(
+                                      label: 'Open Chat',
+                                      compact: true,
+                                      backgroundColor: AppColors.accent,
+                                      onPressed: () {
+                                        ref.read(analyticsServiceProvider).track(
+                                          'open_chat_from_detail',
+                                          properties: {'spark_id': widget.spark.id},
+                                        );
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) => ChatScreen(spark: widget.spark),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      style: OutlinedButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(46),
+                                        foregroundColor: AppColors.onSurfaceStrong,
+                                        side: const BorderSide(
+                                            color: AppColors.chipBorder),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
                                       ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(46),
-                                    foregroundColor: AppColors.onSurfaceStrong,
-                                    side: const BorderSide(
-                                        color: AppColors.chipBorder),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      onPressed: () => _leaveSpark(),
+                                      child: const Text(
+                                        'Leave',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                  onPressed: () => _leaveSpark(),
-                                  child: const Text(
-                                    'Leave',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
+                                ],
                               ),
+                              const SizedBox(height: 8),
+                              _OnMyWayButton(sparkId: widget.spark.id),
+                              if (spark.startsInMinutes <= 15) ...[
+                                const SizedBox(height: 8),
+                                _CheckInButton(sparkId: widget.spark.id),
+                              ],
                             ],
-                          ),
-                          const SizedBox(height: 8),
-                          _OnMyWayButton(sparkId: widget.spark.id),
-                          if (spark.startsInMinutes <= 15) ...[
-                            const SizedBox(height: 8),
-                            _CheckInButton(sparkId: widget.spark.id),
-                          ],
-                        ],
-                      )),
+                          )),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

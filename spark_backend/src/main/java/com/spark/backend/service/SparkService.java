@@ -244,6 +244,23 @@ public class SparkService {
         return sparkParticipantRepository.countBySparkIdAndStatus(sparkId, ParticipantStatus.JOINED);
     }
 
+    public List<String> listParticipants(UUID sparkId) {
+        return sparkParticipantRepository.findBySparkIdAndStatus(sparkId, ParticipantStatus.JOINED)
+                .stream()
+                .map(SparkParticipantEntity::getUserId)
+                .toList();
+    }
+
+    public void cancelSpark(UUID sparkId, String userId) {
+        SparkEventEntity spark = sparkEventRepository.findById(sparkId)
+                .orElseThrow(() -> new EntityNotFoundException("Spark not found."));
+        if (!spark.getHostUserId().equals(userId)) {
+            throw new IllegalStateException("Only the host can cancel the spark.");
+        }
+        spark.setStatus(SparkStatus.CANCELLED);
+        sparkEventRepository.save(spark);
+    }
+
     public boolean isJoined(UUID sparkId, String userId) {
         return sparkParticipantRepository.findBySparkIdAndUserId(sparkId, userId)
                 .map(p -> p.getStatus() == ParticipantStatus.JOINED)

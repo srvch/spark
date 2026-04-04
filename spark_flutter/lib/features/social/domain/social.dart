@@ -10,12 +10,14 @@ class FriendUser {
     required this.displayName,
     required this.phoneNumber,
     this.availabilityStatus = 'NONE',
+    this.hidePhoneNumber = false,
   });
 
   final String userId;
   final String displayName;
   final String phoneNumber;
   final String availabilityStatus;
+  final bool hidePhoneNumber;
 
   bool get isAvailable => availabilityStatus == 'OPEN';
 }
@@ -28,6 +30,7 @@ class IncomingFriendRequest {
     required this.phoneNumber,
     required this.createdAt,
     this.message,
+    this.hidePhoneNumber = false,
   });
 
   final String requestId;
@@ -36,6 +39,7 @@ class IncomingFriendRequest {
   final String phoneNumber;
   final DateTime createdAt;
   final String? message;
+  final bool hidePhoneNumber;
 }
 
 class OutgoingFriendRequest {
@@ -46,6 +50,7 @@ class OutgoingFriendRequest {
     required this.phoneNumber,
     required this.createdAt,
     this.message,
+    this.hidePhoneNumber = false,
   });
 
   final String requestId;
@@ -54,6 +59,7 @@ class OutgoingFriendRequest {
   final String phoneNumber;
   final DateTime createdAt;
   final String? message;
+  final bool hidePhoneNumber;
 }
 
 class FriendSuggestion {
@@ -62,12 +68,14 @@ class FriendSuggestion {
     required this.displayName,
     required this.phoneNumber,
     required this.mutualGroupCount,
+    this.hidePhoneNumber = false,
   });
 
   final String userId;
   final String displayName;
   final String phoneNumber;
   final int mutualGroupCount;
+  final bool hidePhoneNumber;
 }
 
 class MatchedContact {
@@ -76,12 +84,14 @@ class MatchedContact {
     required this.displayName,
     required this.phoneNumber,
     required this.alreadyFriend,
+    this.hidePhoneNumber = false,
   });
 
   final String userId;
   final String displayName;
   final String phoneNumber;
   final bool alreadyFriend;
+  final bool hidePhoneNumber;
 }
 
 class SparkGroup {
@@ -150,12 +160,14 @@ class GroupMember {
     required this.displayName,
     required this.phoneNumber,
     required this.role,
+    this.hidePhoneNumber = false,
   });
 
   final String userId;
   final String displayName;
   final String phoneNumber;
   final String role;
+  final bool hidePhoneNumber;
 
   bool get isOwner => role.toUpperCase() == 'OWNER';
   bool get isAdmin => role.toUpperCase() == 'ADMIN';

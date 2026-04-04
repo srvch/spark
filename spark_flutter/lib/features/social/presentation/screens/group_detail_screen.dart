@@ -294,161 +294,164 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
-      body: FutureBuilder<GroupDetail>(
-        future: _detailFuture,
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const _SkeletonDetail();
-          }
-          if (snap.hasError || !snap.hasData) {
-            return Scaffold(
-              backgroundColor: const Color(0xFFF2F2F7),
-              appBar: _buildAppBar(context, title: 'Group', group: null),
-              body: Center(child: _ErrorView(onRetry: _refresh)),
-            );
-          }
-          final group = snap.data!;
+    return FutureBuilder<GroupDetail>(
+      future: _detailFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const _SkeletonDetail();
+        }
+        if (snap.hasError || !snap.hasData) {
           return Scaffold(
             backgroundColor: const Color(0xFFF2F2F7),
-            appBar: _buildAppBar(context, title: group.name, group: group),
-            body: RefreshIndicator.adaptive(
-              onRefresh: _refresh,
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: _GroupHeaderCard(group: group),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: _ActionRow(
-                        group: group,
-                        leavingOrArchiving: _leavingOrArchiving,
-                        onCreateSpark: () {
-                          HapticFeedback.lightImpact();
-                          ref.read(bottomTabProvider.notifier).state = 1;
-                          Navigator.of(context).pop();
-                        },
-                        onInvite: () => showInviteToGroupSheet(
-                          context,
-                          groupId: widget.groupId,
-                          existingMemberIds: group.members.map((m) => m.userId).toList(),
-                        ).then((_) => _refresh()),
-                        onLeave: group.isOwner ? null : _leaveGroup,
-                        onArchive: group.isOwner ? _archiveGroup : null,
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 22, 16, 6),
-                      child: Text(
-                        'MEMBERS  ${group.members.length}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF8E8E93),
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(group.members.length, (i) {
-                            final m = group.members[i];
-                            return _MemberRow(
-                              member: m,
-                              isFirst: i == 0,
-                              isLast: i == group.members.length - 1,
-                              showSeparator: i < group.members.length - 1,
-                              canManage: group.canEdit && !m.isOwner,
-                              isNudging: _nudging.contains(m.userId),
-                              isRemoving: _removing.contains(m.userId),
-                              onNudge: group.canEdit && !m.isOwner ? () => _nudge(m) : null,
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => FriendProfileScreen(
-                                    friend: FriendUser(
-                                      userId: m.userId,
-                                      displayName: m.displayName,
-                                      phoneNumber: m.phoneNumber,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              onManage: group.canEdit && !m.isOwner
-                                  ? () => _memberActions(group, m)
-                                  : null,
-                            );
-                          }),
-                        ),
-                      ),
-                    ),
-                  ),
-                  _PendingInvitesSection(future: _pendingInvitesFuture),
-                  const SliverToBoxAdapter(child: SizedBox(height: 48)),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(context, title: 'Group', group: null),
+                  Expanded(child: Center(child: _ErrorView(onRetry: _refresh))),
                 ],
               ),
             ),
           );
-        },
-      ),
+        }
+        final group = snap.data!;
+        return Scaffold(
+          backgroundColor: const Color(0xFFF2F2F7),
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context, title: group.name, group: group),
+                Expanded(
+                  child: RefreshIndicator.adaptive(
+                    onRefresh: _refresh,
+                    child: CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: _GroupHeaderCard(group: group),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: _ActionRow(
+                              group: group,
+                              leavingOrArchiving: _leavingOrArchiving,
+                              onCreateSpark: () {
+                                HapticFeedback.lightImpact();
+                                ref.read(bottomTabProvider.notifier).state = 1;
+                                Navigator.of(context).pop();
+                              },
+                              onInvite: () => showInviteToGroupSheet(
+                                context,
+                                groupId: widget.groupId,
+                                existingMemberIds: group.members.map((m) => m.userId).toList(),
+                              ).then((_) => _refresh()),
+                              onLeave: group.isOwner ? null : _leaveGroup,
+                              onArchive: group.isOwner ? _archiveGroup : null,
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 22, 16, 6),
+                            child: Text(
+                              'MEMBERS  ${group.members.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF8E8E93),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(group.members.length, (i) {
+                                  final m = group.members[i];
+                                  return _MemberRow(
+                                    member: m,
+                                    isFirst: i == 0,
+                                    isLast: i == group.members.length - 1,
+                                    showSeparator: i < group.members.length - 1,
+                                    canManage: group.canEdit && !m.isOwner,
+                                    isNudging: _nudging.contains(m.userId),
+                                    isRemoving: _removing.contains(m.userId),
+                                    onNudge: group.canEdit && !m.isOwner ? () => _nudge(m) : null,
+                                    onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => FriendProfileScreen(
+                                          friend: FriendUser(
+                                            userId: m.userId,
+                                            displayName: m.displayName,
+                                            phoneNumber: m.phoneNumber,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    onManage: group.canEdit && !m.isOwner
+                                        ? () => _memberActions(group, m)
+                                        : null,
+                                  );
+                                }),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _PendingInvitesSection(future: _pendingInvitesFuture),
+                        const SliverToBoxAdapter(child: SizedBox(height: 48)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext ctx, {required String title, required GroupDetail? group}) {
-    return AppBar(
-      backgroundColor: const Color(0xFFF2F2F7),
-      scrolledUnderElevation: 0,
-      elevation: 0,
-      leading: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () => Navigator.of(ctx).pop(),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(width: 8),
-            Icon(CupertinoIcons.chevron_left, color: AppColors.accent, size: 20),
-          ],
-        ),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF000000),
-          fontFamily: 'Manrope',
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-      centerTitle: true,
-      actions: [
-        if (group != null && group.canEdit)
-          CupertinoButton(
-            padding: const EdgeInsets.only(right: 8),
-            onPressed: () => _editGroup(group),
-            child: const Text(
-              'Edit',
-              style: TextStyle(
-                color: AppColors.accent,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+  Widget _buildHeader(BuildContext context, {required String title, GroupDetail? group}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(
+              Icons.chevron_left_rounded,
+              color: AppColors.accent,
+              size: 28,
             ),
           ),
-      ],
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                color: Colors.black,
+                letterSpacing: -0.5,
+                fontFamily: 'Manrope',
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (group != null && group.canEdit)
+            IconButton(
+              onPressed: () => _editGroup(group),
+              icon: const Icon(CupertinoIcons.pencil_circle, color: AppColors.accent, size: 24),
+            ),
+        ],
+      ),
     );
   }
 }

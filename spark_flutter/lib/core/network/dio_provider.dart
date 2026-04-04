@@ -16,6 +16,10 @@ final dioProvider = Provider<Dio>((ref) {
       ? 'http://10.0.2.2:8080'
       : 'http://localhost:8080';
 
+  if (kReleaseMode && defineBase.isEmpty) {
+    debugPrint('WARNING: PROD BUILD WITHOUT BACKEND_BASE_URL. API WILL FAIL.');
+  }
+
   final dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,

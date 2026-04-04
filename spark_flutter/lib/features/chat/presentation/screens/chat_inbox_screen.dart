@@ -32,60 +32,76 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 18,
-            color: _kNavy,
-          ),
-          onPressed: () => backOrGoDiscover(context, ref),
-        ),
-        title: const Text(
-          'Chats',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: _kNavy,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.cardDivider),
-        ),
-      ),
       body: SafeArea(
-        child: available.isEmpty
-            ? _EmptyInbox()
-            : ListView.separated(
-                padding: EdgeInsets.zero,
-                itemCount: available.length,
-                separatorBuilder: (_, __) => Container(
-                  height: 1,
-                  margin: const EdgeInsets.only(left: 72),
-                  color: AppColors.cardDivider,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 16, 16, 14),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.cardDivider,
+                    width: 0.5,
+                  ),
                 ),
-                itemBuilder: (context, index) {
-                  final spark = available[index];
-                  final isJoined = joinedIds.contains(spark.id);
-                  final createdByMe = created.any((s) => s.id == spark.id);
-                  return _InboxRow(
-                    spark: spark,
-                    joined: isJoined,
-                    created: createdByMe,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(spark: spark),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => backOrGoDiscover(context, ref),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'Chats',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.8,
+                        fontFamily: 'Manrope',
                       ),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
+            ),
+            Expanded(
+              child: available.isEmpty
+                  ? _EmptyInbox()
+                  : ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: available.length,
+                      separatorBuilder: (_, __) => Container(
+                        height: 1,
+                        margin: const EdgeInsets.only(left: 72),
+                        color: AppColors.cardDivider,
+                      ),
+                      itemBuilder: (context, index) {
+                        final spark = available[index];
+                        final isJoined = joinedIds.contains(spark.id);
+                        final createdByMe = created.any((s) => s.id == spark.id);
+                        return _InboxRow(
+                          spark: spark,
+                          joined: isJoined,
+                          created: createdByMe,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ChatScreen(spark: spark),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -95,41 +111,55 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
 class _EmptyInbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Padding(
+      padding: const EdgeInsets.only(top: 100),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 84,
+            height: 84,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: _kNavyLight,
-              shape: BoxShape.circle,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: const Icon(
               Icons.chat_bubble_outline_rounded,
-              size: 32,
-              color: _kNavy,
+              size: 38,
+              color: AppColors.accent,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           const Text(
-            'No chats yet',
+            'Keep in touch',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: _kNavy,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
               fontFamily: 'Manrope',
+              letterSpacing: -0.4,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Join or create a spark to start chatting',
-            style: TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textMuted,
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Your joining and created sparks will appear here once you start chatting.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -253,6 +283,32 @@ class _Badge extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: _kNavy,
           fontFamily: 'Manrope',
+        ),
+      ),
+    );
+  }
+}
+class _HeaderAction extends StatelessWidget {
+  const _HeaderAction({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSubtle,
+          shape: BoxShape.circle,
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          icon,
+          size: 19,
+          color: AppColors.accent,
         ),
       ),
     );

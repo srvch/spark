@@ -16,126 +16,134 @@ class QrCodeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF2F2F7),
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(width: 8),
-              Icon(CupertinoIcons.chevron_left, color: AppColors.accent, size: 20),
-            ],
-          ),
-        ),
-        title: const Text(
-          'Add via QR',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF000000),
-            fontFamily: 'Manrope',
-          ),
-        ),
-        centerTitle: true,
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF000000),
-                        letterSpacing: -0.3,
-                        fontFamily: 'Manrope',
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Scan to add as a friend on Spark',
-                      style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
-                    ),
-                    const SizedBox(height: 28),
-                    _QrPlaceholder(link: _deepLink),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: SelectableText(
-                        _deepLink,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF8E8E93),
-                          fontFamily: 'monospace',
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
+              child: Row(
                 children: [
-                  Expanded(
-                    child: _ActionButton(
-                      icon: CupertinoIcons.square_on_square,
-                      label: 'Copy link',
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Clipboard.setData(ClipboardData(text: _deepLink));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Link copied!'),
-                            backgroundColor: AppColors.accent,
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        );
-                      },
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.accent,
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ActionButton(
-                      icon: CupertinoIcons.share,
-                      label: 'Share',
-                      primary: true,
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Share.share(
-                          'Add me on Spark! $_deepLink',
-                          subject: 'Join me on Spark',
-                        );
-                      },
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'Invite',
+                      style: TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                        letterSpacing: -0.5,
+                        fontFamily: 'Manrope',
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF000000),
+                              letterSpacing: -0.3,
+                              fontFamily: 'Manrope',
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Scan to add as a friend on Spark',
+                            style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+                          ),
+                          const SizedBox(height: 28),
+                          _QrPlaceholder(link: _deepLink),
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF2F2F7),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: SelectableText(
+                              _deepLink,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF8E8E93),
+                                fontFamily: 'monospace',
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ActionButton(
+                            icon: CupertinoIcons.square_on_square,
+                            label: 'Copy link',
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Clipboard.setData(ClipboardData(text: _deepLink));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('Link copied!'),
+                                  backgroundColor: AppColors.accent,
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 2),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _ActionButton(
+                            icon: CupertinoIcons.share,
+                            label: 'Share',
+                            primary: true,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Share.share(
+                                'Add me on Spark! $_deepLink',
+                                subject: 'Join me on Spark',
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

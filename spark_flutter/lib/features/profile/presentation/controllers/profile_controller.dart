@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/auth/auth_state.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../data/profile_api_repository.dart';
 
 export '../../data/profile_api_repository.dart' show UserProfile;
+
+const _kHidePhoneKey = 'hide_phone_number';
 
 final profileApiRepositoryProvider = Provider<ProfileApiRepository>((ref) {
   return ProfileApiRepository(dio: ref.watch(dioProvider));
@@ -28,7 +31,10 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
     state = const AsyncValue.loading();
     try {
       final profile = await ref.read(profileApiRepositoryProvider).fetchProfile();
-      state = AsyncValue.data(profile);
+      // Read the locally-persisted privacy pref (backend doesn't store this yet).
+      final prefs = await SharedPreferences.getInstance();
+      final hidePhone = prefs.getBool(_kHidePhoneKey) ?? true;
+      state = AsyncValue.data(profile.copyWith(hidePhoneNumber: hidePhone));
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -53,6 +59,27 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
     } catch (e, st) {
       if (prev != null) state = AsyncValue.data(prev);
       rethrow;
+    }
+  }
+
+  Future<void> toggleHidePhoneNumber(bool hide) async {
+    final prev = state.valueOrNull;
+    if (prev == null) return;
+    // Save locally — backend doesn't support this field yet so no API call.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kHidePhoneKey, hide);
+    final updated = prev.copyWith(hidePhoneNumber: hide);
+    state = AsyncValue.data(updated);
+    // Mirror into auth session.
+    final current = ref.read(authSessionProvider);
+    if (current != null) {
+      ref.read(authSessionProvider.notifier).state = AuthSession(
+        token: current.token,
+        userId: current.userId,
+        phoneNumber: current.phoneNumber,
+        displayName: current.displayName,
+        hidePhoneNumber: hide,
+      );
     }
   }
 }
