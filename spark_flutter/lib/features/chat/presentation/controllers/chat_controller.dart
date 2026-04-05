@@ -16,6 +16,7 @@ class ChatMessage {
     required this.isMine,
     required this.timeLabel,
     this.isHost = false,
+    this.isAi = false,
   });
 
   final String id;
@@ -25,6 +26,7 @@ class ChatMessage {
   final bool isMine;
   final String timeLabel;
   final bool isHost;
+  final bool isAi;
 }
 
 final chatThreadsProvider =
@@ -58,10 +60,11 @@ class ChatThreadNotifier extends StateNotifier<List<ChatMessage>> {
     return ChatMessage(
       id: msg.id,
       senderId: msg.senderId,
-      sender: 'User ${msg.senderId.substring(0, 4)}',
+      sender: msg.isAi ? 'Spark Bot' : 'User ${msg.senderId.substring(0, 4)}',
       text: msg.text,
-      isMine: true, // Should be checked against current user ID
+      isMine: false, // In production, check against current user ID
       timeLabel: '${msg.createdAt.hour}:${msg.createdAt.minute}',
+      isAi: msg.isAi,
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
 import '../../../../shared/widgets/person_avatar.dart';
 import '../../domain/social.dart';
+import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../controllers/social_controller.dart';
 import '../widgets/invite_to_group_sheet.dart';
 import 'friend_profile_screen.dart';
@@ -339,6 +340,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                               leavingOrArchiving: _leavingOrArchiving,
                               onCreateSpark: () {
                                 HapticFeedback.lightImpact();
+                                ref.read(sparkCreationContextProvider.notifier).state = widget.groupId;
                                 ref.read(bottomTabProvider.notifier).state = 1;
                                 Navigator.of(context).pop();
                               },

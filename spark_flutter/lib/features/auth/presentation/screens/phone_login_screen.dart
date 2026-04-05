@@ -64,7 +64,7 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen>
         children: [
           _Background(orbCtrl: _orbCtrl),
           SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -516,9 +516,10 @@ class _GlassFieldState extends State<_GlassField> {
         keyboardType: widget.keyboardType,
         textAlign: widget.centerText ? TextAlign.center : TextAlign.start,
         style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+          color: Color(0xFF1E3A8A), // Professional Dark Blue
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
         ),
         decoration: InputDecoration(
           hintText: widget.hintText,

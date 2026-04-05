@@ -16,6 +16,7 @@ import '../../../spark/presentation/screens/activity_screen.dart';
 import '../../../../features/auth/presentation/controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_preferences_controller.dart';
+import '../controllers/availability_controller.dart';
 import '../../data/safety_api_repository.dart';
 import '../widgets/availability_sheet.dart';
 

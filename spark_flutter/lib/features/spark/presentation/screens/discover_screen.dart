@@ -201,6 +201,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      const _AiRadarPanel(),
+                      const SizedBox(height: 20),
                       // ── Section header ────────────────────────────
                       Row(
                         children: [
@@ -2182,4 +2184,130 @@ class _SelectionChip extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── AI Radar Panel ─────────────────────────────────────────────────────────────
+
+class _AiRadarPanel extends StatelessWidget {
+  const _AiRadarPanel();
+
+  static const List<_AiRadarInsight> _insights = [
+    _AiRadarInsight(
+      title: 'Friday Night Fever',
+      subtitle: '3 late-night food sparks just started in Indiranagar. Want to join?',
+      icon: Icons.nightlight_round,
+    ),
+    _AiRadarInsight(
+      title: 'Vibe Match: 95%',
+      subtitle: 'Most people in "Sunset Sprints" are reaching in 10 mins. Perfect timing!',
+      icon: Icons.auto_awesome_rounded,
+    ),
+    _AiRadarInsight(
+      title: 'Weather Radar',
+      subtitle: 'It\'s clearing up! 4 active sports groups are heading out within 2km.',
+      icon: Icons.wb_sunny_rounded,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accent),
+            const SizedBox(width: 8),
+            const Text(
+              'SPARK AI RADAR',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                color: AppColors.accent,
+                letterSpacing: 1.2,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _insights.length,
+            clipBehavior: Clip.none,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final insight = _insights[index];
+              return Container(
+                width: 240,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.accent.withValues(alpha: 0.08),
+                      AppColors.accent.withValues(alpha: 0.02),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    width: 1.5,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(insight.icon, size: 16, color: AppColors.accent),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            insight.title,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      insight.subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AiRadarInsight {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _AiRadarInsight({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
 }

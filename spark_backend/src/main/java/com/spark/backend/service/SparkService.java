@@ -509,10 +509,3 @@ public class SparkService {
     ) {
     }
 }
-InviteInboxItem> items,
-            int page,
-            int size,
-            boolean hasMore
-    ) {
-    }
-}

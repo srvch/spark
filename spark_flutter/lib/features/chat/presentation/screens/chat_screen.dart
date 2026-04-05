@@ -110,9 +110,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     };
 
     final thread = ref.watch(chatThreadsProvider(widget.spark.id));
-    final messages = thread
-        .where((msg) => !hiddenUserIds.contains(msg.senderId))
-        .toList();
+    final messages = [
+      ...thread,
+      if (thread.isNotEmpty)
+        const ChatMessage(
+          id: 'mock_ai',
+          senderId: 'spark_bot',
+          sender: 'Spark Bot',
+          text: 'Checking neighborhood traffic... 🚦 It’s a 10 min drive from Central Park. I’ll notify the group as you near the location. ✨',
+          isMine: false,
+          timeLabel: 'Just now',
+          isAi: true,
+        ),
+    ].where((msg) => !hiddenUserIds.contains(msg.senderId)).toList();
 
     final participantIds = ref.watch(sparkParticipantsProvider(widget.spark.id));
     final participants = _buildParticipants(
@@ -795,13 +805,82 @@ class _MessageBubble extends StatelessWidget {
       );
     }
 
+    if (message.isAi) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.accent.withValues(alpha: 0.12),
+                    AppColors.accent.withValues(alpha: 0.04),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.accent.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accent),
+                      const SizedBox(width: 8),
+                      Text(
+                        message.sender,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.accent,
+                          fontFamily: 'Manrope',
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    message.text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    message.timeLabel,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 10 : 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (isLast)
-            _Avatar(name: message.sender)
+            _Avatar(name: message.sender, isAi: message.isAi)
           else
             const SizedBox(width: 32),
           const SizedBox(width: 8),
@@ -879,8 +958,9 @@ class _MessageBubble extends StatelessWidget {
 // ── Avatar ────────────────────────────────────────────────────────────────────
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name});
+  const _Avatar({required this.name, this.isAi = false});
   final String name;
+  final bool isAi;
 
   @override
   Widget build(BuildContext context) {
@@ -888,18 +968,27 @@ class _Avatar extends StatelessWidget {
       width: 32,
       height: 32,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: _kNavyLight,
+      decoration: BoxDecoration(
+        color: isAi ? AppColors.accent : _kNavyLight,
         shape: BoxShape.circle,
+        boxShadow: isAi ? [
+          BoxShadow(
+            color: AppColors.accent.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
       ),
-      child: Text(
-        _initials(name),
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: _kNavy,
-        ),
-      ),
+      child: isAi 
+        ? const Icon(Icons.auto_awesome_rounded, size: 16, color: Colors.white)
+        : Text(
+            _initials(name),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: _kNavy,
+            ),
+          ),
     );
   }
 

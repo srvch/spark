@@ -6,6 +6,7 @@ class ChatMessage {
     required this.text,
     required this.createdAt,
     this.isMine = false,
+    this.isAi = false,
   });
 
   final String id;
@@ -14,6 +15,7 @@ class ChatMessage {
   final String text;
   final DateTime createdAt;
   final bool isMine;
+  final bool isAi;
 }
 
 class ChatPage {

@@ -44,6 +44,7 @@ class ChatApiRepository {
       senderId: '${json['senderId']}',
       text: '${json['text']}',
       createdAt: DateTime.tryParse('${json['createdAt']}')?.toLocal() ?? DateTime.now(),
+      isAi: json['isAi'] == true,
     );
   }
 }

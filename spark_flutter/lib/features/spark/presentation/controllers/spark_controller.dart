@@ -26,6 +26,9 @@ final selectedLocationProvider = StateProvider<String>(
   (ref) => 'Indiranagar',
 );
 
+/// Holds an optional groupId for pre-filling "Create Spark" from a group screen
+final sparkCreationContextProvider = StateProvider<String?>((ref) => null);
+
 final savedLocationsProvider = Provider<List<String>>((ref) {
   return const [
     'Current location',
