@@ -94,6 +94,16 @@ public class SparkService {
         entity.setVisibility(command.visibility());
         entity.setStatus(SparkStatus.ACTIVE);
 
+        // Recurring template fields
+        if (command.recurrenceType() != null && !command.recurrenceType().isBlank()) {
+            entity.setRecurrenceType(command.recurrenceType().toUpperCase());
+            entity.setRecurrenceDayOfWeek(command.recurrenceDayOfWeek());
+            entity.setRecurrenceTime(command.recurrenceTime());
+            entity.setRecurrenceEndDate(command.recurrenceEndDate());
+            // Pre-compute next occurrence so the scheduler can find it quickly
+            entity.setNextOccursAt(command.startsAt());
+        }
+
         SparkEventEntity saved = sparkEventRepository.save(entity);
         if (command.visibility() == SparkVisibility.INVITE) {
             createPendingInvites(saved.getId(), command.hostUserId(), command.inviteUserIds());
@@ -466,7 +476,11 @@ public class SparkService {
             int maxSpots,
             SparkVisibility visibility,
             List<UUID> circleIds,
-            List<String> inviteUserIds
+            List<String> inviteUserIds,
+            String recurrenceType,
+            Integer recurrenceDayOfWeek,
+            String recurrenceTime,
+            java.time.LocalDate recurrenceEndDate
     ) {
     }
 

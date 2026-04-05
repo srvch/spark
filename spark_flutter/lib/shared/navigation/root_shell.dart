@@ -12,6 +12,7 @@ import '../../features/spark/domain/spark_invite.dart';
 import '../../features/spark/presentation/controllers/spark_controller.dart';
 import '../../features/spark/presentation/screens/create_spark_screen.dart';
 import '../../features/spark/presentation/screens/discover_screen.dart';
+import '../../features/spark/presentation/screens/spark_detail_screen.dart';
 
 final bottomTabProvider = StateProvider<int>((ref) => 0);
 
@@ -32,6 +33,31 @@ class RootShell extends ConsumerWidget {
     final tab = ref.watch(bottomTabProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.darkBackground : Colors.white;
+
+    // Handle deep links — navigate to spark detail when a link arrives
+    ref.listen<String?>(pendingDeepLinkSparkIdProvider, (_, sparkId) {
+      if (sparkId == null) return;
+      ref.read(pendingDeepLinkSparkIdProvider.notifier).state = null;
+
+      // Fetch and show the spark
+      ref.read(sparkDataControllerProvider).fetchSparkDetail(sparkId);
+
+      // Switch to Explore tab and push detail once spark is in state
+      ref.read(bottomTabProvider.notifier).state = 0;
+
+      // Small delay to let the spark load into the provider
+      Future.delayed(const Duration(milliseconds: 400), () {
+        final sparks = ref.read(allSparksProvider);
+        final spark = sparks.where((s) => s.id == sparkId).firstOrNull;
+        if (spark != null && context.mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SparkDetailScreen(spark: spark),
+            ),
+          );
+        }
+      });
+    });
 
     final joinedCount = ref.watch(joinedSparksProvider).length;
     final createdCount = ref.watch(myCreatedSparksProvider).length;

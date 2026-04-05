@@ -58,6 +58,33 @@ public class SparkEventEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    /** NULL = one-off spark; DAILY / WEEKLY = this spark is a recurring template */
+    @Column(name = "recurrence_type", length = 16)
+    private String recurrenceType;
+
+    /** For WEEKLY recurrence: 1=Monday … 7=Sunday */
+    @Column(name = "recurrence_day_of_week")
+    private Integer recurrenceDayOfWeek;
+
+    /** HH:mm string, e.g. "18:30" */
+    @Column(name = "recurrence_time", length = 8)
+    private String recurrenceTime;
+
+    @Column(name = "recurrence_end_date")
+    private java.time.LocalDate recurrenceEndDate;
+
+    /** UUID of the template spark that spawned this instance */
+    @Column(name = "template_id")
+    private UUID templateId;
+
+    /** Last time this template spawned a new spark instance */
+    @Column(name = "last_spawned_at")
+    private Instant lastSpawnedAt;
+
+    /** Pre-computed next spawn time (set by the scheduler) */
+    @Column(name = "next_occurs_at")
+    private Instant nextOccursAt;
+
     @PrePersist
     void onCreate() {
         createdAt = Instant.now();
@@ -169,11 +196,27 @@ public class SparkEventEntity {
         this.visibility = visibility;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    public String getRecurrenceType() { return recurrenceType; }
+    public void setRecurrenceType(String recurrenceType) { this.recurrenceType = recurrenceType; }
+
+    public Integer getRecurrenceDayOfWeek() { return recurrenceDayOfWeek; }
+    public void setRecurrenceDayOfWeek(Integer recurrenceDayOfWeek) { this.recurrenceDayOfWeek = recurrenceDayOfWeek; }
+
+    public String getRecurrenceTime() { return recurrenceTime; }
+    public void setRecurrenceTime(String recurrenceTime) { this.recurrenceTime = recurrenceTime; }
+
+    public java.time.LocalDate getRecurrenceEndDate() { return recurrenceEndDate; }
+    public void setRecurrenceEndDate(java.time.LocalDate recurrenceEndDate) { this.recurrenceEndDate = recurrenceEndDate; }
+
+    public UUID getTemplateId() { return templateId; }
+    public void setTemplateId(UUID templateId) { this.templateId = templateId; }
+
+    public Instant getLastSpawnedAt() { return lastSpawnedAt; }
+    public void setLastSpawnedAt(Instant lastSpawnedAt) { this.lastSpawnedAt = lastSpawnedAt; }
+
+    public Instant getNextOccursAt() { return nextOccursAt; }
+    public void setNextOccursAt(Instant nextOccursAt) { this.nextOccursAt = nextOccursAt; }
 }

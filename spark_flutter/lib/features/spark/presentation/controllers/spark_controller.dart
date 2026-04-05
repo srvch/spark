@@ -217,6 +217,9 @@ final sparkDataControllerProvider = Provider<SparkDataController>((ref) {
   return SparkDataController(ref);
 });
 
+/// Holds a sparkId received via deep link — consumed by RootShell to open the detail screen.
+final pendingDeepLinkSparkIdProvider = StateProvider<String?>((ref) => null);
+
 class SparkDataController {
   SparkDataController(this.ref);
 
@@ -381,6 +384,10 @@ class SparkDataController {
     SparkVisibility visibility = SparkVisibility.publicSpark,
     List<String> circleIds = const [],
     List<String> inviteUserIds = const [],
+    String? recurrenceType,
+    int? recurrenceDayOfWeek,
+    String? recurrenceTime,
+    DateTime? recurrenceEndDate,
   }) async {
     if (visibility == SparkVisibility.publicSpark && (circleIds.isNotEmpty || inviteUserIds.isNotEmpty)) {
       throw Exception('Public sparks cannot have specific circles or invitees. Change visibility to "Circle" or "Invite" first.');
@@ -403,6 +410,10 @@ class SparkDataController {
       visibility: visibility,
       circleIds: circleIds,
       inviteUserIds: inviteUserIds,
+      recurrenceType: recurrenceType,
+      recurrenceDayOfWeek: recurrenceDayOfWeek,
+      recurrenceTime: recurrenceTime,
+      recurrenceEndDate: recurrenceEndDate,
     );
     ref.read(createdSparksProvider.notifier).state = [
       created,
@@ -414,6 +425,7 @@ class SparkDataController {
         'spark_id': created.id,
         'category': created.category.name,
         'spots': created.maxSpots,
+        'recurring': recurrenceType ?? 'none',
       },
     );
     unawaited(refreshNearby());

@@ -108,6 +108,24 @@ public class NotificationService {
     }
 
     @Transactional
+    /**
+     * Proactive "new spark nearby" alert — used by NearbyAlertJob.
+     */
+    @Transactional
+    public void sendNearbySparkAlert(String userId, SparkEventEntity spark) {
+        String dedupe = "nearby_alert:" + spark.getId() + ":" + userId;
+        createNotificationIfMissing(
+                userId,
+                spark.getId(),
+                spark.getHostUserId(),
+                NotificationType.NEW_SPARK_NEARBY,
+                "New spark nearby: " + spark.getTitle(),
+                spark.getCategory() + " · " + spark.getLocationName(),
+                dedupe
+        );
+    }
+
+    @Transactional
     public void sendStartsSoonReminder(SparkEventEntity spark, int minutesBeforeStart) {
         NotificationType type = minutesBeforeStart == 60
                 ? NotificationType.SPARK_STARTS_60

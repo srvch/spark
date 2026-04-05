@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/analytics/analytics_service.dart';
@@ -283,15 +284,19 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
   }
 
   Future<void> _copyShareLink() async {
-    final deepLink = 'https://spark.app/sparks/${widget.spark.id}';
-    await Clipboard.setData(ClipboardData(text: deepLink));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Spark link copied')),
-    );
+    final spark = widget.spark;
+    final deepLink = spark.shareUrl ?? 'spark://sparks/${spark.id}';
+    final timeStr = spark.timeLabel;
+    final message =
+        'Join my Spark: ${spark.title}\n'
+        '$timeStr · ${spark.locationName}\n\n'
+        'Open in app: $deepLink';
+
+    await Share.share(message, subject: 'Join my Spark: ${spark.title}');
+
     ref.read(analyticsServiceProvider).track(
-      'spark_link_copied',
-      properties: {'spark_id': widget.spark.id},
+      'spark_shared',
+      properties: {'spark_id': spark.id},
     );
   }
 

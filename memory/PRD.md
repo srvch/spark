@@ -44,8 +44,29 @@ Users create short-lived "Sparks" (meetup events), discover nearby ones, and joi
 29. `UserController.java` — `DELETE /api/v1/users/me` endpoint added (204 No Content)
 30. `auth_api_repository.dart` — `deleteAccount()` calls `DELETE /api/v1/users/me`
 31. `auth_controller.dart` — `deleteAccount()`: unregister FCM → backend delete → Firebase signOut → clear session
-32. `profile_screen.dart` — "Delete account" row below Sign Out; confirmation dialog with bullet list of
-    what's deleted, loading overlay during deletion, error snackbar on failure
+32. `profile_screen.dart` — "Delete account" row below Sign Out; confirmation dialog with bullet list of what's deleted, loading overlay during deletion, error snackbar on failure
+
+### Three New Features (Session 4)
+
+**1. Shareable Deep Links**
+- Backend: `GET /api/v1/sparks/{id}/public` (no-auth preview endpoint) — `SecurityConfig` updated
+- Backend: `shareUrl` (`spark://sparks/{id}`) added to `SparkResponse`
+- Flutter: `share_plus` upgraded from clipboard → native share sheet (`Share.share`)
+- Flutter: `app_links ^6.3.4` added; `SparkApp` initialises AppLinks stream on startup
+- Flutter: Deep link handler → `pendingDeepLinkSparkIdProvider`; `RootShell` navigates to detail
+- Android: `AndroidManifest.xml` — intent filter for `spark://sparks/{sparkId}`
+
+**2. Recurring Sparks (Templates)**
+- DB: `V10__recurring_sparks.sql` — recurrence columns on `spark_events`
+- Backend: `RecurringSparkJob` — `@Scheduled` hourly, spawns instances for due templates
+- Backend: Recurrence fields propagated through `CreateSparkCommand` → `CreateSparkRequest` → Entity
+- Flutter: `_RecurrenceSection` widget in Create screen (toggle + Daily/Weekly + day picker + end date)
+- Flutter: Recurring badge on nearby spark cards
+
+**3. Proactive Nearby Alerts**
+- Backend: `UserLocationService` — Redis GEO set + active sorted set for user locations
+- Backend: `SparkController.nearby()` — caches user location on every query
+- Backend: `NearbyAlertJob` — `@Scheduled` every 15 min, finds new sparks, pushes to nearby users with dedup
 24. `push_registration_service.dart` — `unregisterDeviceToken()` added (DELETE /api/v1/push/devices)
 25. `auth_controller.dart` — `logout()` method: unregisters FCM token, Firebase signOut, clears session
 26. `profile_screen.dart` — "Sign out" row in Account section with confirmation dialog

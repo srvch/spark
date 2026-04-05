@@ -68,6 +68,10 @@ class SparkApiRepository {
     SparkVisibility visibility = SparkVisibility.publicSpark,
     List<String> inviteUserIds = const [],
     List<String> circleIds = const [],
+    String? recurrenceType,
+    int? recurrenceDayOfWeek,
+    String? recurrenceTime,
+    DateTime? recurrenceEndDate,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/sparks',
@@ -84,6 +88,12 @@ class SparkApiRepository {
         'visibility': _toApiVisibility(visibility),
         if (inviteUserIds.isNotEmpty) 'inviteUserIds': inviteUserIds,
         if (circleIds.isNotEmpty) 'circleIds': circleIds,
+        if (recurrenceType != null) 'recurrenceType': recurrenceType,
+        if (recurrenceDayOfWeek != null) 'recurrenceDayOfWeek': recurrenceDayOfWeek,
+        if (recurrenceTime != null) 'recurrenceTime': recurrenceTime,
+        if (recurrenceEndDate != null)
+          'recurrenceEndDate':
+              '${recurrenceEndDate.year}-${recurrenceEndDate.month.toString().padLeft(2, '0')}-${recurrenceEndDate.day.toString().padLeft(2, '0')}',
       },
     );
     return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.3);
@@ -180,6 +190,7 @@ class SparkApiRepository {
       note: null,
       visibilityRaw: _nullableString(json['visibility']),
       hideHostPhoneNumber: json['hideHostPhoneNumber'] == true,
+      json: json,
     );
   }
 
@@ -199,6 +210,7 @@ class SparkApiRepository {
       note: json['note'] as String?,
       visibilityRaw: _nullableString(json['visibility']),
       hideHostPhoneNumber: json['hideHostPhoneNumber'] == true,
+      json: json,
     );
   }
 
@@ -217,6 +229,7 @@ class SparkApiRepository {
     required String? note,
     required String? visibilityRaw,
     required bool hideHostPhoneNumber,
+    Map<String, dynamic>? json,
   }) {
     final startsAt = DateTime.tryParse(startsAtRaw)?.toLocal() ?? DateTime.now();
     final diffMinutes = startsAt.difference(DateTime.now()).inMinutes.clamp(0, 24 * 60);
@@ -233,11 +246,13 @@ class SparkApiRepository {
       maxSpots: maxSpots == 0 ? 1 : maxSpots,
       location: locationName,
       createdBy: hostUserId,
-      participants: const [], // Participants now fetched separately
+      participants: const [],
       hostPhoneNumber: hostPhoneNumber,
       hideHostPhoneNumber: hideHostPhoneNumber,
       note: note,
       visibility: _toVisibility(visibilityRaw),
+      shareUrl: json != null ? _nullableString(json['shareUrl'] as String?) : null,
+      recurrenceType: json != null ? _nullableString(json['recurrenceType'] as String?) : null,
     );
   }
 

@@ -61,6 +61,12 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   bool _manualOpenGroup = false;
   bool _previewExpanded = false;
 
+  // Recurrence
+  bool _isRecurring = false;
+  String _recurrenceType = 'WEEKLY'; // DAILY or WEEKLY
+  int _recurrenceDayOfWeek = 1; // 1=Mon … 7=Sun
+  DateTime? _recurrenceEndDate;
+
   @override
   void initState() {
     super.initState();
@@ -525,6 +531,21 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                               ],
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 10),
+                        // ─── Repeat this Spark (Recurrence) ─────────────
+                        _RecurrenceSection(
+                          isRecurring: _isRecurring,
+                          recurrenceType: _recurrenceType,
+                          recurrenceDayOfWeek: _recurrenceDayOfWeek,
+                          recurrenceEndDate: _recurrenceEndDate,
+                          onToggle: (v) => setState(() => _isRecurring = v),
+                          onTypeChanged: (t) =>
+                              setState(() => _recurrenceType = t),
+                          onDayChanged: (d) =>
+                              setState(() => _recurrenceDayOfWeek = d),
+                          onEndDateChanged: (dt) =>
+                              setState(() => _recurrenceEndDate = dt),
                         ),
                         const SizedBox(height: 10),
                         InkWell(
@@ -1240,6 +1261,14 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
               ..._selectedInviteUserIds,
               ..._manualInvitePhones,
             ],
+            recurrenceType: _isRecurring ? _recurrenceType : null,
+            recurrenceDayOfWeek: (_isRecurring && _recurrenceType == 'WEEKLY')
+                ? _recurrenceDayOfWeek
+                : null,
+            recurrenceTime: _isRecurring
+                ? '${_manualHour.toString().padLeft(2, '0')}:${_manualMinute.toString().padLeft(2, '0')}'
+                : null,
+            recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
           );
     } catch (e) {
       if (!mounted) return;
@@ -2886,4 +2915,215 @@ class _BottomSheetCard extends StatelessWidget {
     ),
     child: SafeArea(child: child),
   );
+}
+
+
+/// "Repeat this Spark" toggle + day/type picker for recurring sparks.
+class _RecurrenceSection extends StatelessWidget {
+  const _RecurrenceSection({
+    required this.isRecurring,
+    required this.recurrenceType,
+    required this.recurrenceDayOfWeek,
+    required this.recurrenceEndDate,
+    required this.onToggle,
+    required this.onTypeChanged,
+    required this.onDayChanged,
+    required this.onEndDateChanged,
+  });
+
+  final bool isRecurring;
+  final String recurrenceType;
+  final int recurrenceDayOfWeek;
+  final DateTime? recurrenceEndDate;
+  final ValueChanged<bool> onToggle;
+  final ValueChanged<String> onTypeChanged;
+  final ValueChanged<int> onDayChanged;
+  final ValueChanged<DateTime?> onEndDateChanged;
+
+  static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.neutralSurface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          // Toggle row
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => onToggle(!isRecurring),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.repeat_rounded, size: 18,
+                      color: AppColors.textSecondary),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Repeat this spark',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: isRecurring,
+                    onChanged: onToggle,
+                    activeColor: AppColors.accent,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isRecurring) ...[
+            const Divider(height: 1, color: AppColors.border),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // DAILY / WEEKLY
+                  Row(
+                    children: [
+                      _TypeChip(
+                        label: 'Daily',
+                        selected: recurrenceType == 'DAILY',
+                        onTap: () => onTypeChanged('DAILY'),
+                      ),
+                      const SizedBox(width: 8),
+                      _TypeChip(
+                        label: 'Weekly',
+                        selected: recurrenceType == 'WEEKLY',
+                        onTap: () => onTypeChanged('WEEKLY'),
+                      ),
+                    ],
+                  ),
+                  if (recurrenceType == 'WEEKLY') ...[
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Every',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(_days.length, (i) {
+                          final day = i + 1; // 1=Mon…7=Sun
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: _TypeChip(
+                              label: _days[i],
+                              selected: recurrenceDayOfWeek == day,
+                              onTap: () => onDayChanged(day),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  // End date (optional)
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: recurrenceEndDate ??
+                            DateTime.now().add(const Duration(days: 30)),
+                        firstDate: DateTime.now().add(const Duration(days: 1)),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      onEndDateChanged(picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.event_outlined,
+                              size: 16, color: AppColors.textSecondary),
+                          const SizedBox(width: 6),
+                          Text(
+                            recurrenceEndDate == null
+                                ? 'No end date'
+                                : 'Ends ${recurrenceEndDate!.day}/${recurrenceEndDate!.month}/${recurrenceEndDate!.year}',
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (recurrenceEndDate != null) ...[
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                              onTap: () => onEndDateChanged(null),
+                              child: Icon(Icons.close, size: 14,
+                                  color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TypeChip extends StatelessWidget {
+  const _TypeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.accent : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.accent : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: selected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
 }

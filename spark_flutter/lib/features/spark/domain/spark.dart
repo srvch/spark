@@ -69,6 +69,8 @@ class Spark {
     this.hostPhoneNumber,
     this.hideHostPhoneNumber = false,
     this.note,
+    this.shareUrl,
+    this.recurrenceType,
   });
 
   final String id;
@@ -87,10 +89,12 @@ class Spark {
   final String? hostPhoneNumber;
   final bool hideHostPhoneNumber;
   final String? note;
+  final String? shareUrl;
+  final String? recurrenceType;
 
   int get joinedCount => participants.length;
-
   bool get isHappeningSoon => startsInMinutes <= 30;
-
   bool get isLaterToday => startsInMinutes > 30;
+  bool get isRecurring => recurrenceType != null;
+  String get locationName => location;
 }

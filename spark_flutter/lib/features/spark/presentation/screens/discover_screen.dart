@@ -1779,6 +1779,27 @@ class _NearbyCardState extends State<_NearbyCard> {
                       letterSpacing: -0.4,
                     ),
                   ),
+                  if (spark.isRecurring)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        children: [
+                          Icon(Icons.repeat_rounded,
+                              size: 11, color: AppColors.accent),
+                          const SizedBox(width: 3),
+                          Text(
+                            spark.recurrenceType == 'DAILY'
+                                ? 'Repeats daily'
+                                : 'Repeats weekly',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   const SizedBox(height: 3),
                   Row(
                     children: [

@@ -6,6 +6,7 @@ import com.spark.backend.entity.SparkEventEntity;
 import com.spark.backend.entity.SparkInviteEntity;
 import com.spark.backend.repository.AppUserRepository;
 import com.spark.backend.service.SparkService;
+import com.spark.backend.service.UserLocationService;
 import com.spark.backend.security.CurrentUser;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
@@ -25,10 +26,14 @@ import java.util.stream.Collectors;
 public class SparkController {
     private final SparkService sparkService;
     private final AppUserRepository appUserRepository;
+    private final UserLocationService userLocationService;
 
-    public SparkController(SparkService sparkService, AppUserRepository appUserRepository) {
+    public SparkController(SparkService sparkService,
+                           AppUserRepository appUserRepository,
+                           UserLocationService userLocationService) {
         this.sparkService = sparkService;
         this.appUserRepository = appUserRepository;
+        this.userLocationService = userLocationService;
     }
 
     @PostMapping
@@ -62,7 +67,11 @@ public class SparkController {
                         req.maxSpots(),
                         visibility,
                         circleIds,
-                        inviteUserIds
+                        inviteUserIds,
+                        req.recurrenceType(),
+                        req.recurrenceDayOfWeek(),
+                        req.recurrenceTime(),
+                        req.recurrenceEndDate()
                 )
         );
         return toResponse(spark, sparkService.joinedCount(spark.getId()), currentUser.userId());
@@ -77,12 +86,18 @@ public class SparkController {
 
     @GetMapping("/nearby")
     public NearbyPageResponse nearby(
+            Authentication authentication,
             @RequestParam double lat,
             @RequestParam double lng,
             @RequestParam(defaultValue = "5") @DecimalMin("0.1") @DecimalMax("50") double radiusKm,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
+        // Cache user's location for proactive nearby alerts
+        if (authentication != null && authentication.getPrincipal() instanceof CurrentUser currentUser) {
+            userLocationService.updateLocation(currentUser.userId(), lat, lng);
+        }
+
         var nearbyPage = sparkService.nearby(lat, lng, radiusKm, page, size);
         var items = nearbyPage.items()
                 .stream()
@@ -101,6 +116,23 @@ public class SparkController {
                 ))
                 .toList();
         return new NearbyPageResponse(items, page, size, nearbyPage.hasMore());
+    }
+
+    /** Public (no auth) endpoint — returns minimal spark info for deep link previews. */
+    @GetMapping("/{sparkId}/public")
+    public SparkPublicPreview getPublic(@PathVariable UUID sparkId) {
+        SparkEventEntity spark = sparkService.getSpark(sparkId);
+        long joined = sparkService.joinedCount(sparkId);
+        return new SparkPublicPreview(
+                spark.getId(),
+                spark.getTitle(),
+                spark.getCategory(),
+                spark.getLocationName(),
+                spark.getStartsAt(),
+                spark.getMaxSpots(),
+                (int) joined,
+                spark.getStatus().name()
+        );
     }
 
     @GetMapping("/invites")
@@ -258,7 +290,10 @@ public class SparkController {
                 spark.getVisibility().name(),
                 spark.getStatus().name(),
                 spark.getCreatedAt(),
-                spark.getUpdatedAt()
+                spark.getUpdatedAt(),
+                "spark://sparks/" + spark.getId(),
+                spark.getRecurrenceType(),
+                spark.getTemplateId()
         );
     }
 
@@ -274,7 +309,11 @@ public class SparkController {
             @Min(1) @Max(1000) int maxSpots,
             SparkVisibility visibility,
             @Size(max = 100) List<UUID> circleIds,
-            @Size(max = 500) List<@NotBlank String> inviteUserIds
+            @Size(max = 500) List<@NotBlank String> inviteUserIds,
+            String recurrenceType,
+            Integer recurrenceDayOfWeek,
+            String recurrenceTime,
+            java.time.LocalDate recurrenceEndDate
     ) {
     }
 
@@ -296,7 +335,22 @@ public class SparkController {
             String visibility,
             String status,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            String shareUrl,
+            String recurrenceType,
+            UUID templateId
+    ) {
+    }
+
+    public record SparkPublicPreview(
+            UUID id,
+            String title,
+            String category,
+            String locationName,
+            Instant startsAt,
+            int maxSpots,
+            int joinedCount,
+            String status
     ) {
     }
 
