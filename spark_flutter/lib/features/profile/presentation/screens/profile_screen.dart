@@ -13,7 +13,7 @@ import '../../../spark/domain/spark.dart';
 import '../../../spark/domain/spark_invite.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../../../spark/presentation/screens/activity_screen.dart';
-import '../controllers/availability_controller.dart';
+import '../../../../features/auth/presentation/controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_preferences_controller.dart';
 import '../../data/safety_api_repository.dart';
@@ -349,6 +349,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         },
                       ),
 
+                      const _Divider(),
+                      _SectionLabel('Account'),
+                      _MenuRow(
+                        icon: Icons.logout_rounded,
+                        label: 'Sign out',
+                        labelColor: AppColors.errorText,
+                        iconColor: AppColors.errorText,
+                        isLast: true,
+                        onTap: () => _confirmSignOut(context),
+                      ),
+
                       const SizedBox(height: 40),
                     ],
                   );
@@ -553,6 +564,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmSignOut(BuildContext ctx) async {
+    final confirmed = await showDialog<bool>(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        title: const Text(
+          'Sign out?',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontFamily: 'Manrope',
+          ),
+        ),
+        content: const Text(
+          "You'll need your phone number to sign back in.",
+          style: TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.errorText,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(authControllerProvider.notifier).logout();
+    }
   }
 
   void _showAlertsSheet(BuildContext ctx) {

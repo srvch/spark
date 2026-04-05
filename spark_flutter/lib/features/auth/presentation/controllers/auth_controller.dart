@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
@@ -119,7 +120,6 @@ class AuthController extends StateNotifier<AuthUiState> {
         throw Exception('Failed to get ID token from Firebase.');
       }
 
-      // Login to Spark Backend with Firebase Token
       final session = await ref.read(authApiRepositoryProvider).firebaseLogin(
         idToken: idToken,
       );
@@ -142,6 +142,28 @@ class AuthController extends StateNotifier<AuthUiState> {
     } catch (e) {
       state = AuthUiState(loading: false, error: _readableError(e));
     }
+  }
+
+  /// Signs the user out: unregisters push token, clears Firebase session,
+  /// and clears the local Spark session (triggers SharedPreferences clear
+  /// and navigation back to login via SparkApp's ref.listen).
+  Future<void> logout() async {
+    // 1. Unregister FCM token from backend (best-effort)
+    unawaited(ref.read(pushRegistrationServiceProvider).unregisterDeviceToken());
+
+    // 2. Sign out from Firebase
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('[AuthController] Firebase signOut error: $e');
+    }
+
+    // 3. Clear Spark session — SparkApp ref.listen will clear SharedPreferences
+    //    and navigate back to PhoneLoginScreen automatically.
+    ref.read(authSessionProvider.notifier).state = null;
+
+    // 4. Reset auth UI state
+    state = const AuthUiState();
   }
 
   String _readableError(Object error) {

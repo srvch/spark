@@ -21,7 +21,28 @@ Users create short-lived "Sparks" (meetup events), discover nearby ones, and joi
 - Chat per Spark
 - Activity / Profile screens
 
-## Code Review — Fixed Issues (Session 1)
+## Code Review — Fixed Issues (Session 1 + Session 2)
+
+### Critical Fixes (Session 1)
+1. `application.yml` — `expose-debug-otp` and `enable-dev-guest-login` defaults → `false`
+2. `application.yml` — `ddl-auto: update` → `validate`
+3. `SparkService.java` — Past-time validation for `startsAt`
+4. `discover_screen.dart` — Removed hardcoded "Saurav"
+5. `push_registration_service.dart` — Fixed endpoint `/auth/device-token` → `/api/v1/push/devices`
+6. `PhoneAuthService.java` — Redis OTP rate limiting (5/hour per phone)
+7. `SparkService.java` — `cancelSpark` `@Transactional` + `liveSparkCacheService.remove()`
+8. `SecurityConfig.java` — CORS configuration added
+
+### Medium/Low Fixes (Session 1)
+9-23: JWT warning, visibility in NearbySparkResponse, AI prompt injection hardening, DataSeeder fix,
+      auth persistence (SharedPreferences), ThemeMode.system, Empty state CTA, category colors,
+      SparkCategory.fromString(), error logging in catch blocks
+
+### Logout Flow (Session 2)
+24. `push_registration_service.dart` — `unregisterDeviceToken()` added (DELETE /api/v1/push/devices)
+25. `auth_controller.dart` — `logout()` method: unregisters FCM token, Firebase signOut, clears session
+26. `profile_screen.dart` — "Sign out" row in Account section with confirmation dialog
+    Full chain: logout() → session=null → SparkApp listener → SharedPreferences.clear() → PhoneLoginScreen
 
 ### Critical Fixes
 1. `application.yml` — `expose-debug-otp` and `enable-dev-guest-login` defaults changed from `true` → `false`

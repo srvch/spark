@@ -17,10 +17,9 @@ class PushRegistrationService {
   Future<void> registerDeviceToken(AuthSession session) async {
     try {
       if (Platform.isIOS || Platform.isAndroid) {
-        // Ensure initialized (safe even if called before)
         await Firebase.initializeApp();
         final messaging = FirebaseMessaging.instance;
-        
+
         final settings = await messaging.requestPermission(
           alert: true,
           badge: true,
@@ -40,6 +39,20 @@ class PushRegistrationService {
       }
     } catch (e) {
       debugPrint('Push token registration failed: $e');
+    }
+  }
+
+  Future<void> unregisterDeviceToken() async {
+    try {
+      if (Platform.isIOS || Platform.isAndroid) {
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          await _dio.delete('/api/v1/push/devices', data: {'token': token});
+          debugPrint('Push token unregistered');
+        }
+      }
+    } catch (e) {
+      debugPrint('Push token unregistration failed (non-critical): $e');
     }
   }
 }
