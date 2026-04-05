@@ -18,3 +18,7 @@ spark_flutter/ios/Pods/
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment files
+*.env
+*.env.*
