@@ -30,8 +30,8 @@ class PushRegistrationService {
         if (settings.authorizationStatus == AuthorizationStatus.authorized) {
           final token = await messaging.getToken();
           if (token != null) {
-            debugPrint('📱 Push token: $token');
-            await _dio.post('/auth/device-token', data: {
+            debugPrint('Push token obtained, registering with backend');
+            await _dio.post('/api/v1/push/devices', data: {
               'token': token,
               'platform': Platform.isIOS ? 'ios' : 'android',
             });

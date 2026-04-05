@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/auth/auth_state.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/notifications/presentation/screens/notification_screen.dart';
 import '../../../../features/profile/presentation/screens/profile_screen.dart';
@@ -108,6 +109,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget build(BuildContext context) {
     final sparks = ref.watch(sparksProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
+    final displayName = ref.watch(authSessionProvider)?.displayName ?? 'Spark';
     final selectedLocation = ref.watch(selectedLocationProvider);
     final loading = ref.watch(sparksLoadingProvider);
     final loadingMore = ref.watch(sparksLoadingMoreProvider);
@@ -143,6 +145,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _DiscoverHeaderDelegate(
+                  displayName: displayName,
                   selectedLocation: selectedLocation,
                   radius: radius,
                   onLocationTap: () => _showLocationSelector(context),
@@ -642,6 +645,7 @@ const double _kCollapsedHeight = 96.0;
 
 class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _DiscoverHeaderDelegate({
+    required this.displayName,
     required this.selectedLocation,
     required this.radius,
     required this.onLocationTap,
@@ -653,6 +657,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onSearchSubmitted,
   });
 
+  final String displayName;
   final String selectedLocation;
   final int radius;
   final VoidCallback onLocationTap;
@@ -671,6 +676,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_DiscoverHeaderDelegate old) =>
+      old.displayName != displayName ||
       old.selectedLocation != selectedLocation ||
       old.radius != radius ||
       old.searchQuery != searchQuery;
@@ -696,6 +702,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
           child: collapsed
               ? _HeroCollapsed(
                   key: const ValueKey('c'),
+                  displayName: displayName,
                   selectedLocation: selectedLocation,
                   onNotificationTap: onNotificationTap,
                   onProfileTap: onProfileTap,
@@ -1330,6 +1337,7 @@ class _SearchScreenState extends State<_SearchScreen> {
 class _HeroCollapsed extends StatelessWidget {
   const _HeroCollapsed({
     super.key,
+    required this.displayName,
     required this.selectedLocation,
     required this.onNotificationTap,
     required this.onProfileTap,
@@ -1338,6 +1346,7 @@ class _HeroCollapsed extends StatelessWidget {
     required this.onSearchSubmitted,
   });
 
+  final String displayName;
   final String selectedLocation;
   final VoidCallback onNotificationTap;
   final VoidCallback onProfileTap;
@@ -1369,9 +1378,9 @@ class _HeroCollapsed extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                'Saurav',
-                style: TextStyle(
+              Text(
+                displayName,
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -1594,11 +1603,11 @@ class _CategoryChip extends StatelessWidget {
 
 }
 
-class _EmptyState extends StatelessWidget {
+class _EmptyState extends ConsumerWidget {
   const _EmptyState();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
@@ -1639,7 +1648,8 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: null,
+            onPressed: () =>
+                ref.read(bottomTabProvider.notifier).state = 1,
             icon: const Icon(Icons.add_circle_outline, size: 16),
             label: const Text('Be the first — create one'),
             style: OutlinedButton.styleFrom(
@@ -1702,9 +1712,11 @@ class _NearbyCardState extends State<_NearbyCard> {
     SparkCategory.hangout => CupertinoIcons.person_3,
   };
 
-  static Color _catColor(SparkCategory cat) => AppColors.accent;
+  static Color _catColor(SparkCategory cat) => cat.accentColor;
 
-  static Color _catBg(SparkCategory cat) => AppColors.accent.withValues(alpha: 0.08);
+  // ignore: unused_element
+  static Color _catBg(SparkCategory cat) =>
+      cat.accentColor.withValues(alpha: 0.08);
 
   String _countdown() {
     final mins = widget.spark.startsInMinutes;

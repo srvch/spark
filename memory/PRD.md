@@ -1,0 +1,68 @@
+# Spark App — Project Memory
+
+## Overview
+**Spark** is a hyperlocal real-time meetup/event platform.
+Users create short-lived "Sparks" (meetup events), discover nearby ones, and join them.
+
+## Architecture
+- **Flutter** mobile app (Riverpod + Dio + Firebase Auth) — `spark_flutter/`
+- **Spring Boot** backend (PostgreSQL + Redis + Flyway + JWT + Gemini AI moderation) — `spark_backend/`
+- **SparkIOS** — native iOS project (separate)
+- 9 Flyway DB migrations
+
+## Core Features
+- Phone-number OTP auth (Firebase-backed)
+- Create Sparks (categories: Sports, Study, Ride, Events, Hangout)
+- Discover nearby Sparks (Redis geo-index)
+- Join / Leave / Cancel Sparks
+- AI content moderation (Gemini)
+- Push notifications (FCM)
+- Groups / Circles / Invite visibility levels
+- Chat per Spark
+- Activity / Profile screens
+
+## Code Review — Fixed Issues (Session 1)
+
+### Critical Fixes
+1. `application.yml` — `expose-debug-otp` and `enable-dev-guest-login` defaults changed from `true` → `false`
+2. `application.yml` — `ddl-auto: update` → `validate` (prevents Flyway + Hibernate conflict)
+3. `SparkService.java` — Added past-time validation for `startsAt` (isBefore now-60s)
+4. `discover_screen.dart` — Removed hardcoded "Saurav"; now reads from `authSessionProvider`
+5. `push_registration_service.dart` — Fixed API endpoint `/auth/device-token` → `/api/v1/push/devices`
+6. `PhoneAuthService.java` — Added Redis-based OTP rate limiting (5 req/hour per phone)
+7. `SparkService.java` — `cancelSpark` marked `@Transactional` + now calls `liveSparkCacheService.remove()`
+8. `SecurityConfig.java` — Added CORS configuration (all origins, all standard methods)
+
+### Medium Fixes
+9. `JwtService.java` — Startup warning if default JWT secret used; minimum 32-byte enforcement
+10. `LiveSparkCacheService.java` — `visibility` added to `LiveSpark` and `NearbyLiveSpark` records + Redis hash
+11. `SparkController.java` — `visibility` added to `NearbySparkResponse`; nearby() maps it correctly
+12. `AiModerationService.java` — XML tags around user input to prevent prompt injection
+13. `DataSeeder.java` — Idempotency now checks `users.count() > 0` (simpler and correct)
+14. `auth_state.dart` — Added `toJson()`/`fromJson()` to `AuthSession`
+15. `auth_persistence_service.dart` — New file; persists auth session to `SharedPreferences`
+16. `main.dart` — Loads persisted session before `runApp`; passes as `ProviderScope` override
+17. `spark_app.dart` — Session persistence listen + `ThemeMode.system` (was hardcoded `light`)
+
+### Low Priority Fixes
+18. `discover_screen.dart` — `_EmptyState` CTA now navigates to Create tab (was `onPressed: null`)
+19. `discover_screen.dart` — `_catColor`/`_catBg` now use `cat.accentColor` (was always `AppColors.accent`)
+20. `create_spark_screen.dart` — `_categoryAccentColor` uses `cat.accentColor` (was always `neutralSurface`)
+21. `spark.dart` — `SparkCategory.fromString()` static helper added
+22. `spark_api_repository.dart` — Both category parsing sites now use `SparkCategory.fromString()`
+23. `spark_controller.dart` — All `catch (_) {}` blocks now log errors via `debugPrint`
+
+## Backlog (P1 — Not Yet Fixed)
+- `savedLocationsProvider` and `recentLocationsProvider` still return hardcoded Bangalore locations
+- `_coordsFor()` geocoding still hardcoded to Bangalore neighborhoods
+- `_isManualMode` always `true` — dead auto-mode code (~400 lines) not cleaned up
+- `AnalyticsService` still a console-print stub; no real analytics platform integrated
+- `SparkCategory` stored as raw `String` in `SparkEventEntity` (not `@Enumerated(EnumType.STRING)`)
+- No proper logout flow; session cleared only via provider state = null
+- Redis fallback to DB for cold cache not yet implemented
+
+## P2 / Future
+- Dark mode properly tested
+- Recent searches tracked via SharedPreferences
+- Rate limiting for other abusable endpoints (join, create)
+- Backend admin panel

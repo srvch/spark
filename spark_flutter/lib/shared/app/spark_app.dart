@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/auth/auth_persistence_service.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/presentation/screens/phone_login_screen.dart';
@@ -12,6 +15,15 @@ class SparkApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Persist / clear session whenever it changes
+    ref.listen<AuthSession?>(authSessionProvider, (_, next) {
+      if (next != null) {
+        unawaited(AuthPersistenceService.save(next));
+      } else {
+        unawaited(AuthPersistenceService.clear());
+      }
+    });
+
     final session = ref.watch(authSessionProvider);
     return MaterialApp(
       title: 'Spark',
@@ -19,7 +31,7 @@ class SparkApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       // Keep visual styling consistent across emulator + physical devices.
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.system,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
           PointerDeviceKind.touch,

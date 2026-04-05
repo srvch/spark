@@ -59,6 +59,9 @@ public class SparkService {
     @Transactional
     public SparkEventEntity createSpark(CreateSparkCommand command) {
         Instant now = Instant.now();
+        if (command.startsAt().isBefore(now.minusSeconds(60))) {
+            throw new IllegalArgumentException("Spark start time cannot be in the past.");
+        }
         if (command.startsAt().isAfter(now.plus(Duration.ofHours(24)))) {
             throw new IllegalArgumentException("Spark start time must be within 24 hours.");
         }
@@ -251,6 +254,7 @@ public class SparkService {
                 .toList();
     }
 
+    @Transactional
     public void cancelSpark(UUID sparkId, String userId) {
         SparkEventEntity spark = sparkEventRepository.findById(sparkId)
                 .orElseThrow(() -> new EntityNotFoundException("Spark not found."));
@@ -259,6 +263,7 @@ public class SparkService {
         }
         spark.setStatus(SparkStatus.CANCELLED);
         sparkEventRepository.save(spark);
+        liveSparkCacheService.remove(sparkId);
     }
 
     public boolean isJoined(UUID sparkId, String userId) {
@@ -441,7 +446,8 @@ public class SparkService {
                         spark.getStartsAt(),
                         spark.getMaxSpots(),
                         (int) joined,
-                        spark.getHostUserId()
+                        spark.getHostUserId(),
+                        spark.getVisibility().name()
                 ),
                 ttl
         );
@@ -483,6 +489,13 @@ public class SparkService {
 
     public record InviteInboxPage(
             List<InviteInboxItem> items,
+            int page,
+            int size,
+            boolean hasMore
+    ) {
+    }
+}
+InviteInboxItem> items,
             int page,
             int size,
             boolean hasMore

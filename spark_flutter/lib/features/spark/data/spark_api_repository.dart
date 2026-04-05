@@ -220,14 +220,7 @@ class SparkApiRepository {
   }) {
     final startsAt = DateTime.tryParse(startsAtRaw)?.toLocal() ?? DateTime.now();
     final diffMinutes = startsAt.difference(DateTime.now()).inMinutes.clamp(0, 24 * 60);
-    final category = switch (categoryRaw.toLowerCase()) {
-      'sports' => SparkCategory.sports,
-      'study' => SparkCategory.study,
-      'ride' => SparkCategory.ride,
-      'events' => SparkCategory.events,
-      'hangout' => SparkCategory.hangout,
-      _ => SparkCategory.events,
-    };
+    final category = SparkCategory.fromString(categoryRaw);
     return Spark(
       id: id,
       category: category,
@@ -257,29 +250,14 @@ class SparkApiRepository {
       invitedAt: DateTime.tryParse('${json['invitedAt']}')?.toLocal() ?? DateTime.now(),
       actedAt: DateTime.tryParse('${json['actedAt'] ?? ''}')?.toLocal(),
       title: '${json['title']}',
-      category: _toCategory('${json['category']}'),
+      category: SparkCategory.fromString('${json['category']}'),
       locationName: '${json['locationName']}',
       startsAt: DateTime.tryParse('${json['startsAt'] ?? ''}')?.toLocal(),
       sparkStatus: '${json['sparkStatus']}',
     );
   }
 
-  SparkCategory _toCategory(String categoryRaw) {
-    switch (categoryRaw.toLowerCase()) {
-      case 'sports':
-        return SparkCategory.sports;
-      case 'study':
-        return SparkCategory.study;
-      case 'ride':
-        return SparkCategory.ride;
-      case 'events':
-        return SparkCategory.events;
-      case 'hangout':
-        return SparkCategory.hangout;
-      default:
-        return SparkCategory.events;
-    }
-  }
+  // Removed: _toCategory() — use SparkCategory.fromString() from the domain model instead
 
   SparkInviteStatus _toInviteStatus(String raw) {
     switch (raw.toUpperCase()) {

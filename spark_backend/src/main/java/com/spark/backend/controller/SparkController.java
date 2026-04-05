@@ -96,7 +96,8 @@ public class SparkController {
                         item.joinedCount(),
                         item.maxSpots() - item.joinedCount(),
                         item.distanceKm(),
-                        item.hostUserId()
+                        item.hostUserId(),
+                        item.visibility()
                 ))
                 .toList();
         return new NearbyPageResponse(items, page, size, nearbyPage.hasMore());
@@ -309,7 +310,8 @@ public class SparkController {
             int joinedCount,
             int spotsLeft,
             double distanceKm,
-            String hostUserId
+            String hostUserId,
+            String visibility
     ) {
     }
 

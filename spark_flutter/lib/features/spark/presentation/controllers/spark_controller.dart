@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/mock_spark_repository.dart';
@@ -110,7 +111,9 @@ class SparkParticipantsNotifier extends StateNotifier<List<String>> {
   Future<void> fetch() async {
     try {
       state = await _repository.fetchParticipants(_sparkId);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SparkParticipantsNotifier] fetch error: $e');
+    }
   }
 }
 
@@ -446,8 +449,9 @@ class SparkDataController {
         properties: {'spark_id': sparkId},
       );
       unawaited(refreshNearby());
-    } catch (_) {
-      // Keep optimistic join for UX; backend retry can happen later.
+    } catch (e) {
+      debugPrint('[SparkDataController] joinSpark error: $e');
+      // Optimistic UI kept for UX; backend retry can happen later.
     }
   }
 
@@ -455,7 +459,9 @@ class SparkDataController {
     try {
       final updated = await ref.read(sparkApiRepositoryProvider).fetchSparkDetail(sparkId);
       _mergeSpark(updated);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SparkDataController] fetchSparkDetail error: $e');
+    }
   }
 
   Future<void> cancelSpark(String sparkId) async {
@@ -479,7 +485,9 @@ class SparkDataController {
     try {
       await ref.read(sparkApiRepositoryProvider).cancelSpark(sparkId: sparkId);
       unawaited(refreshNearby());
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[SparkDataController] cancelSpark error: $e');
+    }
   }
 
   Future<void> leaveSpark(String sparkId) async {
@@ -500,8 +508,9 @@ class SparkDataController {
         properties: {'spark_id': sparkId},
       );
       unawaited(refreshNearby());
-    } catch (_) {
-      // Keep optimistic leave for UX.
+    } catch (e) {
+      debugPrint('[SparkDataController] leaveSpark error: $e');
+      // Optimistic UI kept for UX.
     }
   }
 

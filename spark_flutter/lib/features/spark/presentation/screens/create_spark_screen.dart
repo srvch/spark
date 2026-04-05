@@ -633,7 +633,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     );
   }
 
-  static Color _categoryAccentColor(SparkCategory cat) => AppColors.neutralSurface;
+  static Color _categoryAccentColor(SparkCategory cat) => cat.accentColor;
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
         SparkCategory.sports => Icons.directions_run_rounded,

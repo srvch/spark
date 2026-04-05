@@ -42,6 +42,7 @@ public class LiveSparkCacheService {
         data.put("maxSpots", Integer.toString(spark.maxSpots()));
         data.put("joinedCount", Integer.toString(spark.joinedCount()));
         data.put("hostUserId", spark.hostUserId());
+        data.put("visibility", spark.visibility() != null ? spark.visibility() : "PUBLIC");
 
         redis.opsForHash().putAll(key, data);
         redis.expire(key, ttl);
@@ -91,7 +92,8 @@ public class LiveSparkCacheService {
                             parseInt(value(hash, "maxSpots"), 0),
                             parseInt(value(hash, "joinedCount"), 0),
                             result.getDistance() == null ? 0 : result.getDistance().getValue(),
-                            value(hash, "hostUserId")
+                            value(hash, "hostUserId"),
+                            value(hash, "visibility").isBlank() ? "PUBLIC" : value(hash, "visibility")
                     )
             );
         }
@@ -138,7 +140,8 @@ public class LiveSparkCacheService {
             Instant startsAt,
             int maxSpots,
             int joinedCount,
-            String hostUserId
+            String hostUserId,
+            String visibility
     ) {
     }
 
@@ -151,7 +154,8 @@ public class LiveSparkCacheService {
             int maxSpots,
             int joinedCount,
             double distanceKm,
-            String hostUserId
+            String hostUserId,
+            String visibility
     ) {
     }
 

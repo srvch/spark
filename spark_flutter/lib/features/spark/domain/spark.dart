@@ -25,6 +25,15 @@ enum SparkCategory {
         return const Color(0xFF0EA5E9);
     }
   }
+
+  static SparkCategory fromString(String raw) => switch (raw.toLowerCase()) {
+        'sports' => SparkCategory.sports,
+        'study' => SparkCategory.study,
+        'ride' => SparkCategory.ride,
+        'events' => SparkCategory.events,
+        'hangout' => SparkCategory.hangout,
+        _ => SparkCategory.events,
+      };
 }
 
 enum SparkSort {

@@ -16,6 +16,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PhoneAuthService {
+    private static final int OTP_RATE_LIMIT_MAX = 5;
+    private static final int OTP_RATE_LIMIT_WINDOW_SECONDS = 3600;
+
     private final StringRedisTemplate redisTemplate;
     private final SparkAuthProperties authProperties;
     private final AppUserRepository appUserRepository;
@@ -35,6 +38,7 @@ public class PhoneAuthService {
 
     public OtpRequested requestOtp(String phoneNumber) {
         String normalized = normalizePhone(phoneNumber);
+        enforceOtpRateLimit(normalized);
         String requestId = UUID.randomUUID().toString();
         String otp = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 999999));
         String payload = normalized + "|" + otp;
@@ -124,6 +128,17 @@ public class PhoneAuthService {
 
     private String key(String requestId) {
         return "auth:otp:" + requestId;
+    }
+
+    private void enforceOtpRateLimit(String normalizedPhone) {
+        String key = "auth:ratelimit:otp:" + normalizedPhone;
+        Long count = redisTemplate.opsForValue().increment(key);
+        if (count != null && count == 1) {
+            redisTemplate.expire(key, Duration.ofSeconds(OTP_RATE_LIMIT_WINDOW_SECONDS));
+        }
+        if (count != null && count > OTP_RATE_LIMIT_MAX) {
+            throw new IllegalStateException("Too many OTP requests. Please try again later.");
+        }
     }
 
     private String normalizePhone(String raw) {

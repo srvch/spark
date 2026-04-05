@@ -47,17 +47,11 @@ public class DataSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        boolean arjunExists = users.findByPhoneNumber("+919876543210").isPresent();
-        boolean groupsExist = !groups.findByOwnerUserId(
-                users.findByPhoneNumber("+910000000000")
-                        .map(u -> u.getId().toString())
-                        .orElse("__none__")
-        ).isEmpty();
-        if (arjunExists && groupsExist) {
-            log.info("[DataSeeder] Seed data already complete — skipping.");
+        if (users.count() > 0) {
+            log.info("[DataSeeder] Users already present — skipping.");
             return;
         }
-        log.info("[DataSeeder] Seed data incomplete or missing — running seeder…");
+        log.info("[DataSeeder] No users found — running seeder…");
 
         AppUserEntity guest = ensureGuest();
 
