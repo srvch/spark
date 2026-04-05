@@ -1362,7 +1362,7 @@ class _HeroCollapsed extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1443,7 +1443,7 @@ class _HeroCollapsed extends StatelessWidget {
               onSearchSubmitted(v);
             },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
         ],
       ),
     );

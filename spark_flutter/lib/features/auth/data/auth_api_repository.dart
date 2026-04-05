@@ -47,6 +47,29 @@ class AuthApiRepository {
     );
   }
 
+  Future<AuthSession> firebaseLogin({
+    required String idToken,
+    String? displayName,
+  }) async {
+    final payload = <String, dynamic>{
+      'idToken': idToken,
+    };
+    if (displayName != null && displayName.trim().isNotEmpty) {
+      payload['displayName'] = displayName.trim();
+    }
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/auth/firebase/verify',
+      data: payload,
+    );
+    final data = response.data ?? const {};
+    return AuthSession(
+      token: '${data['token']}',
+      userId: '${data['userId']}',
+      phoneNumber: '${data['phoneNumber']}',
+      displayName: '${data['displayName']}',
+    );
+  }
+
   Future<AuthSession> loginAsGuest() async {
     final response = await _dio.post<Map<String, dynamic>>('/api/v1/auth/dev/guest');
     final data = response.data ?? const {};

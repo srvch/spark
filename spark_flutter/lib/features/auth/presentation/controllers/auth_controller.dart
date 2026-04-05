@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 
@@ -15,7 +16,7 @@ final authApiRepositoryProvider = Provider<AuthApiRepository>((ref) {
 class AuthUiState {
   const AuthUiState({
     this.loading = false,
-    this.requestId,
+    this.requestId, // In Firebase this is verificationId
     this.debugOtp,
     this.error,
   });
@@ -46,18 +47,43 @@ class AuthController extends StateNotifier<AuthUiState> {
   AuthController(this.ref) : super(const AuthUiState());
 
   final Ref ref;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> requestOtp(String phone) async {
     state = const AuthUiState(loading: true);
+    
+    // Normalize phone for Firebase
+    String normalized = phone.trim();
+    if (!normalized.startsWith('+')) {
+      if (normalized.length == 10) {
+        normalized = '+91$normalized';
+      } else {
+        normalized = '+$normalized';
+      }
+    }
+
     try {
-      final result = await ref.read(authApiRepositoryProvider).requestOtp(phone);
-      state = AuthUiState(
-        loading: false,
-        requestId: result.requestId,
-        debugOtp: result.debugOtp,
+      await _auth.verifyPhoneNumber(
+        phoneNumber: normalized,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-resolution (e.g. on Android) - not common on iOS during debug
+          await _signInWithCredential(credential, normalized);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          state = AuthUiState(loading: false, error: e.message ?? 'Verification failed.');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          state = AuthUiState(
+            loading: false,
+            requestId: verificationId,
+          );
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          state = state.copyWith(requestId: verificationId);
+        },
       );
     } catch (e) {
-      state = AuthUiState(loading: false, error: _readableError(e));
+      state = AuthUiState(loading: false, error: e.toString());
     }
   }
 
@@ -65,18 +91,39 @@ class AuthController extends StateNotifier<AuthUiState> {
     required String phone,
     required String otp,
   }) async {
-    final requestId = state.requestId;
-    if (requestId == null) {
+    final verificationId = state.requestId;
+    if (verificationId == null) {
       state = state.copyWith(error: 'Request OTP first.');
       return;
     }
     state = state.copyWith(loading: true, error: null);
+    
     try {
-      final session = await ref.read(authApiRepositoryProvider).verifyOtp(
-        requestId: requestId,
-        phoneNumber: phone,
-        otp: otp,
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: verificationId,
+        smsCode: otp,
       );
+      await _signInWithCredential(credential, phone);
+    } catch (e) {
+      state = state.copyWith(loading: false, error: 'Invalid code. Please try again.');
+    }
+  }
+
+  Future<void> _signInWithCredential(PhoneAuthCredential credential, String phone) async {
+    state = state.copyWith(loading: true);
+    try {
+      final userCred = await _auth.signInWithCredential(credential);
+      final idToken = await userCred.user?.getIdToken();
+      
+      if (idToken == null) {
+        throw Exception('Failed to get ID token from Firebase.');
+      }
+
+      // Login to Spark Backend with Firebase Token
+      final session = await ref.read(authApiRepositoryProvider).firebaseLogin(
+        idToken: idToken,
+      );
+      
       ref.read(authSessionProvider.notifier).state = session;
       unawaited(ref.read(pushRegistrationServiceProvider).registerDeviceToken(session));
       state = const AuthUiState(loading: false);
@@ -105,11 +152,11 @@ class AuthController extends StateNotifier<AuthUiState> {
       }
       return error.message ?? 'Request failed. Please try again.';
     }
-    return 'Something went wrong. Please try again.';
+    return error.toString();
   }
 }
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AuthUiState>((ref) {
-      return AuthController(ref);
-    });
+  return AuthController(ref);
+});

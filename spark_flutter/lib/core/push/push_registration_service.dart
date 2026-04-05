@@ -16,37 +16,29 @@ class PushRegistrationService {
 
   Future<void> registerDeviceToken(AuthSession session) async {
     try {
-      await Firebase.initializeApp();
-      final messaging = FirebaseMessaging.instance;
-      await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: true,
-      );
-      final token = await messaging.getToken();
-      if (token == null || token.isEmpty) return;
+      if (Platform.isIOS || Platform.isAndroid) {
+        // Ensure initialized (safe even if called before)
+        await Firebase.initializeApp();
+        final messaging = FirebaseMessaging.instance;
+        
+        final settings = await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
 
-      final platform = kIsWeb
-          ? 'web'
-          : Platform.isIOS
-          ? 'ios'
-          : 'android';
-
-      await _dio.post<void>(
-        '/api/v1/push/devices',
-        data: {
-          'token': token,
-          'platform': platform,
-        },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer ${session.token}',
-          },
-        ),
-      );
+        if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+          final token = await messaging.getToken();
+          if (token != null) {
+            debugPrint('📱 Push token: $token');
+            await _dio.post('/auth/device-token', data: {
+              'token': token,
+              'platform': Platform.isIOS ? 'ios' : 'android',
+            });
+          }
+        }
+      }
     } catch (e) {
-      // Firebase may be unconfigured in local dev. Log for visibility.
       debugPrint('Push token registration failed: $e');
     }
   }

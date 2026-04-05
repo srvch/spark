@@ -1,0 +1,51 @@
+Analyzing spark_flutter...                                      
+
+   info • The imported package 'firebase_core' isn't a dependency of the importing package • lib/core/push/push_registration_service.dart:4:8 • depend_on_referenced_packages
+  error • Target of URI doesn't exist: 'package:firebase_core/firebase_core.dart' • lib/core/push/push_registration_service.dart:4:8 • uri_does_not_exist
+   info • The imported package 'firebase_messaging' isn't a dependency of the importing package • lib/core/push/push_registration_service.dart:5:8 • depend_on_referenced_packages
+  error • Target of URI doesn't exist: 'package:firebase_messaging/firebase_messaging.dart' • lib/core/push/push_registration_service.dart:5:8 • uri_does_not_exist
+  error • Undefined name 'Firebase' • lib/core/push/push_registration_service.dart:19:13 • undefined_identifier
+  error • Undefined name 'FirebaseMessaging' • lib/core/push/push_registration_service.dart:20:25 • undefined_identifier
+   info • Unnecessary use of multiple underscores • lib/features/auth/presentation/screens/phone_login_screen.dart:274:24 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/auth/presentation/screens/phone_login_screen.dart:358:24 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/auth/presentation/screens/phone_login_screen.dart:427:20 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/chat/presentation/screens/chat_inbox_screen.dart:81:45 • unnecessary_underscores
+warning • The declaration '_HeaderAction' isn't referenced • lib/features/chat/presentation/screens/chat_inbox_screen.dart:291:7 • unused_element
+   info • Unnecessary use of multiple underscores • lib/features/chat/presentation/screens/chat_screen.dart:279:39 • unnecessary_underscores
+warning • The declaration '_initialMessages' isn't referenced • lib/features/chat/presentation/screens/chat_screen.dart:377:21 • unused_element
+warning • The value of the local variable 'isLocked' isn't used • lib/features/chat/presentation/screens/chat_screen.dart:443:11 • unused_local_variable
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/features/chat/presentation/screens/chat_screen.dart:566:29 • deprecated_member_use
+warning • The declaration '_formatNow' isn't referenced • lib/features/chat/presentation/screens/chat_screen.dart:685:10 • unused_element
+   info • Unnecessary use of multiple underscores • lib/features/notifications/presentation/screens/notification_screen.dart:67:35 • unnecessary_underscores
+warning • The stack trace variable 'st' isn't used and can be removed • lib/features/profile/presentation/controllers/profile_controller.dart:59:17 • unused_catch_stack
+warning • Unused import: '../../../../core/network/dio_provider.dart' • lib/features/profile/presentation/controllers/profile_preferences_controller.dart:3:8 • unused_import
+warning • Unused import: '../../../../core/auth/auth_state.dart' • lib/features/profile/presentation/screens/profile_screen.dart:7:8 • unused_import
+warning • Unused import: '../../../spark/domain/spark.dart' • lib/features/profile/presentation/screens/profile_screen.dart:12:8 • unused_import
+   info • Unnecessary use of multiple underscores • lib/features/profile/presentation/screens/profile_screen.dart:92:32 • unnecessary_underscores
+warning • The declaration '_openSafetyReport' isn't referenced • lib/features/profile/presentation/screens/profile_screen.dart:424:8 • unused_element
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/profile/presentation/screens/profile_screen.dart:528:42 • use_build_context_synchronously
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/features/profile/presentation/screens/profile_screen.dart:1011:11 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/profile/presentation/screens/profile_screen.dart:1138:46 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/profile/presentation/screens/profile_screen.dart:1143:38 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/profile/presentation/screens/profile_screen.dart:1147:46 • use_build_context_synchronously
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/features/profile/presentation/screens/profile_screen.dart:1208:13 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/social/presentation/screens/group_detail_screen.dart:200:28 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/social/presentation/screens/social_screen.dart:406:36 • use_build_context_synchronously
+warning • The declaration '_toast' isn't referenced • lib/features/social/presentation/screens/social_screen.dart:587:8 • unused_element
+   info • 'trackColor' is deprecated and shouldn't be used. Use inactiveTrackColor instead. This feature was deprecated after v3.24.0-0.2.pre • lib/features/social/presentation/screens/social_screen.dart:1166:17 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/social/presentation/screens/social_screen.dart:1306:31 • unnecessary_underscores
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/features/spark/presentation/screens/create_spark_screen.dart:2355:9 • deprecated_member_use
+   info • The import of 'package:flutter/services.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/cupertino.dart' • lib/features/spark/presentation/screens/discover_screen.dart:5:8 • unnecessary_import
+warning • The value of the field '_pageSize' isn't used • lib/features/spark/presentation/screens/discover_screen.dart:27:20 • unused_field
+   info • Unnecessary use of multiple underscores • lib/features/spark/presentation/screens/discover_screen.dart:1065:26 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/spark/presentation/screens/discover_screen.dart:1065:30 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/spark/presentation/screens/discover_screen.dart:1066:39 • unnecessary_underscores
+warning • The declaration '_MapListToggle' isn't referenced • lib/features/spark/presentation/screens/discover_screen.dart:2076:7 • unused_element
+warning • The value of the field '_joinScale' isn't used • lib/features/spark/presentation/screens/spark_detail_screen.dart:34:22 • unused_field
+   info • Unnecessary 'this.' qualifier • lib/features/spark/presentation/screens/spark_detail_screen.dart:200:34 • unnecessary_this
+   info • Unnecessary 'this.' qualifier • lib/features/spark/presentation/screens/spark_detail_screen.dart:215:30 • unnecessary_this
+   info • Unnecessary 'this.' qualifier • lib/features/spark/presentation/screens/spark_detail_screen.dart:224:44 • unnecessary_this
+   info • Unnecessary 'this.' qualifier • lib/features/spark/presentation/screens/spark_detail_screen.dart:263:44 • unnecessary_this
+warning • The declaration '_MetaInline' isn't referenced • lib/features/spark/presentation/screens/spark_detail_screen.dart:1463:7 • unused_element
+
+47 issues found. (ran in 4.1s)
