@@ -6,3 +6,7 @@ spark_flutter/build/
 
 # CocoaPods
 spark_flutter/ios/Pods/
+-e 
+# Environment files
+*.env
+*.env.*
