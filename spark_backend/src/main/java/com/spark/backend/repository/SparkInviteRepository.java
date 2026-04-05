@@ -4,6 +4,10 @@ import com.spark.backend.entity.SparkInviteEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,4 +22,9 @@ public interface SparkInviteRepository extends JpaRepository<SparkInviteEntity, 
 
     Page<SparkInviteEntity> findByToUserIdOrderByInvitedAtDesc(String toUserId, Pageable pageable);
     Page<SparkInviteEntity> findByToUserIdInOrderByInvitedAtDesc(List<String> toUserIds, Pageable pageable);
+
+    @Transactional
+    @Modifying
+    @Query("delete from SparkInviteEntity i where i.toUserId = :userId or i.fromUserId = :userId")
+    void deleteByUser(@Param("userId") String userId);
 }

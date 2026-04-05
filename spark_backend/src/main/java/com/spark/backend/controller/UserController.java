@@ -55,6 +55,13 @@ public class UserController {
         );
     }
 
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAccount(Authentication authentication) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        accountDeletionService.deleteAccount(currentUser.userId());
+    }
+
     @ExceptionHandler({jakarta.persistence.EntityNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public Map<String, String> notFound(Exception ex) {

@@ -3,6 +3,10 @@ package com.spark.backend.repository;
 import com.spark.backend.domain.GroupInviteStatus;
 import com.spark.backend.entity.SparkGroupInviteEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,5 +20,15 @@ public interface SparkGroupInviteRepository extends JpaRepository<SparkGroupInvi
     List<SparkGroupInviteEntity> findByInviteeUserIdAndStatusOrderByCreatedAtDesc(String inviteeUserId, GroupInviteStatus status);
 
     List<SparkGroupInviteEntity> findByGroupIdAndStatusOrderByCreatedAtDesc(UUID groupId, GroupInviteStatus status);
+
+    @Transactional
+    @Modifying
+    @Query("delete from SparkGroupInviteEntity i where i.inviteeUserId = :userId")
+    void deleteByInviteeUserId(@Param("userId") String userId);
+
+    @Transactional
+    @Modifying
+    @Query("delete from SparkGroupInviteEntity i where i.groupId = :groupId")
+    void deleteByGroupId(@Param("groupId") UUID groupId);
 }
 

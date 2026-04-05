@@ -38,7 +38,14 @@ Users create short-lived "Sparks" (meetup events), discover nearby ones, and joi
       auth persistence (SharedPreferences), ThemeMode.system, Empty state CTA, category colors,
       SparkCategory.fromString(), error logging in catch blocks
 
-### Logout Flow (Session 2)
+### Delete Account Flow (Session 3)
+27. Added `deleteByUserId`, `deleteBySparkId`, `deleteByGroupId`, `deleteByUser`, etc. to 8 repositories
+28. `AccountDeletionService.java` — new service: Redis eviction + 12-step transactional cascade delete
+29. `UserController.java` — `DELETE /api/v1/users/me` endpoint added (204 No Content)
+30. `auth_api_repository.dart` — `deleteAccount()` calls `DELETE /api/v1/users/me`
+31. `auth_controller.dart` — `deleteAccount()`: unregister FCM → backend delete → Firebase signOut → clear session
+32. `profile_screen.dart` — "Delete account" row below Sign Out; confirmation dialog with bullet list of
+    what's deleted, loading overlay during deletion, error snackbar on failure
 24. `push_registration_service.dart` — `unregisterDeviceToken()` added (DELETE /api/v1/push/devices)
 25. `auth_controller.dart` — `logout()` method: unregisters FCM token, Firebase signOut, clears session
 26. `profile_screen.dart` — "Sign out" row in Account section with confirmation dialog

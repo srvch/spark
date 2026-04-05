@@ -356,8 +356,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         label: 'Sign out',
                         labelColor: AppColors.errorText,
                         iconColor: AppColors.errorText,
-                        isLast: true,
                         onTap: () => _confirmSignOut(context),
+                      ),
+                      _MenuRow(
+                        icon: Icons.delete_forever_rounded,
+                        label: 'Delete account',
+                        labelColor: AppColors.errorText,
+                        iconColor: AppColors.errorText,
+                        isLast: true,
+                        onTap: () => _confirmDeleteAccount(context),
                       ),
 
                       const SizedBox(height: 40),
@@ -608,6 +615,130 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _confirmDeleteAccount(BuildContext ctx) async {
+    final confirmed = await showDialog<bool>(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning_rounded, color: AppColors.errorText, size: 22),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Delete account?',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Manrope',
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This will permanently delete:',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            _BulletItem('Your profile and phone number'),
+            _BulletItem('All sparks you created'),
+            _BulletItem('Your join history and activity'),
+            _BulletItem('Groups, friends, and invites'),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.errorText.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded,
+                      color: AppColors.errorText, size: 16),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'This cannot be undone.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.errorText,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text('Keep account'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.errorText,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: const Text('Delete account'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !ctx.mounted) return;
+
+    // Show loading overlay while deleting
+    showDialog<void>(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+        content: SizedBox(
+          height: 56,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+              SizedBox(width: 16),
+              Text('Deleting account…'),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await ref.read(authControllerProvider.notifier).deleteAccount();
+      // Session cleared → SparkApp navigates to login; loading dialog auto-dismissed.
+    } catch (e) {
+      if (ctx.mounted) {
+        Navigator.of(ctx).pop(); // Close loading dialog
+        ScaffoldMessenger.of(ctx).showSnackBar(
+          const SnackBar(
+            content: Text('Could not delete account. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
+
   void _showAlertsSheet(BuildContext ctx) {
     final container = ProviderScope.containerOf(ctx);
     showModalBottomSheet<void>(
@@ -799,6 +930,39 @@ class _Divider extends StatelessWidget {
       indent: 16,
       endIndent: 16,
       color: AppColors.border,
+    );
+  }
+}
+
+/// Small bullet-point row used in the delete-account confirmation dialog.
+class _BulletItem extends StatelessWidget {
+  const _BulletItem(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Icon(Icons.circle, size: 5, color: AppColors.textSecondary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13.5,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

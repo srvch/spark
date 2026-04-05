@@ -80,6 +80,10 @@ class AuthApiRepository {
       displayName: '${data['displayName']}',
     );
   }
+
+  Future<void> deleteAccount() async {
+    await _dio.delete<void>('/api/v1/users/me');
+  }
 }
 
 class OtpRequestResult {

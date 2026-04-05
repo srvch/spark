@@ -166,6 +166,26 @@ class AuthController extends StateNotifier<AuthUiState> {
     state = const AuthUiState();
   }
 
+  /// Permanently deletes the user account and all associated data.
+  Future<void> deleteAccount() async {
+    // 1. Unregister FCM token (best-effort)
+    unawaited(ref.read(pushRegistrationServiceProvider).unregisterDeviceToken());
+
+    // 2. Call backend — cascades delete of all user data
+    await ref.read(authApiRepositoryProvider).deleteAccount();
+
+    // 3. Sign out from Firebase
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('[AuthController] Firebase signOut after deletion error: $e');
+    }
+
+    // 4. Clear session → navigates to PhoneLoginScreen
+    ref.read(authSessionProvider.notifier).state = null;
+    state = const AuthUiState();
+  }
+
   String _readableError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;

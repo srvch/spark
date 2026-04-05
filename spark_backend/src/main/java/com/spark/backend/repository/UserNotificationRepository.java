@@ -3,6 +3,10 @@ package com.spark.backend.repository;
 import com.spark.backend.domain.NotificationType;
 import com.spark.backend.entity.UserNotificationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,4 +26,9 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             NotificationType type,
             Instant createdAfter
     );
+
+    @Transactional
+    @Modifying
+    @Query("delete from UserNotificationEntity n where n.recipientUserId = :userId")
+    void deleteByRecipientUserId(@Param("userId") String userId);
 }
