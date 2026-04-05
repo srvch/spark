@@ -19,6 +19,21 @@ public class AuthController {
         this.phoneAuthService = phoneAuthService;
     }
 
+    @PostMapping("/firebase/verify")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthResponse verifyFirebaseToken(@Valid @RequestBody FirebaseVerifyBody req) {
+        var auth = phoneAuthService.verifyFirebaseToken(
+                req.idToken(),
+                req.displayName()
+        );
+        return new AuthResponse(
+                auth.token(),
+                auth.userId(),
+                auth.phoneNumber(),
+                auth.displayName()
+        );
+    }
+
     @PostMapping("/otp/request")
     @ResponseStatus(HttpStatus.OK)
     public OtpRequestResponse requestOtp(@Valid @RequestBody OtpRequestBody req) {
@@ -68,6 +83,12 @@ public class AuthController {
             @NotBlank String requestId,
             @NotBlank @Pattern(regexp = "^[0-9+()\\-\\s]{8,20}$") String phoneNumber,
             @NotBlank @Pattern(regexp = "^[0-9]{6}$") String otp,
+            @Size(max = 120) String displayName
+    ) {
+    }
+
+    public record FirebaseVerifyBody(
+            @NotBlank String idToken,
             @Size(max = 120) String displayName
     ) {
     }

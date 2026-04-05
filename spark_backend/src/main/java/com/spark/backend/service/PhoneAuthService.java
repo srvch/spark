@@ -1,5 +1,8 @@
 package com.spark.backend.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import com.spark.backend.config.SparkAuthProperties;
 import com.spark.backend.entity.AppUserEntity;
 import com.spark.backend.repository.AppUserRepository;
@@ -45,6 +48,40 @@ public class PhoneAuthService {
                 authProperties.otpTtlSeconds(),
                 authProperties.exposeDebugOtp() ? otp : null
         );
+    }
+
+    public AuthenticatedSession verifyFirebaseToken(String idToken, String displayName) {
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            String phoneNumber = decodedToken.getClaims().get("phone_number") != null 
+                    ? (String) decodedToken.getClaims().get("phone_number")
+                    : FirebaseAuth.getInstance().getUser(decodedToken.getUid()).getPhoneNumber();
+            
+            if (phoneNumber == null || phoneNumber.isEmpty()) {
+                throw new IllegalArgumentException("No phone number found in Firebase token.");
+            }
+
+            String normalized = normalizePhone(phoneNumber);
+            AppUserEntity user = appUserRepository.findByPhoneNumber(normalized).orElseGet(() -> {
+                AppUserEntity entity = new AppUserEntity();
+                entity.setPhoneNumber(normalized);
+                entity.setDisplayName((displayName == null || displayName.isBlank())
+                        ? "Spark user"
+                        : displayName.trim());
+                return appUserRepository.save(entity);
+            });
+
+            if (displayName != null && !displayName.isBlank() && !displayName.trim().equals(user.getDisplayName())) {
+                user.setDisplayName(displayName.trim());
+                user = appUserRepository.save(user);
+            }
+
+            String token = jwtService.generateToken(user.getId().toString(), user.getPhoneNumber());
+            return new AuthenticatedSession(token, user.getId().toString(), user.getPhoneNumber(), user.getDisplayName());
+
+        } catch (FirebaseAuthException e) {
+            throw new IllegalArgumentException("Invalid Firebase token: " + e.getMessage());
+        }
     }
 
     public AuthenticatedSession verifyOtp(
