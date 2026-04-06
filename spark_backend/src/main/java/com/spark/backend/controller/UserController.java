@@ -1,5 +1,6 @@
 package com.spark.backend.controller;
 
+import com.spark.backend.service.AccountDeletionService;
 import com.spark.backend.entity.AppUserEntity;
 import com.spark.backend.repository.AppUserRepository;
 import com.spark.backend.security.CurrentUser;
@@ -19,9 +20,11 @@ import java.util.UUID;
 public class UserController {
 
     private final AppUserRepository appUserRepository;
+    private final AccountDeletionService accountDeletionService;
 
-    public UserController(AppUserRepository appUserRepository) {
+    public UserController(AppUserRepository appUserRepository, AccountDeletionService accountDeletionService) {
         this.appUserRepository = appUserRepository;
+        this.accountDeletionService = accountDeletionService;
     }
 
     @GetMapping("/me")

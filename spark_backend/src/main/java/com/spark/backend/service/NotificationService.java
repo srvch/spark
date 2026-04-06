@@ -111,7 +111,6 @@ public class NotificationService {
     /**
      * Proactive "new spark nearby" alert — used by NearbyAlertJob.
      */
-    @Transactional
     public void sendNearbySparkAlert(String userId, SparkEventEntity spark) {
         String dedupe = "nearby_alert:" + spark.getId() + ":" + userId;
         createNotificationIfMissing(

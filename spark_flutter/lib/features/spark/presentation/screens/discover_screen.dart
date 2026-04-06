@@ -133,8 +133,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: RefreshIndicator(
+      body: RefreshIndicator(
           onRefresh: _onRefresh,
           color: AppColors.accent,
           child: CustomScrollView(
@@ -145,6 +144,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _DiscoverHeaderDelegate(
+                  topPadding: MediaQuery.paddingOf(context).top,
                   displayName: displayName,
                   selectedLocation: selectedLocation,
                   radius: radius,
@@ -200,9 +200,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      const _AiRadarPanel(),
-                      const SizedBox(height: 20),
+                      // const _AiRadarPanel(),
+                      // const SizedBox(height: 20),
                       // ── Section header ────────────────────────────
                       Row(
                         children: [
@@ -642,11 +641,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 }
 
 // ── Heights must match the measured content inside each state ──────────────
-const double _kExpandedHeight = 315.0;
-const double _kCollapsedHeight = 96.0;
+const double _kExpandedHeightBase = 315.0;
+const double _kCollapsedHeightBase = 96.0;
 
 class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _DiscoverHeaderDelegate({
+    required this.topPadding,
     required this.displayName,
     required this.selectedLocation,
     required this.radius,
@@ -659,6 +659,7 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onSearchSubmitted,
   });
 
+  final double topPadding;
   final String displayName;
   final String selectedLocation;
   final int radius;
@@ -671,10 +672,10 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final ValueChanged<String> onSearchSubmitted;
 
   @override
-  double get minExtent => _kCollapsedHeight;
+  double get minExtent => _kCollapsedHeightBase + topPadding;
 
   @override
-  double get maxExtent => _kExpandedHeight;
+  double get maxExtent => _kExpandedHeightBase + topPadding;
 
   @override
   bool shouldRebuild(_DiscoverHeaderDelegate old) =>
@@ -876,7 +877,7 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 13, 22, 16),
+              padding: EdgeInsets.fromLTRB(22, 13 + MediaQuery.paddingOf(context).top, 22, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1373,7 +1374,7 @@ class _HeroCollapsed extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: EdgeInsets.fromLTRB(16, 8 + MediaQuery.paddingOf(context).top, 16, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2186,128 +2187,3 @@ class _SelectionChip extends StatelessWidget {
   }
 }
 
-// ── AI Radar Panel ─────────────────────────────────────────────────────────────
-
-class _AiRadarPanel extends StatelessWidget {
-  const _AiRadarPanel();
-
-  static const List<_AiRadarInsight> _insights = [
-    _AiRadarInsight(
-      title: 'Friday Night Fever',
-      subtitle: '3 late-night food sparks just started in Indiranagar. Want to join?',
-      icon: Icons.nightlight_round,
-    ),
-    _AiRadarInsight(
-      title: 'Vibe Match: 95%',
-      subtitle: 'Most people in "Sunset Sprints" are reaching in 10 mins. Perfect timing!',
-      icon: Icons.auto_awesome_rounded,
-    ),
-    _AiRadarInsight(
-      title: 'Weather Radar',
-      subtitle: 'It\'s clearing up! 4 active sports groups are heading out within 2km.',
-      icon: Icons.wb_sunny_rounded,
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accent),
-            const SizedBox(width: 8),
-            const Text(
-              'SPARK AI RADAR',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: AppColors.accent,
-                letterSpacing: 1.2,
-                fontFamily: 'Manrope',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 110,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _insights.length,
-            clipBehavior: Clip.none,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final insight = _insights[index];
-              return Container(
-                width: 240,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.accent.withValues(alpha: 0.08),
-                      AppColors.accent.withValues(alpha: 0.02),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.accent.withValues(alpha: 0.1),
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(insight.icon, size: 16, color: AppColors.accent),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            insight.title,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      insight.subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AiRadarInsight {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  const _AiRadarInsight({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
-}
