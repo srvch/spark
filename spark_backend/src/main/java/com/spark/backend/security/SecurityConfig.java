@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/api/v1/sparks/*/public").permitAll()
+                        .requestMatchers("/api/v1/sparks/nearby").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
