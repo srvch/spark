@@ -1,5 +1,6 @@
 package com.spark.backend.service;
 
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -56,10 +57,16 @@ public class PhoneAuthService {
 
     public AuthenticatedSession verifyFirebaseToken(String idToken, String displayName) {
         try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            if (FirebaseApp.getApps().isEmpty()) {
+                throw new IllegalStateException(
+                        "Firebase Admin is not initialized on backend. Set SPARK_FIREBASE_CONFIG_PATH or SPARK_FIREBASE_CREDENTIALS_JSON."
+                );
+            }
+            FirebaseAuth firebaseAuth = firebaseAuth();
+            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(idToken);
             String phoneNumber = decodedToken.getClaims().get("phone_number") != null 
                     ? (String) decodedToken.getClaims().get("phone_number")
-                    : FirebaseAuth.getInstance().getUser(decodedToken.getUid()).getPhoneNumber();
+                    : firebaseAuth.getUser(decodedToken.getUid()).getPhoneNumber();
             
             if (phoneNumber == null || phoneNumber.isEmpty()) {
                 throw new IllegalArgumentException("No phone number found in Firebase token.");
@@ -86,6 +93,15 @@ public class PhoneAuthService {
         } catch (FirebaseAuthException e) {
             throw new IllegalArgumentException("Invalid Firebase token: " + e.getMessage());
         }
+    }
+
+    private FirebaseAuth firebaseAuth() {
+        for (FirebaseApp app : FirebaseApp.getApps()) {
+            if (FirebaseApp.DEFAULT_APP_NAME.equals(app.getName())) {
+                return FirebaseAuth.getInstance(app);
+            }
+        }
+        return FirebaseAuth.getInstance(FirebaseApp.getApps().get(0));
     }
 
     public AuthenticatedSession verifyOtp(
