@@ -9,8 +9,14 @@ import '../../core/auth/auth_persistence_service.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/auth/presentation/screens/phone_login_screen.dart';
+import '../../features/auth/presentation/screens/mandatory_profile_screen.dart';
 import '../../features/spark/presentation/controllers/spark_controller.dart';
 import '../navigation/root_shell.dart';
+
+const bool _bypassLogin = bool.fromEnvironment(
+  'BYPASS_LOGIN',
+  defaultValue: false,
+);
 
 class SparkApp extends ConsumerStatefulWidget {
   const SparkApp({super.key});
@@ -40,9 +46,9 @@ class _SparkAppState extends ConsumerState<SparkApp> {
 
   void _handleDeepLink(Uri uri) {
     if (uri.scheme == 'spark' && uri.host == 'sparks') {
-      final sparkId = uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
+      final sparkId =
+          uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
       if (sparkId != null && sparkId.isNotEmpty) {
-        debugPrint('[DeepLink] Opening spark: $sparkId');
         ref.read(pendingDeepLinkSparkIdProvider.notifier).state = sparkId;
       }
     }
@@ -71,7 +77,7 @@ class _SparkAppState extends ConsumerState<SparkApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      // Keep visual styling consistent across emulator + physical devices.
+      // Follow device appearance (light/dark).
       themeMode: ThemeMode.system,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
@@ -82,7 +88,14 @@ class _SparkAppState extends ConsumerState<SparkApp> {
           PointerDeviceKind.unknown,
         },
       ),
-      home: session == null ? const PhoneLoginScreen() : const RootShell(),
+      home:
+          (session == null && !_bypassLogin)
+              ? const PhoneLoginScreen()
+              : (session != null &&
+                    !session.isGuestShowcase &&
+                    !session.hasCompletedMandatoryProfile)
+              ? const MandatoryProfileScreen()
+              : const RootShell(),
     );
   }
 }

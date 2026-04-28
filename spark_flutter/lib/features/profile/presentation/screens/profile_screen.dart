@@ -14,6 +14,7 @@ import '../../../spark/domain/spark_invite.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../../../spark/presentation/screens/activity_screen.dart';
 import '../../../../features/auth/presentation/controllers/auth_controller.dart';
+import '../../../../features/auth/presentation/screens/phone_login_screen.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_preferences_controller.dart';
 import '../controllers/availability_controller.dart';
@@ -37,21 +38,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(sparkDataControllerProvider).refreshInvites();
-      ref.read(profileProvider.notifier).load();
+      final session = ref.read(authSessionProvider);
+      final isGuest =
+          ref.read(guestShowcaseModeProvider) ||
+          (session?.isGuestShowcase ?? false);
+      if (!isGuest) {
+        ref.read(sparkDataControllerProvider).refreshInvites();
+        ref.read(profileProvider.notifier).load();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final profileAsync = ref.watch(profileProvider);
+    final session = ref.watch(authSessionProvider);
+    if (session == null) {
+      return const PhoneLoginScreen();
+    }
+    final isGuest =
+        ref.watch(guestShowcaseModeProvider) || session.isGuestShowcase;
+    final profileAsync =
+        isGuest
+            ? AsyncValue.data(
+              UserProfile(
+                userId: session.userId,
+                displayName: session.displayName,
+                phoneNumber: session.phoneNumber,
+                memberSince: DateTime(2026, 3, 1),
+                ageBand: session.ageBand ?? '',
+                gender: session.gender ?? '',
+                hidePhoneNumber: true,
+              ),
+            )
+            : ref.watch(profileProvider);
     final joined = ref.watch(joinedSparksProvider);
     final created = ref.watch(myCreatedSparksProvider);
     final notificationPrefs = ref.watch(notificationPreferencesProvider);
-    final pendingInvites = ref
-        .watch(sparkInvitesProvider)
-        .where((invite) => invite.status == SparkInviteStatus.pending)
-        .length;
+    final pendingInvites =
+        ref
+            .watch(sparkInvitesProvider)
+            .where((invite) => invite.status == SparkInviteStatus.pending)
+            .length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -75,68 +102,73 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Text(
                       'Account',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                        letterSpacing: -0.6,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
                   ),
                   profileAsync.when(
                     data: (_) => const SizedBox.shrink(),
-                    loading: () => const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    error: (_, __) => IconButton(
-                      onPressed: () =>
-                          ref.read(profileProvider.notifier).load(),
-                      icon: const Icon(
-                        Icons.refresh_rounded,
-                        size: 18,
-                        color: AppColors.errorText,
-                      ),
-                    ),
+                    loading:
+                        () => const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    error:
+                        (_, __) => IconButton(
+                          onPressed:
+                              () => ref.read(profileProvider.notifier).load(),
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            size: 18,
+                            color: AppColors.errorText,
+                          ),
+                        ),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: profileAsync.when(
-                loading: () => const Center(
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                error: (e, _) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline_rounded,
-                          color: AppColors.errorText,
-                          size: 36,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Could not load profile.',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.errorText,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: () =>
-                              ref.read(profileProvider.notifier).load(),
-                          child: const Text('Retry'),
-                        ),
-                      ],
+                loading:
+                    () => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                  ),
-                ),
+                error:
+                    (e, _) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.errorText,
+                              size: 36,
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'Could not load profile.',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.errorText,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            FilledButton(
+                              onPressed:
+                                  () =>
+                                      ref.read(profileProvider.notifier).load(),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 data: (profile) {
                   final referralCode = _referralCode(profile.userId);
                   return ListView(
@@ -147,10 +179,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            PersonAvatar(
-                              name: profile.displayName,
-                              radius: 30,
-                            ),
+                            PersonAvatar(name: profile.displayName, radius: 30),
                             const SizedBox(width: 14),
                             Expanded(
                               child: Column(
@@ -161,7 +190,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     style: const TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.w800,
-                                      color: Colors.black,
+                                      color: AppColors.textPrimary,
                                       fontFamily: 'Manrope',
                                     ),
                                   ),
@@ -177,9 +206,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   ),
                                   const SizedBox(height: 5),
                                   GestureDetector(
-                                    onTap: () => _openEditProfileSheet(
-                                      profile.displayName,
-                                    ),
+                                    onTap:
+                                        () => _openEditProfileSheet(
+                                          profile.displayName,
+                                        ),
                                     child: const Text(
                                       'Edit profile →',
                                       style: TextStyle(
@@ -260,21 +290,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _MenuRow(
                         icon: Icons.bolt_outlined,
                         label: 'Your Sparks',
-                        sublabel: created.isEmpty && joined.isEmpty
-                            ? 'No activity yet'
-                            : '${created.length} created · ${joined.length} joined',
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ActivityScreen(),
-                          ),
-                        ),
+                        sublabel:
+                            created.isEmpty && joined.isEmpty
+                                ? 'No activity yet'
+                                : '${created.length} created · ${joined.length} joined',
+                        onTap:
+                            () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ActivityScreen(),
+                              ),
+                            ),
                       ),
                       _MenuRow(
                         icon: Icons.mail_outline_rounded,
                         label: 'Spark Invites',
-                        sublabel: pendingInvites > 0
-                            ? '$pendingInvites pending'
-                            : 'No pending invites',
+                        sublabel:
+                            pendingInvites > 0
+                                ? '$pendingInvites pending'
+                                : 'No pending invites',
                         badge: pendingInvites,
                         onTap: () {
                           ref.read(bottomTabProvider.notifier).state = 2;
@@ -286,14 +319,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _MenuRow(
                         icon: Icons.notifications_outlined,
                         label: 'Notification alerts',
-                        sublabel: notificationPrefs.notifyStarts15 ||
-                                notificationPrefs.notifyStarts60 ||
-                                notificationPrefs.notifyFillingFast ||
-                                notificationPrefs.notifyJoin ||
-                                notificationPrefs.notifyLeaveHost ||
-                                notificationPrefs.notifyNewNearby
-                            ? 'Alerts on'
-                            : 'All alerts off',
+                        sublabel:
+                            notificationPrefs.notifyStarts15 ||
+                                    notificationPrefs.notifyStarts60 ||
+                                    notificationPrefs.notifyFillingFast ||
+                                    notificationPrefs.notifyJoin ||
+                                    notificationPrefs.notifyLeaveHost ||
+                                    notificationPrefs.notifyNewNearby
+                                ? 'Alerts on'
+                                : 'All alerts off',
                         onTap: () => _showAlertsSheet(context),
                       ),
                       _MenuRow(
@@ -309,9 +343,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _SectionLabel('Privacy'),
                       _PrivacyToggle(
                         label: 'Hide phone number from others',
-                        sublabel: 'Only show first 2 digits and xxxxx on your profile and sparks',
+                        sublabel:
+                            'Only show first 2 digits and xxxxx on your profile and sparks',
                         value: profile.hidePhoneNumber,
-                        onChanged: (val) => ref.read(profileProvider.notifier).toggleHidePhoneNumber(val),
+                        onChanged:
+                            (val) => ref
+                                .read(profileProvider.notifier)
+                                .toggleHidePhoneNumber(val),
                       ),
 
                       const _Divider(),
@@ -382,8 +420,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   String _monthYear(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return "${months[dt.month - 1]} '${dt.year.toString().substring(2)}";
   }
@@ -398,52 +446,55 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       case _LegalType.privacy:
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => const _LegalDocumentScreen(
-              title: 'Privacy Policy',
-              paragraphs: [
-                'Spark only stores data needed to run real-time nearby coordination.',
-                'Phone login data, spark participation, and safety reports are stored securely.',
-                'We do not expose private personal details inside spark cards or chat lists.',
-                'Location is used only for discovery, sorting, and relevance.',
-              ],
-            ),
+            builder:
+                (_) => const _LegalDocumentScreen(
+                  title: 'Privacy Policy',
+                  paragraphs: [
+                    'Spark only stores data needed to run real-time nearby coordination.',
+                    'Phone login data, spark participation, and safety reports are stored securely.',
+                    'We do not expose private personal details inside spark cards or chat lists.',
+                    'Location is used only for discovery, sorting, and relevance.',
+                  ],
+                ),
           ),
         );
       case _LegalType.guidelines:
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => const _LegalDocumentScreen(
-              title: 'Community Guidelines',
-              useApi: true,
-              paragraphs: [
-                'Be respectful and kind to others.',
-                'No harassment or illegal content.',
-                'Stay safe and meet in public.',
-              ],
-            ),
+            builder:
+                (_) => const _LegalDocumentScreen(
+                  title: 'Community Guidelines',
+                  useApi: true,
+                  paragraphs: [
+                    'Be respectful and kind to others.',
+                    'No harassment or illegal content.',
+                    'Stay safe and meet in public.',
+                  ],
+                ),
           ),
         );
       case _LegalType.safety:
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => const _LegalDocumentScreen(
-              title: 'Safety Tips',
-              paragraphs: [
-                'Always meet in well-lit public areas.',
-                'Verify spark hosts by checking their profiles.',
-                'Share your coordination status with a trusted contact.',
-                'If you feel uncomfortable, leave and report via SOS.',
-              ],
-            ),
+            builder:
+                (_) => const _LegalDocumentScreen(
+                  title: 'Safety Tips',
+                  paragraphs: [
+                    'Always meet in well-lit public areas.',
+                    'Verify spark hosts by checking their profiles.',
+                    'Share your coordination status with a trusted contact.',
+                    'If you feel uncomfortable, leave and report via SOS.',
+                  ],
+                ),
           ),
         );
     }
   }
 
   void _openSafetyReport() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const _SafetyReportScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const _SafetyReportScreen()));
   }
 
   String _inviteMessage(String code) =>
@@ -452,14 +503,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       'https://spark.app/invite/$code';
 
   Future<void> _shareInvite(String code) async {
-    _analytics.track(
-      'referral_share_tapped',
-      properties: {'code': code},
-    );
+    _analytics.track('referral_share_tapped', properties: {'code': code});
     final box = context.findRenderObject() as RenderBox?;
-    final shareOrigin = box != null
-        ? box.localToGlobal(Offset.zero) & box.size
-        : const Rect.fromLTWH(1, 1, 1, 1);
+    final shareOrigin =
+        box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : const Rect.fromLTWH(1, 1, 1, 1);
     await Share.share(
       _inviteMessage(code),
       subject: 'Join me on Spark',
@@ -490,125 +539,136 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            8,
-            16,
-            MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Edit profile',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'Manrope',
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setModalState) => Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    MediaQuery.of(ctx).viewInsets.bottom + 24,
+                  ),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Edit profile',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: nameController,
+                          autofocus: true,
+                          textCapitalization: TextCapitalization.words,
+                          decoration: const InputDecoration(
+                            labelText: 'Display name',
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Name is required';
+                            }
+                            if (value.trim().length < 2) {
+                              return 'At least 2 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        PrimaryButton(
+                          label: saving ? 'Saving…' : 'SAVE CHANGES',
+                          backgroundColor: _kNavy,
+                          onPressed:
+                              saving
+                                  ? null
+                                  : () async {
+                                    if (!formKey.currentState!.validate())
+                                      return;
+                                    setModalState(() => saving = true);
+                                    try {
+                                      await ref
+                                          .read(profileProvider.notifier)
+                                          .updateDisplayName(
+                                            nameController.text.trim(),
+                                          );
+                                      if (!mounted) return;
+                                      Navigator.of(ctx).pop();
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          behavior: SnackBarBehavior.floating,
+                                          content: Text('Profile updated'),
+                                          duration: Duration(seconds: 2),
+                                          backgroundColor: _kNavy,
+                                        ),
+                                      );
+                                    } catch (_) {
+                                      setModalState(() => saving = false);
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Could not update profile. Try again.',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: nameController,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Display name'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Name is required';
-                    }
-                    if (value.trim().length < 2) {
-                      return 'At least 2 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                PrimaryButton(
-                  label: saving ? 'Saving…' : 'SAVE CHANGES',
-                  backgroundColor: _kNavy,
-                  onPressed: saving
-                      ? null
-                      : () async {
-                          if (!formKey.currentState!.validate()) return;
-                          setModalState(() => saving = true);
-                          try {
-                            await ref
-                                .read(profileProvider.notifier)
-                                .updateDisplayName(
-                                  nameController.text.trim(),
-                                );
-                            if (!mounted) return;
-                            Navigator.of(ctx).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                behavior: SnackBarBehavior.floating,
-                                content: Text('Profile updated'),
-                                duration: Duration(seconds: 2),
-                                backgroundColor: _kNavy,
-                              ),
-                            );
-                          } catch (_) {
-                            setModalState(() => saving = false);
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Could not update profile. Try again.',
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                ),
-              ],
-            ),
           ),
-        ),
-      ),
     );
   }
 
   Future<void> _confirmSignOut(BuildContext ctx) async {
     final confirmed = await showDialog<bool>(
       context: ctx,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: const Text(
-          'Sign out?',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontFamily: 'Manrope',
-          ),
-        ),
-        content: const Text(
-          "You'll need your phone number to sign back in.",
-          style: TextStyle(fontSize: 14, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.errorText,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+      builder:
+          (dialogCtx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            title: const Text(
+              'Sign out?',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontFamily: 'Manrope',
               ),
             ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text('Sign out'),
+            content: const Text(
+              "You'll need your phone number to sign back in.",
+              style: TextStyle(fontSize: 14, height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.errorText,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text('Sign out'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -619,83 +679,91 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _confirmDeleteAccount(BuildContext ctx) async {
     final confirmed = await showDialog<bool>(
       context: ctx,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.warning_rounded, color: AppColors.errorText, size: 22),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'Delete account?',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Manrope',
-                  fontSize: 18,
+      builder:
+          (dialogCtx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: AppColors.errorText,
+                  size: 22,
                 ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This will permanently delete:',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 10),
-            _BulletItem('Your profile and phone number'),
-            _BulletItem('All sparks you created'),
-            _BulletItem('Your join history and activity'),
-            _BulletItem('Groups, friends, and invites'),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.errorText.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline_rounded,
-                      color: AppColors.errorText, size: 16),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'This cannot be undone.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.errorText,
-                      ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Delete account?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'Manrope',
+                      fontSize: 18,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text('Keep account'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.errorText,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'This will permanently delete:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                _BulletItem('Your profile and phone number'),
+                _BulletItem('All sparks you created'),
+                _BulletItem('Your join history and activity'),
+                _BulletItem('Groups, friends, and invites'),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorText.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: AppColors.errorText,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'This cannot be undone.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.errorText,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text('Delete account'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogCtx).pop(false),
+                child: const Text('Keep account'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.errorText,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(dialogCtx).pop(true),
+                child: const Text('Delete account'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed != true || !ctx.mounted) return;
@@ -704,25 +772,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showDialog<void>(
       context: ctx,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-        ),
-        content: SizedBox(
-          height: 56,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
+      builder:
+          (_) => const AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+            ),
+            content: SizedBox(
+              height: 56,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Deleting account…'),
+                ],
               ),
-              SizedBox(width: 16),
-              Text('Deleting account…'),
-            ],
+            ),
           ),
-        ),
-      ),
     );
 
     try {
@@ -746,10 +815,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: ctx,
       isScrollControlled: true,
       showDragHandle: true,
-      builder: (_) => UncontrolledProviderScope(
-        container: container,
-        child: const _AlertsSheet(),
-      ),
+      builder:
+          (_) => UncontrolledProviderScope(
+            container: container,
+            child: const _AlertsSheet(),
+          ),
     );
   }
 }
@@ -782,7 +852,7 @@ class _QuickStat extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: Colors.black,
+                color: AppColors.textPrimary,
                 fontFamily: 'Manrope',
               ),
             ),
@@ -861,11 +931,7 @@ class _MenuRow extends StatelessWidget {
                 color: AppColors.iconBg,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                icon,
-                size: 18,
-                color: iconColor ?? AppColors.iconFg,
-              ),
+              child: Icon(icon, size: 18, color: iconColor ?? AppColors.iconFg),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1012,11 +1078,7 @@ class _ReferralBanner extends StatelessWidget {
           const SizedBox(height: 6),
           const Text(
             'Share your code and get early access perks when friends join.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-              height: 1.4,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
           ),
           const SizedBox(height: 12),
           Row(
@@ -1209,7 +1271,7 @@ class _AlertToggle extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: AppColors.textPrimary,
                   fontFamily: 'Manrope',
                 ),
               ),
@@ -1251,18 +1313,19 @@ class _LegalDocumentScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
-      body: useApi
-          ? FutureBuilder<List<String>>(
-              future: ref.read(safetyApiRepositoryProvider).fetchGuidelines(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final list = snapshot.data ?? paragraphs;
-                return _buildList(list);
-              },
-            )
-          : _buildList(paragraphs),
+      body:
+          useApi
+              ? FutureBuilder<List<String>>(
+                future: ref.read(safetyApiRepositoryProvider).fetchGuidelines(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final list = snapshot.data ?? paragraphs;
+                  return _buildList(list);
+                },
+              )
+              : _buildList(paragraphs),
     );
   }
 
@@ -1270,18 +1333,19 @@ class _LegalDocumentScreen extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: items.length,
-      itemBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: Text(
-          items[index],
-          style: const TextStyle(
-            fontSize: 14,
-            height: 1.5,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w500,
+      itemBuilder:
+          (context, index) => Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Text(
+              items[index],
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 }
@@ -1290,7 +1354,8 @@ class _SafetyReportScreen extends ConsumerStatefulWidget {
   const _SafetyReportScreen();
 
   @override
-  ConsumerState<_SafetyReportScreen> createState() => _SafetyReportScreenState();
+  ConsumerState<_SafetyReportScreen> createState() =>
+      _SafetyReportScreenState();
 }
 
 class _SafetyReportScreenState extends ConsumerState<_SafetyReportScreen> {
@@ -1333,40 +1398,44 @@ class _SafetyReportScreenState extends ConsumerState<_SafetyReportScreen> {
             PrimaryButton(
               label: _submitting ? 'Submitting…' : 'SUBMIT REPORT',
               backgroundColor: _kNavy,
-              onPressed: _submitting
-                  ? null
-                  : () async {
-                      final note = _controller.text.trim();
-                      if (note.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please add a short description'),
-                          ),
-                        );
-                        return;
-                      }
-                      setState(() => _submitting = true);
-                      try {
-                        await ref.read(safetyApiRepositoryProvider).triggerSos(
-                              sparkId: '00000000-0000-0000-0000-000000000000', // Global
-                              locationName: 'Profile Report',
-                              note: note,
-                            );
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Safety report submitted'),
-                          ),
-                        );
-                        Navigator.of(context).pop();
-                      } catch (e) {
-                        if (!mounted) return;
-                        setState(() => _submitting = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    },
+              onPressed:
+                  _submitting
+                      ? null
+                      : () async {
+                        final note = _controller.text.trim();
+                        if (note.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please add a short description'),
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() => _submitting = true);
+                        try {
+                          await ref
+                              .read(safetyApiRepositoryProvider)
+                              .triggerSos(
+                                sparkId:
+                                    '00000000-0000-0000-0000-000000000000', // Global
+                                locationName: 'Profile Report',
+                                note: note,
+                              );
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Safety report submitted'),
+                            ),
+                          );
+                          Navigator.of(context).pop();
+                        } catch (e) {
+                          if (!mounted) return;
+                          setState(() => _submitting = false);
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        }
+                      },
             ),
           ],
         ),
@@ -1403,7 +1472,7 @@ class _PrivacyToggle extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                    color: AppColors.textPrimary,
                     fontFamily: 'Manrope',
                   ),
                 ),

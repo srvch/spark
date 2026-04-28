@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
@@ -31,8 +32,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     text: 'Cricket at 6 near Central Park',
   );
   final TextEditingController _manualTitleController = TextEditingController();
-  final TextEditingController _manualLocationController = TextEditingController();
-  final TextEditingController _manualSpotsController = TextEditingController(text: '2');
+  final TextEditingController _manualLocationController =
+      TextEditingController();
+  final TextEditingController _manualSpotsController = TextEditingController(
+    text: '2',
+  );
   final TextEditingController _manualNoteController = TextEditingController();
 
   Timer? _aiDebounce;
@@ -60,6 +64,8 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   final Set<String> _manualInvitePhones = <String>{};
   bool _manualOpenGroup = false;
   bool _previewExpanded = false;
+  bool _isCreatingSpark = false;
+  String? _guestPhoneInlineError;
 
   // Recurrence
   bool _isRecurring = false;
@@ -70,7 +76,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    _isRecurring = false;
+    _recurrenceType = 'WEEKLY';
+    _recurrenceEndDate = null;
+    final now = DateTime.now().add(const Duration(minutes: 30));
     _manualSelectedDate = DateTime(now.year, now.month, now.day);
     _manualHour = _to12Hour(now.hour);
     _manualMinute = now.minute;
@@ -84,15 +93,24 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       _manualLocationController.text = prefill.location;
       _manualNoteController.text = prefill.note ?? '';
       _manualCategory = prefill.category;
+      _manualVisibility =
+          prefill.visibility == SparkVisibility.publicSpark
+              ? SparkVisibility.publicSpark
+              : SparkVisibility.invite;
+      _isRecurring = prefill.recurrenceType != null;
+      _recurrenceType =
+          (prefill.recurrenceType ?? 'WEEKLY').toUpperCase() == 'DAILY'
+              ? 'DAILY'
+              : 'WEEKLY';
       _manualOpenGroup = prefill.maxSpots == 0;
       if (prefill.maxSpots > 0) {
         _manualSpotsController.text = prefill.maxSpots.toString();
       }
+      ref.read(selectedLocationProvider.notifier).state = prefill.location;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _scheduleAiParse();
-      _hydrateManualFromAuto(_effectiveAutoPlan());
       unawaited(ref.read(socialControllerProvider).refreshAll());
     });
   }
@@ -137,11 +155,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final validationMessage = _manualValidationMessage();
     final ctaHint = null;
     final dynamicSuggestions = _smartSuggestions(selectedLocation);
-    final manualLocation = _manualLocationController.text.trim().isEmpty
-        ? selectedLocation
-        : _manualLocationController.text.trim();
-    final isNearYou =
-        _manualLocationController.text.trim().isEmpty || manualLocation == selectedLocation;
+    final manualLocation =
+        _manualLocationController.text.trim().isEmpty
+            ? selectedLocation
+            : _manualLocationController.text.trim();
+    final isNearYou = _isNearYouLocationLabel(manualLocation);
 
     return Scaffold(
       body: SafeArea(
@@ -176,7 +194,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             decoration: InputDecoration(
                               hintText: 'e.g. Cricket at Central Park',
                               hintStyle: TextStyle(
-                                color: AppColors.textPrimary.withValues(alpha: 0.35),
+                                color: AppColors.textPrimary.withValues(
+                                  alpha: 0.35,
+                                ),
                                 fontWeight: FontWeight.w500,
                               ),
                               contentPadding: const EdgeInsets.symmetric(
@@ -197,21 +217,28 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: dynamicSuggestions
-                                .take(1)
-                                .map(
-                                  (label) => _SuggestionChip(
-                                    label: label,
-                                    onTap: () {
-                                      _manualTitleController.text = label;
-                                      _manualTitleController.selection = TextSelection.fromPosition(
-                                        TextPosition(offset: _manualTitleController.text.length),
-                                      );
-                                      setState(() {});
-                                    },
-                                  ),
-                                )
-                                .toList(),
+                            children:
+                                dynamicSuggestions
+                                    .take(1)
+                                    .map(
+                                      (label) => _SuggestionChip(
+                                        label: label,
+                                        onTap: () {
+                                          _manualTitleController.text = label;
+                                          _manualTitleController.selection =
+                                              TextSelection.fromPosition(
+                                                TextPosition(
+                                                  offset:
+                                                      _manualTitleController
+                                                          .text
+                                                          .length,
+                                                ),
+                                              );
+                                          setState(() {});
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
                           ),
                         ],
                         const SizedBox(height: 10),
@@ -227,28 +254,33 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: SparkCategory.values
-                                .map(
-                                  (c) => Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: _QuickChoiceChip(
-                                      label: c.label,
-                                      selected: c == _manualCategory,
-                                      onTap: () => setState(() {
-                                        _manualCategory = c;
-                                        if (_manualCategory == SparkCategory.ride) {
-                                          _manualOpenGroup = false;
-                                        }
-                                      }),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
+                            children:
+                                SparkCategory.values
+                                    .map(
+                                      (c) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: 8,
+                                        ),
+                                        child: _QuickChoiceChip(
+                                          label: c.label,
+                                          selected: c == _manualCategory,
+                                          onTap:
+                                              () => setState(() {
+                                                _manualCategory = c;
+                                                if (_manualCategory ==
+                                                    SparkCategory.ride) {
+                                                  _manualOpenGroup = false;
+                                                }
+                                              }),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
                           ),
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          'Who can see this spark',
+                          'Who can see the spark?',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
@@ -262,78 +294,103 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           children: [
                             _QuickChoiceChip(
                               label: 'Public',
-                              selected: _manualVisibility == SparkVisibility.publicSpark,
-                              onTap: () => setState(() {
-                                _manualVisibility = SparkVisibility.publicSpark;
-                                _selectedCircleIds.clear();
-                                _selectedInviteUserIds.clear();
-                                _manualInvitePhones.clear();
-                              }),
+                              selected:
+                                  _manualVisibility ==
+                                  SparkVisibility.publicSpark,
+                              onTap:
+                                  () => setState(() {
+                                    _manualVisibility =
+                                        SparkVisibility.publicSpark;
+                                    _selectedCircleIds.clear();
+                                    _selectedInviteUserIds.clear();
+                                    _manualInvitePhones.clear();
+                                    _guestPhoneInlineError = null;
+                                  }),
                             ),
                             _QuickChoiceChip(
-                              label: 'Circle only',
-                              selected: _manualVisibility == SparkVisibility.circle,
-                              onTap: () => setState(() {
-                                _manualVisibility = SparkVisibility.circle;
-                                _selectedInviteUserIds.clear();
-                                _manualInvitePhones.clear();
-                              }),
-                            ),
-                            _QuickChoiceChip(
-                              label: 'Invite only',
-                              selected: _manualVisibility == SparkVisibility.invite,
-                              onTap: () => setState(() {
-                                _manualVisibility = SparkVisibility.invite;
-                                _selectedCircleIds.clear();
-                              }),
+                              label: 'Private',
+                              selected:
+                                  _manualVisibility == SparkVisibility.invite ||
+                                  _manualVisibility == SparkVisibility.circle,
+                              onTap:
+                                  () => setState(() {
+                                    _manualVisibility = SparkVisibility.invite;
+                                    _selectedCircleIds.clear();
+                                    _guestPhoneInlineError = null;
+                                  }),
                             ),
                           ],
                         ),
+                        if (_manualVisibility == SparkVisibility.invite) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Private sparks are hidden from Discover. Share via link or phone invites only.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.85,
+                              ),
+                            ),
+                          ),
+                        ],
                         if (_manualVisibility == SparkVisibility.circle) ...[
                           const SizedBox(height: 8),
                           _AudiencePickerRow(
                             title: 'Groups',
                             cta: 'Select groups',
-                            value: _selectedCircleIds.isEmpty
-                                ? 'No groups selected'
-                                : '${_selectedCircleIds.length} selected',
+                            value:
+                                _selectedCircleIds.isEmpty
+                                    ? 'No groups selected'
+                                    : '${_selectedCircleIds.length} selected',
                             onTap: _pickCircles,
                           ),
                         ],
                         if (_manualVisibility == SparkVisibility.invite) ...[
                           const SizedBox(height: 8),
                           _AudiencePickerRow(
-                            title: 'Invite users',
-                            cta: 'Select users',
-                            value: _selectedInviteUserIds.isEmpty
-                                ? 'No users selected'
-                                : '${_selectedInviteUserIds.length} selected',
-                            onTap: _pickInviteUsers,
-                          ),
-                          const SizedBox(height: 8),
-                          _AudiencePickerRow(
                             title: 'Guest phone invites',
                             cta: 'Add phone',
-                            value: _manualInvitePhones.isEmpty
-                                ? 'No guest phones added'
-                                : '${_manualInvitePhones.length} phones added',
+                            value:
+                                _manualInvitePhones.isEmpty
+                                    ? 'No guest phones added'
+                                    : '${_manualInvitePhones.length} phones added',
                             onTap: _addGuestPhoneInvite,
                           ),
+                          if (_guestPhoneInlineError != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              _guestPhoneInlineError!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.dangerText,
+                              ),
+                            ),
+                          ],
                           if (_manualInvitePhones.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: _manualInvitePhones
-                                  .map(
-                                    (phone) => _RemovablePill(
-                                      text: phone,
-                                      onRemove: () => setState(() {
-                                        _manualInvitePhones.remove(phone);
-                                      }),
-                                    ),
-                                  )
-                                  .toList(),
+                              children:
+                                  _manualInvitePhones
+                                      .map(
+                                        (phone) => _RemovablePill(
+                                          text: phone,
+                                          onRemove:
+                                              () => setState(() {
+                                                _manualInvitePhones.remove(
+                                                  phone,
+                                                );
+                                                if (_manualInvitePhones
+                                                    .isNotEmpty) {
+                                                  _guestPhoneInlineError = null;
+                                                }
+                                              }),
+                                        ),
+                                      )
+                                      .toList(),
                             ),
                           ],
                         ],
@@ -357,22 +414,55 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                   children: [
                                     _QuickChoiceChip(
                                       label: 'Now',
-                                      selected: _manualStartsAt().difference(DateTime.now()).inMinutes <= 5,
-                                      onTap: () => _setManualTimeFromDateTime(DateTime.now().add(const Duration(minutes: 2))),
+                                      selected:
+                                          _manualStartsAt()
+                                              .difference(DateTime.now())
+                                              .inMinutes <=
+                                          5,
+                                      onTap:
+                                          () => _setManualTimeFromDateTime(
+                                            DateTime.now().add(
+                                              const Duration(minutes: 2),
+                                            ),
+                                          ),
                                     ),
                                     const SizedBox(width: 8),
                                     _QuickChoiceChip(
                                       label: '30 min',
-                                      selected: _manualStartsAt().difference(DateTime.now()).inMinutes > 5 &&
-                                          _manualStartsAt().difference(DateTime.now()).inMinutes <= 35,
-                                      onTap: () => _setManualTimeFromDateTime(DateTime.now().add(const Duration(minutes: 30))),
+                                      selected:
+                                          _manualStartsAt()
+                                                  .difference(DateTime.now())
+                                                  .inMinutes >
+                                              5 &&
+                                          _manualStartsAt()
+                                                  .difference(DateTime.now())
+                                                  .inMinutes <=
+                                              35,
+                                      onTap:
+                                          () => _setManualTimeFromDateTime(
+                                            DateTime.now().add(
+                                              const Duration(minutes: 30),
+                                            ),
+                                          ),
                                     ),
                                     const SizedBox(width: 8),
                                     _QuickChoiceChip(
                                       label: '1 hr',
-                                      selected: _manualStartsAt().difference(DateTime.now()).inMinutes > 35 &&
-                                          _manualStartsAt().difference(DateTime.now()).inMinutes <= 65,
-                                      onTap: () => _setManualTimeFromDateTime(DateTime.now().add(const Duration(hours: 1))),
+                                      selected:
+                                          _manualStartsAt()
+                                                  .difference(DateTime.now())
+                                                  .inMinutes >
+                                              35 &&
+                                          _manualStartsAt()
+                                                  .difference(DateTime.now())
+                                                  .inMinutes <=
+                                              65,
+                                      onTap:
+                                          () => _setManualTimeFromDateTime(
+                                            DateTime.now().add(
+                                              const Duration(hours: 1),
+                                            ),
+                                          ),
                                     ),
                                     const SizedBox(width: 8),
                                     _QuickChoiceChip(
@@ -402,7 +492,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             _showLocationPicker(context);
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.background,
                               borderRadius: BorderRadius.circular(12),
@@ -410,7 +503,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.location_on_rounded, size: 18, color: AppColors.accent),
+                                const Icon(
+                                  Icons.location_on_rounded,
+                                  size: 18,
+                                  color: AppColors.accent,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -423,7 +520,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                     ),
                                   ),
                                 ),
-                                const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
                               ],
                             ),
                           ),
@@ -443,7 +544,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             _QuickChoiceChip(
                               label: 'Limited',
                               selected: !_manualOpenGroup,
-                              onTap: () => setState(() => _manualOpenGroup = false),
+                              onTap:
+                                  () =>
+                                      setState(() => _manualOpenGroup = false),
                             ),
                             const SizedBox(width: 8),
                             _QuickChoiceChip(
@@ -453,7 +556,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                 if (_manualCategory == SparkCategory.ride) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Ride sparks require a seat count.'),
+                                      content: Text(
+                                        'Ride sparks require a seat count.',
+                                      ),
                                     ),
                                   );
                                   return;
@@ -467,7 +572,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                         if (_manualOpenGroup)
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
@@ -486,12 +594,22 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           _PeopleStepper(
                             value: _manualSpotsValue(),
                             onDecrease: () {
-                              final next = (_manualSpotsValue() - 1).clamp(1, 20);
-                              setState(() => _manualSpotsController.text = '$next');
+                              final next = (_manualSpotsValue() - 1).clamp(
+                                1,
+                                20,
+                              );
+                              setState(
+                                () => _manualSpotsController.text = '$next',
+                              );
                             },
                             onIncrease: () {
-                              final next = (_manualSpotsValue() + 1).clamp(1, 20);
-                              setState(() => _manualSpotsController.text = '$next');
+                              final next = (_manualSpotsValue() + 1).clamp(
+                                1,
+                                20,
+                              );
+                              setState(
+                                () => _manualSpotsController.text = '$next',
+                              );
                             },
                           ),
                         const SizedBox(height: 10),
@@ -502,14 +620,21 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           },
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.background,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.notes_rounded, size: 18, color: AppColors.accent),
+                                const Icon(
+                                  Icons.notes_rounded,
+                                  size: 18,
+                                  color: AppColors.accent,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -521,9 +646,13 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: _manualNoteController.text.trim().isEmpty
-                                          ? AppColors.textPrimary.withValues(alpha: 0.4)
-                                          : AppColors.textPrimary,
+                                      color:
+                                          _manualNoteController.text
+                                                  .trim()
+                                                  .isEmpty
+                                              ? AppColors.textPrimary
+                                                  .withValues(alpha: 0.4)
+                                              : AppColors.textPrimary,
                                       fontFamily: 'Manrope',
                                     ),
                                   ),
@@ -540,17 +669,20 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           recurrenceDayOfWeek: _recurrenceDayOfWeek,
                           recurrenceEndDate: _recurrenceEndDate,
                           onToggle: (v) => setState(() => _isRecurring = v),
-                          onTypeChanged: (t) =>
-                              setState(() => _recurrenceType = t),
-                          onDayChanged: (d) =>
-                              setState(() => _recurrenceDayOfWeek = d),
-                          onEndDateChanged: (dt) =>
-                              setState(() => _recurrenceEndDate = dt),
+                          onTypeChanged:
+                              (t) => setState(() => _recurrenceType = t),
+                          onDayChanged:
+                              (d) => setState(() => _recurrenceDayOfWeek = d),
+                          onEndDateChanged:
+                              (dt) => setState(() => _recurrenceEndDate = dt),
                         ),
                         const SizedBox(height: 10),
                         InkWell(
                           borderRadius: BorderRadius.circular(10),
-                          onTap: () => setState(() => _previewExpanded = !_previewExpanded),
+                          onTap:
+                              () => setState(
+                                () => _previewExpanded = !_previewExpanded,
+                              ),
                           child: Row(
                             children: [
                               const Expanded(
@@ -564,7 +696,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                 ),
                               ),
                               Icon(
-                                _previewExpanded ? Icons.expand_less : Icons.expand_more,
+                                _previewExpanded
+                                    ? Icons.expand_less
+                                    : Icons.expand_more,
                                 size: 18,
                                 color: AppColors.textSecondary,
                               ),
@@ -579,11 +713,17 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.accent.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.accent.withValues(alpha: 0.15)),
+                              border: Border.all(
+                                color: AppColors.accent.withValues(alpha: 0.15),
+                              ),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.accent),
+                                Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 16,
+                                  color: AppColors.accent,
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
@@ -593,7 +733,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.accent.withValues(alpha: 0.8),
+                                      color: AppColors.accent.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       fontFamily: 'Manrope',
                                       letterSpacing: -0.2,
                                     ),
@@ -606,9 +748,14 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           _AutoPreviewCard(
                             plan: manualPlan,
                             selectedLocation: selectedLocation,
-                            timeText: _previewTimeLabel(manualPlan.startsAt ?? DateTime.now()),
+                            timeText: _previewTimeLabel(
+                              manualPlan.startsAt ?? DateTime.now(),
+                            ),
                             relativeTimeText: _previewRelativeTime(
-                              manualPlan.startsAt ?? DateTime.now().add(const Duration(minutes: 1)),
+                              manualPlan.startsAt ??
+                                  DateTime.now().add(
+                                    const Duration(minutes: 1),
+                                  ),
                             ),
                             hasExplicitSpots: !_manualOpenGroup,
                           ),
@@ -626,26 +773,40 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
-                      color: _isManualMode ? AppColors.dangerText : AppColors.textSecondary,
+                      color:
+                          _isManualMode
+                              ? AppColors.dangerText
+                              : AppColors.textSecondary,
                     ),
                   ),
                 ),
               PrimaryButton(
-                label: 'Create',
+                label: _isCreatingSpark ? 'Creating…' : 'Create',
                 backgroundColor: AppColors.accent,
-                onPressed: () async {
-                  if (validationMessage == null) {
-                    await _createSpark();
-                    return;
-                  }
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(validationMessage),
-                      backgroundColor: AppColors.danger,
-                    ),
-                  );
-                },
+                onPressed:
+                    _isCreatingSpark
+                        ? null
+                        : () async {
+                          final message = _manualValidationMessage();
+                          if (message == null) {
+                            await _createSpark();
+                            return;
+                          }
+                          if (_manualVisibility == SparkVisibility.invite &&
+                              _manualInvitePhones.isEmpty) {
+                            setState(() {
+                              _guestPhoneInlineError =
+                                  'Add at least one valid phone number';
+                            });
+                          }
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(message),
+                              backgroundColor: AppColors.danger,
+                            ),
+                          );
+                        },
               ),
             ],
           ),
@@ -657,12 +818,12 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   static Color _categoryAccentColor(SparkCategory cat) => cat.accentColor;
 
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => Icons.directions_run_rounded,
-        SparkCategory.study => Icons.auto_stories_rounded,
-        SparkCategory.ride => Icons.drive_eta_rounded,
-        SparkCategory.events => Icons.confirmation_number_outlined,
-        SparkCategory.hangout => Icons.coffee_outlined,
-      };
+    SparkCategory.sports => Icons.directions_run_rounded,
+    SparkCategory.study => Icons.auto_stories_rounded,
+    SparkCategory.ride => Icons.drive_eta_rounded,
+    SparkCategory.events => Icons.confirmation_number_outlined,
+    SparkCategory.hangout => Icons.coffee_outlined,
+  };
 
   void _setPlanText(String value) {
     _planController.text = value;
@@ -675,10 +836,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final hour = DateTime.now().hour;
     final near = selectedLocation;
     if (hour < 11) {
-      return [
-        'Interview prep in 2 hours near $near',
-        'Chai now near $near',
-      ];
+      return ['Interview prep in 2 hours near $near', 'Chai now near $near'];
     }
     if (hour < 17) {
       return [
@@ -686,10 +844,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
         'Study sprint in 1 hour near $near',
       ];
     }
-    return [
-      'Cricket at 6 near $near',
-      'Coffee catch-up now near $near',
-    ];
+    return ['Cricket at 6 near $near', 'Coffee catch-up now near $near'];
   }
 
   Future<void> _pickCircles() async {
@@ -736,41 +891,68 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   Future<void> _addGuestPhoneInvite() async {
     final controller = TextEditingController();
+    String? dialogError;
     final value = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add guest phone'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'e.g. +919876543210',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder:
+              (context, setDialogState) => AlertDialog(
+                title: const Text('Add guest phone'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.phone,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. +919876543210',
+                        errorText: dialogError,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Format: country code + number',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                    ),
+                    onPressed: () {
+                      final normalized = _normalizePhone(controller.text);
+                      if (normalized == null) {
+                        setDialogState(() {
+                          dialogError = 'Enter a valid phone number';
+                        });
+                        return;
+                      }
+                      Navigator.of(context).pop(normalized);
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+        );
+      },
     );
     if (!mounted || value == null || value.isEmpty) return;
-    final normalized = _normalizePhone(value);
-    if (normalized == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid phone number.')),
-      );
-      return;
-    }
     setState(() {
-      _manualInvitePhones.add(normalized);
+      _manualInvitePhones.add(value);
+      _guestPhoneInlineError = null;
     });
   }
 
@@ -794,7 +976,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   List<_AudienceOption> _inviteUserOptionsFromState() {
     final friends = ref.read(friendsProvider);
     return friends
-        .map((friend) => _AudienceOption(id: friend.userId, label: friend.displayName))
+        .map(
+          (friend) =>
+              _AudienceOption(id: friend.userId, label: friend.displayName),
+        )
         .toList();
   }
 
@@ -810,76 +995,81 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       builder: (context) {
         final selected = {...initialSelection};
         return StatefulBuilder(
-          builder: (context, setSheetState) => SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ...options.map(
-                    (option) => CheckboxListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      value: selected.contains(option.id),
-                      title: Text(
-                        option.label,
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      onChanged: (checked) {
-                        setSheetState(() {
-                          if (checked == true) {
-                            selected.add(option.id);
-                          } else {
-                            selected.remove(option.id);
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
+          builder:
+              (context, setSheetState) => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(null),
-                          child: const Text('Cancel'),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.accent,
+                      const SizedBox(height: 10),
+                      ...options.map(
+                        (option) => CheckboxListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          value: selected.contains(option.id),
+                          title: Text(
+                            option.label,
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          onPressed: () => Navigator.of(context).pop(selected),
-                          child: const Text('Save'),
+                          onChanged: (checked) {
+                            setSheetState(() {
+                              if (checked == true) {
+                                selected.add(option.id);
+                              } else {
+                                selected.remove(option.id);
+                              }
+                            });
+                          },
                         ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(null),
+                              child: const Text('Cancel'),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                              ),
+                              onPressed:
+                                  () => Navigator.of(context).pop(selected),
+                              child: const Text('Save'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
         );
       },
     );
   }
 
-  Future<void> _handleCreateTapped(_InferredPlan autoPlan, String? validationMessage) async {
+  Future<void> _handleCreateTapped(
+    _InferredPlan autoPlan,
+    String? validationMessage,
+  ) async {
     if (validationMessage == null) {
       await _createSpark();
       return;
@@ -909,16 +1099,18 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Time auto-set to in 30 min. You can edit it in Preview.'),
+          content: Text(
+            'Time auto-set to in 30 min. You can edit it in Preview.',
+          ),
         ),
       );
       return;
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(validationMessage)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(validationMessage)));
   }
 
   _InferredPlan _effectiveAutoPlan() {
@@ -929,7 +1121,8 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       input: input,
       selectedLocation: selectedLocation,
     );
-    final hasFreshAi = _aiInferred != null &&
+    final hasFreshAi =
+        _aiInferred != null &&
         _lastAiInput == input &&
         _lastAiLocation == selectedLocation;
     final plan = hasFreshAi ? _aiInferred! : fallback;
@@ -937,34 +1130,46 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final deterministicTime = _inferStartsAt(lower, DateTime.now());
     DateTime? startsAt = _autoTimeOverride;
     if (startsAt == null) {
-      if (timeIntent.kind == _TimeIntentKind.resolved && deterministicTime != null) {
+      if (timeIntent.kind == _TimeIntentKind.resolved &&
+          deterministicTime != null) {
         startsAt = deterministicTime;
       } else if (timeIntent.kind == _TimeIntentKind.ambiguous) {
         startsAt = _resolveAmbiguousTime(timeIntent);
       } else {
-        startsAt = deterministicTime ?? plan.startsAt ?? DateTime.now().add(const Duration(minutes: 30));
+        startsAt =
+            deterministicTime ??
+            plan.startsAt ??
+            DateTime.now().add(const Duration(minutes: 30));
       }
     }
 
     return plan.copyWith(
       title: _sanitizeSparkTitle(plan.title),
       startsAt: startsAt,
-      locationName: (_autoLocationOverride?.trim().isNotEmpty ?? false)
-          ? _autoLocationOverride!.trim()
-          : plan.locationName,
+      locationName:
+          (_autoLocationOverride?.trim().isNotEmpty ?? false)
+              ? _autoLocationOverride!.trim()
+              : plan.locationName,
       maxSpots: _autoSpotsOverride ?? plan.maxSpots,
-      note: (_autoNoteOverride?.trim().isNotEmpty ?? false) ? _autoNoteOverride!.trim() : plan.note,
+      note:
+          (_autoNoteOverride?.trim().isNotEmpty ?? false)
+              ? _autoNoteOverride!.trim()
+              : plan.note,
     );
   }
 
   _TimeIntent _timeIntentFromInput(String lower) {
-    if (RegExp(r'in\s+\d{1,3}\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours)')
-        .hasMatch(lower)) {
+    if (RegExp(
+      r'in\s+\d{1,3}\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours)',
+    ).hasMatch(lower)) {
       return const _TimeIntent(kind: _TimeIntentKind.resolved);
     }
 
-    final explicit = RegExp(r'\bat\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b').firstMatch(lower);
-    if (explicit == null) return const _TimeIntent(kind: _TimeIntentKind.missing);
+    final explicit = RegExp(
+      r'\bat\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b',
+    ).firstMatch(lower);
+    if (explicit == null)
+      return const _TimeIntent(kind: _TimeIntentKind.missing);
 
     final hour = int.tryParse(explicit.group(1) ?? '');
     final minute = int.tryParse(explicit.group(2) ?? '0') ?? 0;
@@ -1042,10 +1247,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     if (input.length < 3) return;
     if (mounted) setState(() => _isAiParsing = true);
     try {
-      final parsed = await ref.read(planParseApiRepositoryProvider).parsePlan(
-            input: input,
-            locationHint: selectedLocation,
-          );
+      final parsed = await ref
+          .read(planParseApiRepositoryProvider)
+          .parsePlan(input: input, locationHint: selectedLocation);
       if (!mounted) return;
       setState(() {
         _lastAiInput = input;
@@ -1073,16 +1277,24 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   SparkCategory _inferCategory(String lower) {
-    if (lower.contains('study') || lower.contains('dsa') || lower.contains('library')) {
+    if (lower.contains('study') ||
+        lower.contains('dsa') ||
+        lower.contains('library')) {
       return SparkCategory.study;
     }
-    if (lower.contains('ride') || lower.contains('airport') || lower.contains('cab')) {
+    if (lower.contains('ride') ||
+        lower.contains('airport') ||
+        lower.contains('cab')) {
       return SparkCategory.ride;
     }
-    if (lower.contains('event') || lower.contains('show') || lower.contains('open mic')) {
+    if (lower.contains('event') ||
+        lower.contains('show') ||
+        lower.contains('open mic')) {
       return SparkCategory.events;
     }
-    if (lower.contains('coffee') || lower.contains('chai') || lower.contains('hangout')) {
+    if (lower.contains('coffee') ||
+        lower.contains('chai') ||
+        lower.contains('hangout')) {
       return SparkCategory.hangout;
     }
     return SparkCategory.sports;
@@ -1098,7 +1310,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       if (raw.isNotEmpty) {
         return raw
             .split(RegExp(r'\s+'))
-            .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+            .map(
+              (w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}',
+            )
             .join(' ');
       }
     }
@@ -1106,27 +1320,33 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   DateTime? _inferStartsAt(String lower, DateTime now) {
-    final inMinutesMatch =
-        RegExp(r'in\s+(\d{1,3})\s*(m|min|mins|minute|minutes)').firstMatch(lower);
+    final inMinutesMatch = RegExp(
+      r'in\s+(\d{1,3})\s*(m|min|mins|minute|minutes)',
+    ).firstMatch(lower);
     if (inMinutesMatch != null) {
       final mins = int.tryParse(inMinutesMatch.group(1) ?? '') ?? 30;
       return now.add(Duration(minutes: mins.clamp(1, 24 * 60)));
     }
-    final inHoursMatch = RegExp(r'in\s+(\d{1,2})\s*(h|hr|hrs|hour|hours)').firstMatch(lower);
+    final inHoursMatch = RegExp(
+      r'in\s+(\d{1,2})\s*(h|hr|hrs|hour|hours)',
+    ).firstMatch(lower);
     if (inHoursMatch != null) {
       final hours = int.tryParse(inHoursMatch.group(1) ?? '') ?? 1;
       return now.add(Duration(hours: hours.clamp(1, 24)));
     }
-    final explicitTime = RegExp(r'(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?').firstMatch(lower);
+    final explicitTime = RegExp(
+      r'(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?',
+    ).firstMatch(lower);
     if (explicitTime != null) {
       final meridiem = explicitTime.group(3);
       if (meridiem == null) return null;
       final rawHour = int.tryParse(explicitTime.group(1) ?? '');
       final rawMinute = int.tryParse(explicitTime.group(2) ?? '0') ?? 0;
       if (rawHour == null || rawHour < 1 || rawHour > 12) return null;
-      final hour24 = meridiem == 'am'
-          ? (rawHour == 12 ? 0 : rawHour)
-          : (rawHour == 12 ? 12 : rawHour + 12);
+      final hour24 =
+          meridiem == 'am'
+              ? (rawHour == 12 ? 0 : rawHour)
+              : (rawHour == 12 ? 12 : rawHour + 12);
       var candidate = DateTime(now.year, now.month, now.day, hour24, rawMinute);
       if (candidate.isBefore(now.add(const Duration(minutes: 1)))) {
         candidate = candidate.add(const Duration(days: 1));
@@ -1137,7 +1357,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   int _inferSpots(String lower, SparkCategory category) {
-    final spotsMatch = RegExp(r'(\d{1,2})\s*(spots|spot|people|ppl)').firstMatch(lower);
+    final spotsMatch = RegExp(
+      r'(\d{1,2})\s*(spots|spot|people|ppl)',
+    ).firstMatch(lower);
     if (spotsMatch != null) {
       final count = int.tryParse(spotsMatch.group(1) ?? '');
       if (count != null) return count.clamp(1, 20);
@@ -1172,11 +1394,17 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
     // Remove obvious timing fragments from title intent.
     text = text.replaceAll(
-      RegExp(r'\b(in\s+\d{1,3}\s*(?:m|min|mins|minute|minutes|h|hr|hrs|hour|hours))\b', caseSensitive: false),
+      RegExp(
+        r'\b(in\s+\d{1,3}\s*(?:m|min|mins|minute|minutes|h|hr|hrs|hour|hours))\b',
+        caseSensitive: false,
+      ),
       '',
     );
     text = text.replaceAll(
-      RegExp(r'\b(at\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b', caseSensitive: false),
+      RegExp(
+        r'\b(at\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\b',
+        caseSensitive: false,
+      ),
       '',
     );
     text = text.replaceAll(
@@ -1185,10 +1413,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     );
 
     // Remove location hint from title ("near ...").
-    text = text.replaceAll(
-      RegExp(r'\bnear\s+.+$', caseSensitive: false),
-      '',
-    );
+    text = text.replaceAll(RegExp(r'\bnear\s+.+$', caseSensitive: false), '');
 
     // Normalize spacing/punctuation left after cleanup.
     text = text.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
@@ -1199,7 +1424,8 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   String? _autoValidationMessage(_InferredPlan plan) {
-    if (_planController.text.trim().isEmpty) return 'Type one line to create spark';
+    if (_planController.text.trim().isEmpty)
+      return 'Type one line to create spark';
     if (plan.category == SparkCategory.ride &&
         _autoSpotsOverride == null &&
         !_hasSpotsIntent(_planController.text.toLowerCase())) {
@@ -1216,22 +1442,28 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   bool _hasSpotsIntent(String lower) {
-    return RegExp(r'(\d{1,2})\s*(spot|spots|seat|seats|people|ppl)').hasMatch(lower);
+    return RegExp(
+      r'(\d{1,2})\s*(spot|spots|seat|seats|people|ppl)',
+    ).hasMatch(lower);
   }
 
   String? _manualValidationMessage() {
-    if (_manualTitleController.text.trim().isEmpty) return 'Title is required';
-    if (_manualVisibility == SparkVisibility.circle && _selectedCircleIds.isEmpty) {
+    final normalizedTitle = _normalizedTitle(_manualTitleController.text);
+    if (normalizedTitle.isEmpty) return 'Title is required';
+    if (normalizedTitle.length < 3)
+      return 'Title should be at least 3 characters';
+    if (_manualVisibility == SparkVisibility.circle &&
+        _selectedCircleIds.isEmpty) {
       return 'Pick at least one group for circle-only spark.';
     }
-    if (_manualVisibility == SparkVisibility.invite && _selectedInviteUserIds.isEmpty) {
-      if (_manualInvitePhones.isEmpty) {
-        return 'Pick at least one user or add a guest phone for invite-only spark.';
-      }
+    if (_manualVisibility == SparkVisibility.invite &&
+        _manualInvitePhones.isEmpty) {
+      return 'Add at least one phone number for private spark.';
     }
-    final location = _manualLocationController.text.trim().isEmpty
-        ? ref.read(selectedLocationProvider)
-        : _manualLocationController.text.trim();
+    final location =
+        _manualLocationController.text.trim().isEmpty
+            ? ref.read(selectedLocationProvider)
+            : _manualLocationController.text.trim();
     if (location.isEmpty) return 'Place / Venue is required';
     final startsAt = _manualStartsAt();
     final now = DateTime.now();
@@ -1245,32 +1477,51 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   Future<void> _createSpark() async {
+    final cleanedTitle = _normalizedTitle(_manualTitleController.text);
+    if (cleanedTitle != _manualTitleController.text) {
+      _manualTitleController.text = cleanedTitle;
+      _manualTitleController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _manualTitleController.text.length),
+      );
+    }
+    if (_isCreatingSpark) return;
+    setState(() {
+      _isCreatingSpark = true;
+      _guestPhoneInlineError = null;
+    });
+
     final draft = _isManualMode ? _manualDraft() : _effectiveAutoPlan();
     Spark createdSpark;
     try {
-      createdSpark = await ref.read(sparkDataControllerProvider).createSpark(
+      createdSpark = await ref
+          .read(sparkDataControllerProvider)
+          .createSpark(
             category: draft.category,
             title: draft.title,
             note: draft.note,
             locationName: draft.locationName,
-            startsAt: draft.startsAt ?? DateTime.now().add(const Duration(minutes: 30)),
+            startsAt:
+                draft.startsAt ??
+                DateTime.now().add(const Duration(minutes: 30)),
             maxSpots: draft.maxSpots,
             visibility: _manualVisibility,
             circleIds: _selectedCircleIds.toList(),
-            inviteUserIds: [
-              ..._selectedInviteUserIds,
-              ..._manualInvitePhones,
-            ],
+            inviteUserIds: [..._selectedInviteUserIds, ..._manualInvitePhones],
             recurrenceType: _isRecurring ? _recurrenceType : null,
-            recurrenceDayOfWeek: (_isRecurring && _recurrenceType == 'WEEKLY')
-                ? _recurrenceDayOfWeek
-                : null,
-            recurrenceTime: _isRecurring
-                ? '${_manualHour.toString().padLeft(2, '0')}:${_manualMinute.toString().padLeft(2, '0')}'
-                : null,
+            recurrenceDayOfWeek:
+                (_isRecurring && _recurrenceType == 'WEEKLY')
+                    ? _recurrenceDayOfWeek
+                    : null,
+            recurrenceTime:
+                _isRecurring
+                    ? '${_manualHour.toString().padLeft(2, '0')}:${_manualMinute.toString().padLeft(2, '0')}'
+                    : null,
             recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
           );
     } catch (e) {
+      if (mounted) {
+        setState(() => _isCreatingSpark = false);
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1281,19 +1532,171 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       return;
     }
 
+    if (mounted) {
+      setState(() => _isCreatingSpark = false);
+    }
+    final sparkForUi = _sparkWithLocalStartTime(
+      createdSpark,
+      draft.startsAt ?? DateTime.now().add(const Duration(minutes: 2)),
+    );
     HapticFeedback.mediumImpact();
-    ref.read(bottomTabProvider.notifier).state = 0;
     if (!mounted) return;
+    final isPrivateSpark = _manualVisibility == SparkVisibility.invite;
+    if (isPrivateSpark) {
+      await _showPrivateSparkSuccessSheet(sparkForUi);
+      return;
+    }
     await showInviteFriendsBottomSheet(
       context: context,
-      spark: createdSpark,
+      spark: sparkForUi,
       source: 'post_create',
       onViewSpark: () {
-        if (!mounted) return;
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => SparkDetailScreen(spark: createdSpark)),
+          MaterialPageRoute(
+            builder: (_) => SparkDetailScreen(spark: sparkForUi),
+          ),
         );
       },
+    );
+    if (!mounted) return;
+    ref.read(bottomTabProvider.notifier).state = 0;
+  }
+
+  String _sparkShareLink(Spark spark) {
+    final shareUrl = spark.shareUrl?.trim();
+    if (shareUrl != null && shareUrl.isNotEmpty) return shareUrl;
+    return 'https://spark.app/sparks/${spark.id}';
+  }
+
+  Spark _sparkWithLocalStartTime(Spark spark, DateTime startsAt) {
+    final diffMinutes = startsAt
+        .difference(DateTime.now())
+        .inMinutes
+        .clamp(0, 24 * 60);
+    final label =
+        diffMinutes == 0 ? 'Starts now' : 'Starts in $diffMinutes min';
+    return Spark(
+      id: spark.id,
+      category: spark.category,
+      title: spark.title,
+      startsInMinutes: diffMinutes,
+      timeLabel: label,
+      distanceKm: spark.distanceKm,
+      distanceLabel: spark.distanceLabel,
+      spotsLeft: spark.spotsLeft,
+      maxSpots: spark.maxSpots,
+      location: spark.location,
+      createdBy: spark.createdBy,
+      participants: spark.participants,
+      visibility: spark.visibility,
+      hostPhoneNumber: spark.hostPhoneNumber,
+      hideHostPhoneNumber: spark.hideHostPhoneNumber,
+      note: spark.note,
+      shareUrl: spark.shareUrl,
+      recurrenceType: spark.recurrenceType,
+    );
+  }
+
+  Future<void> _showPrivateSparkSuccessSheet(Spark spark) async {
+    final link = _sparkShareLink(spark);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder:
+          (_) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Private spark created',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Generate and share your private spark link.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      link,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            await Clipboard.setData(ClipboardData(text: link));
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Link copied')),
+                            );
+                          },
+                          child: const Text('Copy link'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.accent,
+                          ),
+                          onPressed: () async {
+                            await Share.share(
+                              'Join my private spark: ${spark.title}\n$link',
+                              subject: 'Private Spark Invite',
+                            );
+                          },
+                          child: const Text('Share link'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => SparkDetailScreen(spark: spark),
+                          ),
+                        );
+                      },
+                      child: const Text('View spark'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
     );
   }
 
@@ -1323,7 +1726,8 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       return 'Please keep spark text respectful and neutral.';
     }
 
-    if (lower.contains('note') && (lower.contains('max') || lower.contains('word'))) {
+    if (lower.contains('note') &&
+        (lower.contains('max') || lower.contains('word'))) {
       return 'Please keep your note concise (up to 15 words).';
     }
 
@@ -1359,7 +1763,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     _manualNoteController.text = plan.note ?? '';
     _manualCategory = plan.category;
     final ts = plan.startsAt ?? DateTime.now().add(const Duration(minutes: 30));
-    final ambiguousClock = _extractAmbiguousClock(_planController.text.toLowerCase());
+    final ambiguousClock = _extractAmbiguousClock(
+      _planController.text.toLowerCase(),
+    );
 
     _manualSelectedDate = DateTime(ts.year, ts.month, ts.day);
     if (plan.startsAt == null && ambiguousClock != null) {
@@ -1374,8 +1780,10 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   (int, int)? _extractAmbiguousClock(String lower) {
-    final explicit = RegExp(r'\bat\s*(\d{1,2})(?::(\d{2}))?\s*(?!am\b|pm\b)', caseSensitive: false)
-        .firstMatch(lower);
+    final explicit = RegExp(
+      r'\bat\s*(\d{1,2})(?::(\d{2}))?\s*(?!am\b|pm\b)',
+      caseSensitive: false,
+    ).firstMatch(lower);
     if (explicit == null) return null;
     final hour = int.tryParse(explicit.group(1) ?? '');
     final minute = int.tryParse(explicit.group(2) ?? '0') ?? 0;
@@ -1388,24 +1796,27 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   _InferredPlan _manualDraft() {
     final fallbackLocation = ref.read(selectedLocationProvider);
     return _InferredPlan(
-      title: _manualTitleController.text.trim(),
+      title: _normalizedTitle(_manualTitleController.text),
       category: _manualCategory,
-      locationName: _manualLocationController.text.trim().isEmpty
-          ? fallbackLocation
-          : _manualLocationController.text.trim(),
+      locationName:
+          _manualLocationController.text.trim().isEmpty
+              ? fallbackLocation
+              : _manualLocationController.text.trim(),
       startsAt: _manualStartsAt(),
       maxSpots: _manualOpenGroup ? 20 : _manualSpotsValue(),
-      note: _manualNoteController.text.trim().isEmpty
-          ? null
-          : _manualNoteController.text.trim(),
+      note:
+          _manualNoteController.text.trim().isEmpty
+              ? null
+              : _manualNoteController.text.trim(),
       source: 'manual',
     );
   }
 
   DateTime _manualStartsAt() {
-    final hour24 = _manualPeriod == 'AM'
-        ? (_manualHour == 12 ? 0 : _manualHour)
-        : (_manualHour == 12 ? 12 : _manualHour + 12);
+    final hour24 =
+        _manualPeriod == 'AM'
+            ? (_manualHour == 12 ? 0 : _manualHour)
+            : (_manualHour == 12 ? 12 : _manualHour + 12);
     return DateTime(
       _manualSelectedDate.year,
       _manualSelectedDate.month,
@@ -1421,7 +1832,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       context: context,
       initialDate: _manualSelectedDate,
       firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(now.year, now.month, now.day).add(const Duration(days: 1)),
+      lastDate: DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(const Duration(days: 1)),
     );
     if (picked == null) return;
     setState(() {
@@ -1442,10 +1857,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   String _previewTimeLabel(DateTime value) {
     final now = DateTime.now();
-    final diff = value.difference(now);
-    if (diff.inMinutes > 0 && diff.inMinutes <= 60) {
-      return 'In ${diff.inMinutes} min';
-    }
     final isToday = DateUtils.isSameDay(now, value);
     final dayLabel = isToday ? 'Today' : 'Tomorrow';
     final hour = (value.hour % 12 == 0) ? 12 : value.hour % 12;
@@ -1469,33 +1880,34 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final selection = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.flash_on_outlined),
-              title: const Text('Now'),
-              onTap: () => Navigator.of(context).pop('now'),
+      builder:
+          (_) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.flash_on_outlined),
+                  title: const Text('Now'),
+                  onTap: () => Navigator.of(context).pop('now'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: const Text('In 30 min'),
+                  onTap: () => Navigator.of(context).pop('30'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.wb_twilight_outlined),
+                  title: const Text('This evening (6:00 PM)'),
+                  onTap: () => Navigator.of(context).pop('evening'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_calendar_outlined),
+                  title: const Text('Pick custom time'),
+                  onTap: () => Navigator.of(context).pop('custom'),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.schedule_outlined),
-              title: const Text('In 30 min'),
-              onTap: () => Navigator.of(context).pop('30'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.wb_twilight_outlined),
-              title: const Text('This evening (6:00 PM)'),
-              onTap: () => Navigator.of(context).pop('evening'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_calendar_outlined),
-              title: const Text('Pick custom time'),
-              onTap: () => Navigator.of(context).pop('custom'),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
     if (selection == null || !mounted) return;
     final now = DateTime.now();
@@ -1519,7 +1931,13 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       initialTime: TimeOfDay.now(),
     );
     if (picked == null || !mounted) return;
-    var candidate = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+    var candidate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      picked.hour,
+      picked.minute,
+    );
     if (candidate.isBefore(now)) {
       candidate = candidate.add(const Duration(days: 1));
     }
@@ -1537,68 +1955,77 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => LocationPickerSheet(
-        title: 'Set place / venue',
-        selectedLocation: _autoLocationOverride ?? selected,
-        savedLocations: saved,
-        recentLocations: recent,
-        catalogLocations: catalog,
-        placesService: placesService,
-        onSelect: (place) {
-          setState(() => _autoLocationOverride = place);
-          Navigator.of(context).pop();
-        },
-      ),
+      builder:
+          (_) => LocationPickerSheet(
+            title: 'Set place / venue',
+            selectedLocation: _autoLocationOverride ?? selected,
+            savedLocations: saved,
+            recentLocations: recent,
+            catalogLocations: catalog,
+            placesService: placesService,
+            onSelect: (place) {
+              setState(() => _autoLocationOverride = place);
+              Navigator.of(context).pop();
+            },
+          ),
     );
   }
 
   Future<void> _editAutoSpots(_InferredPlan plan) async {
-    final controller = TextEditingController(text: '${_autoSpotsOverride ?? plan.maxSpots}');
+    final controller = TextEditingController(
+      text: '${_autoSpotsOverride ?? plan.maxSpots}',
+    );
     final result = await showDialog<int>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(plan.category == SparkCategory.ride ? 'Set seats' : 'How many people?'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            hintText: plan.category == SparkCategory.ride
-                ? 'Enter seats'
-                : 'Enter number of people',
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        buttonPadding: EdgeInsets.zero,
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                final parsed = int.tryParse(controller.text.trim());
-                if (parsed == null) return;
-                Navigator.of(context).pop(parsed.clamp(1, 20));
-              },
-              child: const Text('Save'),
+      builder:
+          (_) => AlertDialog(
+            title: Text(
+              plan.category == SparkCategory.ride
+                  ? 'Set seats'
+                  : 'How many people?',
             ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.accent,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+            content: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                hintText:
+                    plan.category == SparkCategory.ride
+                        ? 'Enter seats'
+                        : 'Enter number of people',
               ),
-              child: const Text('Cancel'),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            buttonPadding: EdgeInsets.zero,
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final parsed = int.tryParse(controller.text.trim());
+                    if (parsed == null) return;
+                    Navigator.of(context).pop(parsed.clamp(1, 20));
+                  },
+                  child: const Text('Save'),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (result == null || !mounted) return;
     setState(() => _autoSpotsOverride = result);
@@ -1608,33 +2035,35 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final controller = TextEditingController(text: _autoNoteOverride ?? '');
     final result = await showDialog<String>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Add details'),
-        content: TextField(
-          controller: controller,
-          minLines: 1,
-          maxLines: 2,
-          inputFormatters: [_WordLimitFormatter(maxWords: 15)],
-          decoration: const InputDecoration(hintText: 'Optional note (max 15 words)'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.accent,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Add details'),
+            content: TextField(
+              controller: controller,
+              minLines: 1,
+              maxLines: 2,
+              inputFormatters: [_WordLimitFormatter(maxWords: 15)],
+              decoration: const InputDecoration(
+                hintText: 'Optional note (max 15 words)',
+              ),
             ),
-            child: const Text('Cancel'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(foregroundColor: AppColors.accent),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed:
+                    () => Navigator.of(context).pop(controller.text.trim()),
+                child: const Text('Save'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
     if (result == null || !mounted) return;
     setState(() => _autoNoteOverride = result.isEmpty ? null : result);
@@ -1644,33 +2073,34 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final selection = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.flash_on_outlined),
-              title: const Text('Now'),
-              onTap: () => Navigator.of(context).pop('now'),
+      builder:
+          (_) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.flash_on_outlined),
+                  title: const Text('Now'),
+                  onTap: () => Navigator.of(context).pop('now'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: const Text('In 30 min'),
+                  onTap: () => Navigator.of(context).pop('30'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.wb_twilight_outlined),
+                  title: const Text('This evening (6:00 PM)'),
+                  onTap: () => Navigator.of(context).pop('evening'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_calendar_outlined),
+                  title: const Text('Pick custom time'),
+                  onTap: () => Navigator.of(context).pop('custom'),
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.schedule_outlined),
-              title: const Text('In 30 min'),
-              onTap: () => Navigator.of(context).pop('30'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.wb_twilight_outlined),
-              title: const Text('This evening (6:00 PM)'),
-              onTap: () => Navigator.of(context).pop('evening'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_calendar_outlined),
-              title: const Text('Pick custom time'),
-              onTap: () => Navigator.of(context).pop('custom'),
-            ),
-          ],
-        ),
-      ),
+          ),
     );
     if (selection == null || !mounted) return;
     final now = DateTime.now();
@@ -1693,7 +2123,13 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       initialTime: TimeOfDay.now(),
     );
     if (picked == null || !mounted) return;
-    var candidate = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+    var candidate = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      picked.hour,
+      picked.minute,
+    );
     if (candidate.isBefore(now)) {
       candidate = candidate.add(const Duration(days: 1));
     }
@@ -1701,129 +2137,167 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   void _setManualTimeFromDateTime(DateTime ts) {
+    final snappedMinute = ((ts.minute + 7) ~/ 15) * 15;
+    final snapped = DateTime(ts.year, ts.month, ts.day, ts.hour, snappedMinute);
     setState(() {
-      _manualSelectedDate = DateTime(ts.year, ts.month, ts.day);
-      _manualHour = _to12Hour(ts.hour);
-      _manualMinute = ts.minute;
-      _manualPeriod = ts.hour >= 12 ? 'PM' : 'AM';
+      _manualSelectedDate = DateTime(snapped.year, snapped.month, snapped.day);
+      _manualHour = _to12Hour(snapped.hour);
+      _manualMinute = snapped.minute;
+      _manualPeriod = snapped.hour >= 12 ? 'PM' : 'AM';
     });
   }
 
+  String _normalizedTitle(String raw) {
+    return raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  bool _isNearYouLocationLabel(String location) {
+    final normalized = location.trim().toLowerCase();
+    return normalized.isEmpty ||
+        normalized == 'near you' ||
+        normalized == 'nearby' ||
+        normalized == 'current location';
+  }
+
   Future<void> _editManualSpots() async {
-    final controller = TextEditingController(text: _manualSpotsController.text.trim().isEmpty ? '3' : _manualSpotsController.text.trim());
+    final controller = TextEditingController(
+      text:
+          _manualSpotsController.text.trim().isEmpty
+              ? '3'
+              : _manualSpotsController.text.trim(),
+    );
     final result = await showDialog<int>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(_manualCategory == SparkCategory.ride ? 'How many seats?' : 'How many people?'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            hintText: _manualCategory == SparkCategory.ride ? 'Enter seats' : 'Enter number of people',
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        buttonPadding: EdgeInsets.zero,
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
+      builder:
+          (_) => AlertDialog(
+            title: Text(
+              _manualCategory == SparkCategory.ride
+                  ? 'How many seats?'
+                  : 'How many people?',
+            ),
+            content: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: InputDecoration(
+                hintText:
+                    _manualCategory == SparkCategory.ride
+                        ? 'Enter seats'
+                        : 'Enter number of people',
               ),
-              onPressed: () {
-                final parsed = int.tryParse(controller.text.trim());
-                if (parsed == null) return;
-                Navigator.of(context).pop(parsed.clamp(1, 20));
-              },
-              child: const Text('Save'),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            buttonPadding: EdgeInsets.zero,
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final parsed = int.tryParse(controller.text.trim());
+                    if (parsed == null) return;
+                    Navigator.of(context).pop(parsed.clamp(1, 20));
+                  },
+                  child: const Text('Save'),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ],
           ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          ),
-        ],
-      ),
     );
     if (result == null || !mounted) return;
     setState(() => _manualSpotsController.text = '$result');
   }
 
   Future<void> _editManualNote() async {
-    final controller = TextEditingController(text: _manualNoteController.text.trim());
+    final controller = TextEditingController(
+      text: _manualNoteController.text.trim(),
+    );
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _BottomSheetCard(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            24, 20, 24,
-            MediaQuery.of(ctx).viewInsets.bottom + 32,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36, height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD1D1D6),
-                    borderRadius: BorderRadius.circular(2),
+      builder:
+          (ctx) => _BottomSheetCard(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                20,
+                24,
+                MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD1D1D6),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const Text(
-                'Add details',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF000000),
-                  letterSpacing: -0.3,
-                  fontFamily: 'Manrope',
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Add any extra information about your spark.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: controller,
-                minLines: 3,
-                maxLines: 5,
-                autofocus: true,
-                inputFormatters: [_WordLimitFormatter(maxWords: 50)],
-                decoration: InputDecoration(
-                  hintText: 'e.g. Meeting at the north gate, look for the red flag.',
-                  hintStyle: const TextStyle(color: Color(0xFFC7C7CC), fontSize: 14),
-                  fillColor: const Color(0xFFF2F2F7),
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                  const Text(
+                    'Add details',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                      fontFamily: 'Manrope',
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.all(16),
-                ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Add any extra information about your spark.',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: controller,
+                    minLines: 3,
+                    maxLines: 5,
+                    autofocus: true,
+                    inputFormatters: [_WordLimitFormatter(maxWords: 50)],
+                    decoration: InputDecoration(
+                      hintText:
+                          'e.g. Meeting at the north gate, look for the red flag.',
+                      hintStyle: const TextStyle(
+                        color: Color(0xFFC7C7CC),
+                        fontSize: 14,
+                      ),
+                      fillColor: AppColors.background,
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  PrimaryButton(
+                    label: 'Save',
+                    onPressed:
+                        () => Navigator.of(ctx).pop(controller.text.trim()),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              PrimaryButton(
-                label: 'Save',
-                onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
     if (result == null || !mounted) return;
     setState(() => _manualNoteController.text = result);
@@ -1839,21 +2313,22 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => LocationPickerSheet(
-        title: 'Post in area',
-        selectedLocation: selected,
-        savedLocations: saved,
-        recentLocations: recent,
-        catalogLocations: catalog,
-        placesService: placesService,
-        onSelect: (place) {
-          ref.read(selectedLocationProvider.notifier).state = place;
-          if (_isManualMode) {
-            _manualLocationController.text = place;
-          }
-          Navigator.of(context).pop();
-        },
-      ),
+      builder:
+          (_) => LocationPickerSheet(
+            title: 'Post in area',
+            selectedLocation: selected,
+            savedLocations: saved,
+            recentLocations: recent,
+            catalogLocations: catalog,
+            placesService: placesService,
+            onSelect: (place) {
+              ref.read(selectedLocationProvider.notifier).state = place;
+              if (_isManualMode) {
+                _manualLocationController.text = place;
+              }
+              Navigator.of(context).pop();
+            },
+          ),
     );
   }
 }
@@ -1933,6 +2408,13 @@ class _AutoPreviewCard extends StatelessWidget {
   final String? relativeTimeText;
   final bool hasExplicitSpots;
 
+  bool _isNearYouAlias(String locationName) {
+    final normalized = locationName.trim().toLowerCase();
+    return normalized == 'near you' ||
+        normalized == 'nearby' ||
+        normalized == 'current location';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1955,13 +2437,20 @@ class _AutoPreviewCard extends StatelessWidget {
                   color: AppColors.accentSurface,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(plan.category.icon, size: 16, color: AppColors.accent),
+                child: Icon(
+                  plan.category.icon,
+                  size: 16,
+                  color: AppColors.accent,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   plan.title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -1969,21 +2458,28 @@ class _AutoPreviewCard extends StatelessWidget {
           const SizedBox(height: 8),
           _ReadOnlyMetaChip(
             icon: Icons.place_outlined,
-            value: plan.locationName.trim().toLowerCase() == selectedLocation.trim().toLowerCase()
-                ? '${plan.locationName} (near you)'
-                : plan.locationName,
+            value:
+                _isNearYouAlias(plan.locationName)
+                    ? '${plan.locationName} (near you)'
+                    : plan.locationName,
           ),
           const SizedBox(height: 6),
           _ReadOnlyMetaChip(
             icon: Icons.schedule_outlined,
-            value: relativeTimeText == null ? timeText : '$relativeTimeText • $timeText',
+            value:
+                relativeTimeText == null
+                    ? timeText
+                    : '$relativeTimeText • $timeText',
           ),
           const SizedBox(height: 6),
           _ReadOnlyMetaChip(
             icon: Icons.group_outlined,
-            value: plan.category == SparkCategory.ride
-                ? '${plan.maxSpots} seats'
-                : (hasExplicitSpots ? '${plan.maxSpots} people' : 'Open group'),
+            value:
+                plan.category == SparkCategory.ride
+                    ? '${plan.maxSpots} seats'
+                    : (hasExplicitSpots
+                        ? '${plan.maxSpots} people'
+                        : 'Open group'),
           ),
         ],
       ),
@@ -2039,7 +2535,9 @@ class _ManualForm extends StatelessWidget {
           label: 'Title',
           child: TextField(
             controller: titleController,
-            decoration: const InputDecoration(hintText: 'Cricket at 6 near Central Park'),
+            decoration: const InputDecoration(
+              hintText: 'Cricket at 6 near Central Park',
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -2066,8 +2564,11 @@ class _ManualForm extends StatelessWidget {
                       color: AppColors.iconBg,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.place_outlined,
-                        size: 13, color: AppColors.accent),
+                    child: const Icon(
+                      Icons.place_outlined,
+                      size: 13,
+                      color: AppColors.accent,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -2075,10 +2576,17 @@ class _ManualForm extends StatelessWidget {
                       locationText,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  const Icon(Icons.expand_more, size: 16, color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.expand_more,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                 ],
               ),
             ),
@@ -2097,55 +2605,62 @@ class _ManualForm extends StatelessWidget {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: SparkCategory.values
-                .map(
-                  (c) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => onCategoryChanged(c),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: c == category
-                              ? AppColors.accent
-                              : AppColors.surfaceSubtle,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: c == category
-                                ? AppColors.accent
-                                : AppColors.chipBorder,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              c.icon,
-                              size: 13,
-                              color: c == category
-                                  ? Colors.white
-                                  : AppColors.textSecondary,
+            children:
+                SparkCategory.values
+                    .map(
+                      (c) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () => onCategoryChanged(c),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 160),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              c.label,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: c == category
-                                    ? Colors.white
-                                    : AppColors.chipText,
+                            decoration: BoxDecoration(
+                              color:
+                                  c == category
+                                      ? AppColors.accent
+                                      : AppColors.surfaceSubtle,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color:
+                                    c == category
+                                        ? AppColors.accent
+                                        : AppColors.chipBorder,
                               ),
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  c.icon,
+                                  size: 13,
+                                  color:
+                                      c == category
+                                          ? Colors.white
+                                          : AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  c.label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        c == category
+                                            ? Colors.white
+                                            : AppColors.chipText,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                )
-                .toList(),
+                    )
+                    .toList(),
           ),
         ),
         const SizedBox(height: 10),
@@ -2155,10 +2670,7 @@ class _ManualForm extends StatelessWidget {
             if (compact) {
               return Column(
                 children: [
-                  _ManualDateField(
-                    dateLabel: dateLabel,
-                    onTap: onPickDate,
-                  ),
+                  _ManualDateField(dateLabel: dateLabel, onTap: onPickDate),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -2268,17 +2780,17 @@ class _ManualForm extends StatelessWidget {
                 animation: noteController,
                 builder: (context, _) {
                   final text = noteController.text.trim();
-                  final wordCount = text.isEmpty
-                      ? 0
-                      : text.split(RegExp(r'\s+')).length;
+                  final wordCount =
+                      text.isEmpty ? 0 : text.split(RegExp(r'\s+')).length;
                   return Text(
                     '$wordCount / 15 words',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
-                      color: wordCount >= 14
-                          ? AppColors.errorText
-                          : AppColors.textMuted,
+                      color:
+                          wordCount >= 14
+                              ? AppColors.errorText
+                              : AppColors.textMuted,
                     ),
                   );
                 },
@@ -2292,10 +2804,7 @@ class _ManualForm extends StatelessWidget {
 }
 
 class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.child,
-  });
+  const _LabeledField({required this.label, required this.child});
 
   final String label;
   final Widget child;
@@ -2323,10 +2832,7 @@ class _LabeledField extends StatelessWidget {
 }
 
 class _ManualDateField extends StatelessWidget {
-  const _ManualDateField({
-    required this.dateLabel,
-    required this.onTap,
-  });
+  const _ManualDateField({required this.dateLabel, required this.onTap});
 
   final String dateLabel;
   final VoidCallback onTap;
@@ -2346,14 +2852,21 @@ class _ManualDateField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: 15, color: AppColors.textSecondary),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 15,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 dateLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -2388,7 +2901,10 @@ class _SelectField<T> extends StatelessWidget {
           filled: true,
           fillColor: AppColors.surfaceDim,
           isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 12,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppColors.border),
@@ -2398,18 +2914,22 @@ class _SelectField<T> extends StatelessWidget {
             borderSide: const BorderSide(color: AppColors.border),
           ),
         ),
-        items: items
-            .map(
-              (item) => DropdownMenuItem<T>(
-                value: item,
-                child: Text(
-                  labelBuilder(item),
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                ),
-              ),
-            )
-            .toList(),
+        items:
+            items
+                .map(
+                  (item) => DropdownMenuItem<T>(
+                    value: item,
+                    child: Text(
+                      labelBuilder(item),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
         onChanged: (newValue) {
           if (newValue == null) return;
           onChanged(newValue);
@@ -2420,22 +2940,20 @@ class _SelectField<T> extends StatelessWidget {
 }
 
 class _CreateScreenHeader extends StatelessWidget {
-  const _CreateScreenHeader({
-    required this.category,
-    required this.onBackTap,
-  });
+  const _CreateScreenHeader({required this.category, required this.onBackTap});
   final SparkCategory category;
   final VoidCallback onBackTap;
+  static const double _kScreenTitleSize = 24;
 
   static Color _accentColor(SparkCategory cat) => AppColors.accent;
 
   static IconData _icon(SparkCategory cat) => switch (cat) {
-        SparkCategory.sports => Icons.directions_run_rounded,
-        SparkCategory.study => Icons.auto_stories_rounded,
-        SparkCategory.ride => Icons.drive_eta_rounded,
-        SparkCategory.events => Icons.confirmation_number_outlined,
-        SparkCategory.hangout => Icons.coffee_outlined,
-      };
+    SparkCategory.sports => Icons.directions_run_rounded,
+    SparkCategory.study => Icons.auto_stories_rounded,
+    SparkCategory.ride => Icons.drive_eta_rounded,
+    SparkCategory.events => Icons.confirmation_number_outlined,
+    SparkCategory.hangout => Icons.coffee_outlined,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -2455,11 +2973,13 @@ class _CreateScreenHeader extends StatelessWidget {
         const Expanded(
           child: Text(
             "What's your plan?",
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.black,
-              letterSpacing: -0.6,
+              fontSize: _kScreenTitleSize,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.7,
               fontFamily: 'Manrope',
             ),
           ),
@@ -2561,10 +3081,7 @@ class _AudienceOption {
 }
 
 class _RemovablePill extends StatelessWidget {
-  const _RemovablePill({
-    required this.text,
-    required this.onRemove,
-  });
+  const _RemovablePill({required this.text, required this.onRemove});
 
   final String text;
   final VoidCallback onRemove;
@@ -2658,15 +3175,16 @@ class _QuickChoiceChip extends StatelessWidget {
             color: selected ? AppColors.accent : AppColors.border,
             width: 1,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
+          boxShadow:
+              selected
+                  ? [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                  : null,
         ),
         child: Text(
           label,
@@ -2756,10 +3274,7 @@ class _StepButton extends StatelessWidget {
 }
 
 class _ReadOnlyMetaChip extends StatelessWidget {
-  const _ReadOnlyMetaChip({
-    required this.icon,
-    required this.value,
-  });
+  const _ReadOnlyMetaChip({required this.icon, required this.value});
 
   final IconData icon;
   final String value;
@@ -2796,10 +3311,7 @@ class _ReadOnlyMetaChip extends StatelessWidget {
 }
 
 class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({
-    required this.label,
-    required this.onTap,
-  });
+  const _SuggestionChip({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -2828,7 +3340,6 @@ class _SuggestionChip extends StatelessWidget {
     );
   }
 }
-
 
 class _InferredPlan {
   const _InferredPlan({
@@ -2874,11 +3385,7 @@ class _InferredPlan {
 enum _TimeIntentKind { missing, ambiguous, resolved }
 
 class _TimeIntent {
-  const _TimeIntent({
-    required this.kind,
-    this.hour,
-    this.minute,
-  });
+  const _TimeIntent({required this.kind, this.hour, this.minute});
 
   final _TimeIntentKind kind;
   final int? hour;
@@ -2916,7 +3423,6 @@ class _BottomSheetCard extends StatelessWidget {
     child: SafeArea(child: child),
   );
 }
-
 
 /// "Repeat this Spark" toggle + day/type picker for recurring sparks.
 class _RecurrenceSection extends StatelessWidget {
@@ -2959,8 +3465,11 @@ class _RecurrenceSection extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.repeat_rounded, size: 18,
-                      color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.repeat_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Text(
@@ -3038,7 +3547,8 @@ class _RecurrenceSection extends StatelessWidget {
                     onTap: () async {
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: recurrenceEndDate ??
+                        initialDate:
+                            recurrenceEndDate ??
                             DateTime.now().add(const Duration(days: 30)),
                         firstDate: DateTime.now().add(const Duration(days: 1)),
                         lastDate: DateTime.now().add(const Duration(days: 365)),
@@ -3047,7 +3557,9 @@ class _RecurrenceSection extends StatelessWidget {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 9),
+                        horizontal: 12,
+                        vertical: 9,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -3056,8 +3568,11 @@ class _RecurrenceSection extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.event_outlined,
-                              size: 16, color: AppColors.textSecondary),
+                          Icon(
+                            Icons.event_outlined,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             recurrenceEndDate == null
@@ -3073,8 +3588,11 @@ class _RecurrenceSection extends StatelessWidget {
                             const SizedBox(width: 6),
                             GestureDetector(
                               onTap: () => onEndDateChanged(null),
-                              child: Icon(Icons.close, size: 14,
-                                  color: AppColors.textSecondary),
+                              child: Icon(
+                                Icons.close,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ],
                         ],

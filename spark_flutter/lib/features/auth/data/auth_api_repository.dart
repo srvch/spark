@@ -44,6 +44,8 @@ class AuthApiRepository {
       userId: '${data['userId']}',
       phoneNumber: '${data['phoneNumber']}',
       displayName: '${data['displayName']}',
+      ageBand: data['ageBand']?.toString(),
+      gender: data['gender']?.toString(),
     );
   }
 
@@ -67,6 +69,8 @@ class AuthApiRepository {
       userId: '${data['userId']}',
       phoneNumber: '${data['phoneNumber']}',
       displayName: '${data['displayName']}',
+      ageBand: data['ageBand']?.toString(),
+      gender: data['gender']?.toString(),
     );
   }
 
@@ -78,6 +82,31 @@ class AuthApiRepository {
       userId: '${data['userId']}',
       phoneNumber: '${data['phoneNumber']}',
       displayName: '${data['displayName']}',
+      ageBand: data['ageBand']?.toString(),
+      gender: data['gender']?.toString(),
+    );
+  }
+
+  Future<OnboardingProfile> completeProfile({
+    required String displayName,
+    required String ageBand,
+    required String gender,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/api/v1/users/me',
+      data: {
+        'displayName': displayName.trim(),
+        'ageBand': ageBand,
+        'gender': gender,
+      },
+    );
+    final data = response.data ?? const <String, dynamic>{};
+    return OnboardingProfile(
+      userId: '${data['userId']}',
+      displayName: '${data['displayName']}',
+      phoneNumber: '${data['phoneNumber']}',
+      ageBand: data['ageBand']?.toString() ?? ageBand,
+      gender: data['gender']?.toString() ?? gender,
     );
   }
 
@@ -96,4 +125,20 @@ class OtpRequestResult {
   final String requestId;
   final int expiresInSeconds;
   final String debugOtp;
+}
+
+class OnboardingProfile {
+  const OnboardingProfile({
+    required this.userId,
+    required this.displayName,
+    required this.phoneNumber,
+    required this.ageBand,
+    required this.gender,
+  });
+
+  final String userId;
+  final String displayName;
+  final String phoneNumber;
+  final String ageBand;
+  final String gender;
 }

@@ -3,19 +3,19 @@ package com.spark.backend.job;
 import com.spark.backend.domain.SparkStatus;
 import com.spark.backend.entity.SparkEventEntity;
 import com.spark.backend.repository.SparkEventRepository;
-import com.spark.backend.service.LiveSparkCacheService;
-import com.spark.backend.service.SparkService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
@@ -30,12 +30,12 @@ public class RecurringSparkJob {
     private static final Duration SPAWN_HORIZON = Duration.ofHours(2);
 
     private final SparkEventRepository sparkEventRepository;
-    private final SparkService sparkService;
+    private final ZoneId recurrenceZone;
 
     public RecurringSparkJob(SparkEventRepository sparkEventRepository,
-                             SparkService sparkService) {
+                             @Value("${spark.recurrence.zone:Asia/Kolkata}") String recurrenceZoneId) {
         this.sparkEventRepository = sparkEventRepository;
-        this.sparkService = sparkService;
+        this.recurrenceZone = parseZone(recurrenceZoneId);
     }
 
     @Scheduled(fixedDelay = 3_600_000L, initialDelay = 30_000L)
@@ -62,7 +62,10 @@ public class RecurringSparkJob {
 
     @Transactional
     protected void spawnNextInstance(SparkEventEntity template, Instant now) {
-        Instant nextStart = computeNextStart(template, now);
+        Instant nextStart = template.getNextOccursAt();
+        if (nextStart == null) {
+            nextStart = computeNextStart(template, now);
+        }
         if (nextStart == null) {
             log.debug("[RecurringJob] No next occurrence for template {}", template.getId());
             // Deactivate template if its end date has passed
@@ -104,22 +107,28 @@ public class RecurringSparkJob {
         if (template.getRecurrenceType() == null) return null;
 
         // Parse recurrenceTime (HH:mm) — default 09:00
-        int hour = 9, minute = 0;
+        int hour = 9;
+        int minute = 0;
         if (template.getRecurrenceTime() != null) {
-            String[] parts = template.getRecurrenceTime().split(":");
-            if (parts.length == 2) {
-                hour = Integer.parseInt(parts[0]);
-                minute = Integer.parseInt(parts[1]);
+            try {
+                String[] parts = template.getRecurrenceTime().split(":");
+                if (parts.length == 2) {
+                    hour = Integer.parseInt(parts[0]);
+                    minute = Integer.parseInt(parts[1]);
+                }
+            } catch (Exception ignored) {
+                hour = 9;
+                minute = 0;
             }
         }
 
         ZonedDateTime candidate;
-        ZonedDateTime base = after.atZone(ZoneOffset.UTC);
+        ZonedDateTime base = after.atZone(recurrenceZone);
 
         if ("DAILY".equalsIgnoreCase(template.getRecurrenceType())) {
             candidate = base.toLocalDate().plusDays(1)
                     .atTime(hour, minute)
-                    .atZone(ZoneOffset.UTC);
+                    .atZone(recurrenceZone);
         } else { // WEEKLY
             int targetDay = template.getRecurrenceDayOfWeek() != null
                     ? template.getRecurrenceDayOfWeek() : 1; // default Monday
@@ -127,18 +136,26 @@ public class RecurringSparkJob {
                     .with(java.time.temporal.TemporalAdjusters.next(
                             java.time.DayOfWeek.of(targetDay)))
                     .atTime(hour, minute)
-                    .atZone(ZoneOffset.UTC);
+                    .atZone(recurrenceZone);
         }
 
         Instant result = candidate.toInstant();
 
         // Check against recurrenceEndDate
         if (template.getRecurrenceEndDate() != null) {
-            Instant endInstant = template.getRecurrenceEndDate()
-                    .atStartOfDay(ZoneOffset.UTC).toInstant();
-            if (result.isAfter(endInstant)) return null;
+            LocalDate occurrenceDate = result.atZone(recurrenceZone).toLocalDate();
+            if (occurrenceDate.isAfter(template.getRecurrenceEndDate())) return null;
         }
 
         return result;
+    }
+
+    private ZoneId parseZone(String zoneId) {
+        try {
+            return ZoneId.of(zoneId);
+        } catch (Exception ex) {
+            log.warn("[RecurringJob] Invalid recurrence zone '{}', defaulting to UTC", zoneId);
+            return ZoneOffset.UTC;
+        }
     }
 }

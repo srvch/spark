@@ -33,6 +33,12 @@ public class AppUserEntity {
     @Column(name = "interests")
     private String interests;
 
+    @Column(name = "age_band", length = 20)
+    private String ageBand;
+
+    @Column(name = "gender", length = 20)
+    private String gender;
+
     @PrePersist
     void onCreate() {
         createdAt = Instant.now();
@@ -67,4 +73,10 @@ public class AppUserEntity {
 
     public String getInterests() { return interests; }
     public void setInterests(String interests) { this.interests = interests; }
+
+    public String getAgeBand() { return ageBand; }
+    public void setAgeBand(String ageBand) { this.ageBand = ageBand; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 }

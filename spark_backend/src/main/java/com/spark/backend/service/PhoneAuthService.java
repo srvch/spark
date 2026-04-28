@@ -88,7 +88,14 @@ public class PhoneAuthService {
             }
 
             String token = jwtService.generateToken(user.getId().toString(), user.getPhoneNumber());
-            return new AuthenticatedSession(token, user.getId().toString(), user.getPhoneNumber(), user.getDisplayName());
+            return new AuthenticatedSession(
+                    token,
+                    user.getId().toString(),
+                    user.getPhoneNumber(),
+                    user.getDisplayName(),
+                    user.getAgeBand(),
+                    user.getGender()
+            );
 
         } catch (FirebaseAuthException e) {
             throw new IllegalArgumentException("Invalid Firebase token: " + e.getMessage());
@@ -139,7 +146,14 @@ public class PhoneAuthService {
         }
 
         String token = jwtService.generateToken(user.getId().toString(), user.getPhoneNumber());
-        return new AuthenticatedSession(token, user.getId().toString(), user.getPhoneNumber(), user.getDisplayName());
+        return new AuthenticatedSession(
+                token,
+                user.getId().toString(),
+                user.getPhoneNumber(),
+                user.getDisplayName(),
+                user.getAgeBand(),
+                user.getGender()
+        );
     }
 
     private String key(String requestId) {
@@ -183,7 +197,9 @@ public class PhoneAuthService {
             String token,
             String userId,
             String phoneNumber,
-            String displayName
+            String displayName,
+            String ageBand,
+            String gender
     ) {
     }
 
@@ -201,6 +217,13 @@ public class PhoneAuthService {
         });
 
         String token = jwtService.generateToken(user.getId().toString(), user.getPhoneNumber());
-        return new AuthenticatedSession(token, user.getId().toString(), user.getPhoneNumber(), user.getDisplayName());
+        return new AuthenticatedSession(
+                token,
+                user.getId().toString(),
+                user.getPhoneNumber(),
+                user.getDisplayName(),
+                user.getAgeBand(),
+                user.getGender()
+        );
     }
 }

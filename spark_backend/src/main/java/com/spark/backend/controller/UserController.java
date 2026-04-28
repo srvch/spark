@@ -36,7 +36,9 @@ public class UserController {
                 user.getId().toString(),
                 user.getDisplayName(),
                 user.getPhoneNumber(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                user.getAgeBand(),
+                user.getGender()
         );
     }
 
@@ -49,12 +51,16 @@ public class UserController {
         AppUserEntity user = appUserRepository.findById(UUID.fromString(currentUser.userId()))
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found."));
         user.setDisplayName(request.displayName().trim());
+        user.setAgeBand(normalizeAgeBand(request.ageBand()));
+        user.setGender(normalizeGender(request.gender()));
         AppUserEntity saved = appUserRepository.save(user);
         return new ProfileResponse(
                 saved.getId().toString(),
                 saved.getDisplayName(),
                 saved.getPhoneNumber(),
-                saved.getCreatedAt()
+                saved.getCreatedAt(),
+                saved.getAgeBand(),
+                saved.getGender()
         );
     }
 
@@ -81,10 +87,35 @@ public class UserController {
             String userId,
             String displayName,
             String phoneNumber,
-            Instant createdAt
+            Instant createdAt,
+            String ageBand,
+            String gender
     ) {}
 
     public record UpdateProfileRequest(
-            @NotBlank @Size(min = 2, max = 120) String displayName
+            @NotBlank @Size(min = 2, max = 120) String displayName,
+            @NotBlank String ageBand,
+            @NotBlank String gender
     ) {}
+
+    private String normalizeAgeBand(String ageBand) {
+        final String value = ageBand.trim().toUpperCase();
+        if ("18-24".equals(value) ||
+                "25-34".equals(value) ||
+                "35-44".equals(value) ||
+                "45+".equals(value)) {
+            return value;
+        }
+        throw new IllegalArgumentException("Invalid age band.");
+    }
+
+    private String normalizeGender(String gender) {
+        final String value = gender.trim().toUpperCase();
+        if ("MALE".equals(value) ||
+                "FEMALE".equals(value) ||
+                "OTHER".equals(value)) {
+            return value;
+        }
+        throw new IllegalArgumentException("Invalid gender.");
+    }
 }

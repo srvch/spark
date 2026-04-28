@@ -30,7 +30,9 @@ public class AuthController {
                 auth.token(),
                 auth.userId(),
                 auth.phoneNumber(),
-                auth.displayName()
+                auth.displayName(),
+                auth.ageBand(),
+                auth.gender()
         );
     }
 
@@ -58,7 +60,9 @@ public class AuthController {
                 auth.token(),
                 auth.userId(),
                 auth.phoneNumber(),
-                auth.displayName()
+                auth.displayName(),
+                auth.ageBand(),
+                auth.gender()
         );
     }
 
@@ -70,7 +74,9 @@ public class AuthController {
                 auth.token(),
                 auth.userId(),
                 auth.phoneNumber(),
-                auth.displayName()
+                auth.displayName(),
+                auth.ageBand(),
+                auth.gender()
         );
     }
 
@@ -104,7 +110,9 @@ public class AuthController {
             String token,
             String userId,
             String phoneNumber,
-            String displayName
+            String displayName,
+            String ageBand,
+            String gender
     ) {
     }
 

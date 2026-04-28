@@ -6,6 +6,8 @@ class UserProfile {
     required this.displayName,
     required this.phoneNumber,
     required this.memberSince,
+    required this.ageBand,
+    required this.gender,
     this.hidePhoneNumber = true,
   });
 
@@ -13,14 +15,23 @@ class UserProfile {
   final String displayName;
   final String phoneNumber;
   final DateTime memberSince;
+  final String ageBand;
+  final String gender;
   final bool hidePhoneNumber;
 
-  UserProfile copyWith({String? displayName, bool? hidePhoneNumber}) {
+  UserProfile copyWith({
+    String? displayName,
+    String? ageBand,
+    String? gender,
+    bool? hidePhoneNumber,
+  }) {
     return UserProfile(
       userId: userId,
       displayName: displayName ?? this.displayName,
       phoneNumber: phoneNumber,
       memberSince: memberSince,
+      ageBand: ageBand ?? this.ageBand,
+      gender: gender ?? this.gender,
       hidePhoneNumber: hidePhoneNumber ?? this.hidePhoneNumber,
     );
   }
@@ -39,13 +50,22 @@ class ProfileApiRepository {
       displayName: '${data['displayName']}',
       phoneNumber: '${data['phoneNumber']}',
       memberSince: DateTime.tryParse('${data['createdAt']}') ?? DateTime.now(),
+      ageBand: '${data['ageBand'] ?? ''}',
+      gender: '${data['gender'] ?? ''}',
       hidePhoneNumber: data['hidePhoneNumber'] == true,
     );
   }
 
-  Future<UserProfile> updateProfile({String? displayName, bool? hidePhoneNumber}) async {
+  Future<UserProfile> updateProfile({
+    required String displayName,
+    required String ageBand,
+    required String gender,
+    bool? hidePhoneNumber,
+  }) async {
     final Map<String, dynamic> updateData = {};
-    if (displayName != null) updateData['displayName'] = displayName;
+    updateData['displayName'] = displayName;
+    updateData['ageBand'] = ageBand;
+    updateData['gender'] = gender;
     if (hidePhoneNumber != null) updateData['hidePhoneNumber'] = hidePhoneNumber;
 
     final response = await _dio.put<Map<String, dynamic>>(
@@ -58,6 +78,8 @@ class ProfileApiRepository {
       displayName: '${data['displayName']}',
       phoneNumber: '${data['phoneNumber']}',
       memberSince: DateTime.tryParse('${data['createdAt']}') ?? DateTime.now(),
+      ageBand: '${data['ageBand'] ?? ''}',
+      gender: '${data['gender'] ?? ''}',
       hidePhoneNumber: data['hidePhoneNumber'] == true,
     );
   }

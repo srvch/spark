@@ -26,7 +26,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   static const int _pageSize = 10;
-  SparkCategory? selectedCategory = SparkCategory.sports;
+  SparkCategory? selectedCategory;
   int radius = 5;
   String query = '';
   late final ScrollController _scrollController;
@@ -39,10 +39,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     Future.microtask(() {
-      ref
-          .read(sparkDataControllerProvider)
-          .refreshNearby(radiusKm: radius.toDouble());
-      ref.read(sparkDataControllerProvider).refreshInvites();
+      final session = ref.read(authSessionProvider);
+      final guestShowcase =
+          ref.read(guestShowcaseModeProvider) ||
+          (session?.isGuestShowcase ?? false);
+      if (!guestShowcase) {
+        ref
+            .read(sparkDataControllerProvider)
+            .refreshNearby(radiusKm: radius.toDouble());
+        ref.read(sparkDataControllerProvider).refreshInvites();
+      }
     });
   }
 
@@ -65,6 +71,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Future<void> _onRefresh() async {
+    final session = ref.read(authSessionProvider);
+    final guestShowcase =
+        ref.read(guestShowcaseModeProvider) ||
+        (session?.isGuestShowcase ?? false);
+    if (guestShowcase) return;
     await Future.wait([
       ref
           .read(sparkDataControllerProvider)
@@ -105,9 +116,33 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         .toList();
   }
 
+  Spark _guestShowcaseSpark() {
+    return Spark(
+      id: 'guest-preview-spark-1',
+      category: SparkCategory.sports,
+      title: 'Cricket match at central park',
+      startsInMinutes: 20,
+      timeLabel: 'In 20m',
+      distanceKm: 0.2,
+      distanceLabel: '200m away',
+      spotsLeft: 2,
+      maxSpots: 8,
+      location: 'Central Park',
+      createdBy: 'host-preview',
+      participants: const ['RK', 'SN', 'AB'],
+      hostPhoneNumber: null,
+      note: 'Preview event',
+      visibility: SparkVisibility.publicSpark,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final sparks = ref.watch(sparksProvider);
+    final session = ref.watch(authSessionProvider);
+    final isGuestShowcase =
+        ref.watch(guestShowcaseModeProvider) ||
+        (session?.isGuestShowcase ?? false);
     final currentUserId = ref.watch(currentUserIdProvider);
     final displayName = ref.watch(authSessionProvider)?.displayName ?? 'Spark';
     final selectedLocation = ref.watch(selectedLocationProvider);
@@ -117,300 +152,389 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final joinedSparkIds = ref.watch(joinedSparkIdsProvider);
     final joinedSparks = ref.watch(joinedSparksProvider);
     final createdSparks = ref.watch(myCreatedSparksProvider);
-    final pendingInvites = ref
-        .watch(sparkInvitesProvider)
-        .where((invite) => invite.status == SparkInviteStatus.pending)
-        .length;
+    final pendingInvites =
+        ref
+            .watch(sparkInvitesProvider)
+            .where((invite) => invite.status == SparkInviteStatus.pending)
+            .length;
     final showMyActivity = joinedSparks.isNotEmpty || createdSparks.isNotEmpty;
-    final createdSparkIds = createdSparks.map((spark) => spark.id).toSet();
-    final discoverableSparks = sparks.where((spark) {
-      final isMineById = createdSparkIds.contains(spark.id);
-      final isMineByHost = spark.createdBy == currentUserId;
-      final isJoined = joinedSparkIds.contains(spark.id);
-      return !isMineById && !isMineByHost && !isJoined;
-    }).toList();
-    final filtered = _applyFilters(discoverableSparks);
+    final discoverableSparks =
+        isGuestShowcase
+            ? [_guestShowcaseSpark()]
+            : sparks.where((spark) {
+              final isJoined = joinedSparkIds.contains(spark.id);
+              return !isJoined;
+            }).toList();
+    final filtered =
+        isGuestShowcase
+            ? discoverableSparks
+            : _applyFilters(discoverableSparks);
+    final effectiveLoadError = isGuestShowcase ? null : loadError;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: RefreshIndicator(
-          onRefresh: _onRefresh,
-          color: AppColors.accent,
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // ── Pinned header: expands at top, collapses on scroll ─
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _DiscoverHeaderDelegate(
-                  topPadding: MediaQuery.paddingOf(context).top,
-                  displayName: displayName,
-                  selectedLocation: selectedLocation,
-                  radius: radius,
-                  onLocationTap: () => _showLocationSelector(context),
-                  onRadiusTap: () => _showPreferencesSheet(context),
-                  onNotificationTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => NotificationScreen()),
-                  ),
-                  onProfileTap: () => _openProfile(context),
-                  searchQuery: query,
-                  onSearchChanged: (v) =>
-                      setState(() => query = v.trim().toLowerCase()),
-                  onSearchSubmitted: (v) =>
-                      setState(() => query = v.trim().toLowerCase()),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                sliver: SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Category chips ────────────────────────────
-                      SizedBox(
-                        height: 40,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            _CategoryChip(
-                              label: 'All',
-                              icon: Icons.apps_outlined,
-                              selected: selectedCategory == null,
-                              count: discoverableSparks.length,
-                              onTap: () => setState(() {
-                                selectedCategory = null;
-                              }),
-                            ),
-                            ...SparkCategory.values
-                                .where((c) => c != SparkCategory.hangout)
-                                .map(
-                                  (category) => _CategoryChip(
-                                    label: category.label,
-                                    icon: category.icon,
-                                    selected: selectedCategory == category,
-                                    count: discoverableSparks
-                                        .where((s) => s.category == category)
-                                        .length,
-                                    onTap: () => setState(() {
-                                      selectedCategory = category;
-                                    }),
-                                  ),
-                                ),
-                          ],
+      body: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: MediaQuery.paddingOf(context).top,
+              color: const Color(0xFF003366),
+            ),
+          ),
+          RefreshIndicator(
+            onRefresh: _onRefresh,
+            color: AppColors.accent,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // ── Pinned header: expands at top, collapses on scroll ─
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _DiscoverHeaderDelegate(
+                    topPadding: MediaQuery.paddingOf(context).top,
+                    displayName: displayName,
+                    selectedLocation: selectedLocation,
+                    radius: radius,
+                    onLocationTap: () => _showLocationSelector(context),
+                    onRadiusTap: () => _showPreferencesSheet(context),
+                    onNotificationTap:
+                        () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => NotificationScreen(),
+                          ),
                         ),
-                      ),
-                      // const _AiRadarPanel(),
-                      // const SizedBox(height: 20),
-                      // ── Section header ────────────────────────────
-                      Row(
-                        children: [
-                          const _LiveHeader(),
-                          const Spacer(),
-                          if (showMyActivity) ...[
-                            GestureDetector(
-                              onTap: () => Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const ActivityScreen(),
-                                ),
+                    onProfileTap: () => _openProfile(context),
+                    searchQuery: query,
+                    onSearchChanged:
+                        (v) => setState(() => query = v.trim().toLowerCase()),
+                    onSearchSubmitted:
+                        (v) => setState(() => query = v.trim().toLowerCase()),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Category chips ────────────────────────────
+                        SizedBox(
+                          height: 40,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              _CategoryChip(
+                                label: 'All',
+                                icon: Icons.apps_outlined,
+                                selected: selectedCategory == null,
+                                count: discoverableSparks.length,
+                                onTap:
+                                    () => setState(() {
+                                      selectedCategory = null;
+                                    }),
                               ),
-                              child: const Text(
-                                'Activity',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          if (pendingInvites > 0)
-                            GestureDetector(
-                              onTap: () {
-                                ref.read(bottomTabProvider.notifier).state = 2;
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 5,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceSubtle,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Text(
-                                  'Invites ($pendingInvites)',
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
+                              ...SparkCategory.values
+                                  .where((c) => c != SparkCategory.hangout)
+                                  .map(
+                                    (category) => _CategoryChip(
+                                      label: category.label,
+                                      icon: category.icon,
+                                      selected: selectedCategory == category,
+                                      count:
+                                          discoverableSparks
+                                              .where(
+                                                (s) => s.category == category,
+                                              )
+                                              .length,
+                                      onTap:
+                                          () => setState(() {
+                                            selectedCategory = category;
+                                          }),
+                                    ),
+                                  ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        // const _AiRadarPanel(),
+                        // const SizedBox(height: 20),
+                        // ── Section header ────────────────────────────
+                        Row(
+                          children: [
+                            const _LiveHeader(),
+                            const Spacer(),
+                            if (showMyActivity) ...[
+                              GestureDetector(
+                                onTap:
+                                    () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => const ActivityScreen(),
+                                      ),
+                                    ),
+                                child: const Text(
+                                  'Activity',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),
-                            ),
-                          const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () => _showPreferencesSheet(context),
-                            child: Container(
-                              width: 30,
-                              height: 30,
-                              alignment: Alignment.center,
-                              decoration: const BoxDecoration(
-                                color: AppColors.surfaceSubtle,
-                                shape: BoxShape.circle,
+                              const SizedBox(width: 12),
+                            ],
+                            if (pendingInvites > 0)
+                              GestureDetector(
+                                onTap: () {
+                                  ref.read(bottomTabProvider.notifier).state =
+                                      2;
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceSubtle,
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Text(
+                                    'Invites ($pendingInvites)',
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.tune_rounded,
-                                size: 14,
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => _showPreferencesSheet(context),
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                alignment: Alignment.center,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.surfaceSubtle,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.tune_rounded,
+                                  size: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // ── Sort toggle (hidden in map view) ──────────
+                        if (!isGuestShowcase)
+                          _SortToggle(
+                            selected: ref.watch(selectedSortProvider),
+                            onSelect:
+                                (s) =>
+                                    ref
+                                        .read(selectedSortProvider.notifier)
+                                        .state = s,
+                          ),
+                        if (isGuestShowcase)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentSurface.withValues(
+                                alpha: 0.28,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.accent.withValues(alpha: 0.4),
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 16,
+                                  color: AppColors.accent,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Guest preview mode. Login to see what is happening around you.',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.accent,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 10),
+                        if (loading && !isGuestShowcase)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 8),
+                            child: LinearProgressIndicator(minHeight: 2),
+                          ),
+                        if (effectiveLoadError != null &&
+                            effectiveLoadError.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorSurface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.errorText),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 16,
+                                  color: AppColors.errorText,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'Could not refresh sparks. Pull down to retry.',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.accent,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (filtered.isEmpty && !loading) const _EmptyState(),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  sliver: SliverToBoxAdapter(
+                    child:
+                        filtered.isEmpty
+                            ? const SizedBox.shrink()
+                            : Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: AppColors.cardShadow,
+                                    blurRadius: 8,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    for (
+                                      var i = 0;
+                                      i < filtered.length;
+                                      i++
+                                    ) ...[
+                                      if (i > 0)
+                                        const Divider(
+                                          height: 1,
+                                          thickness: 1,
+                                          indent: 54,
+                                          endIndent: 16,
+                                          color: AppColors.cardDivider,
+                                        ),
+                                      _NearbyCard(
+                                        spark: filtered[i],
+                                        isHostedByYou:
+                                            filtered[i].createdBy ==
+                                            currentUserId,
+                                        ctaLabel:
+                                            isGuestShowcase
+                                                ? 'Preview'
+                                                : joinedSparkIds.contains(
+                                                  filtered[i].id,
+                                                )
+                                                ? 'Chat'
+                                                : 'Join',
+                                        onTap: () {
+                                          if (isGuestShowcase) return;
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => SparkDetailScreen(
+                                                    spark: filtered[i],
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    4,
+                    16,
+                    20 + MediaQuery.paddingOf(context).bottom + 76,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        if (loadingMore)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        if (filtered.isNotEmpty && !loadingMore)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              'You\'re all caught up nearby.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                                 color: AppColors.textSecondary,
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      // ── Sort toggle (hidden in map view) ──────────
-                      _SortToggle(
-                        selected: ref.watch(selectedSortProvider),
-                        onSelect: (s) =>
-                            ref.read(selectedSortProvider.notifier).state = s,
-                      ),
-                      const SizedBox(height: 10),
-                      if (loading)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 8),
-                          child: LinearProgressIndicator(minHeight: 2),
-                        ),
-                      if (loadError != null && loadError.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.errorSurface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.errorText),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 16,
-                                color: AppColors.errorText,
-                              ),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  'Could not refresh sparks. Pull down to retry.',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.accent,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (filtered.isEmpty && !loading) const _EmptyState(),
-                    ],
+                        const _CreateNudge(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                sliver: SliverToBoxAdapter(
-                  child: filtered.isEmpty
-                      ? const SizedBox.shrink()
-                      : Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: AppColors.cardShadow,
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (var i = 0; i < filtered.length; i++) ...[
-                                  if (i > 0)
-                                    const Divider(
-                                      height: 1,
-                                      thickness: 1,
-                                      indent: 54,
-                                      endIndent: 16,
-                                      color: AppColors.cardDivider,
-                                    ),
-                                  _NearbyCard(
-                                    spark: filtered[i],
-                                    ctaLabel:
-                                        joinedSparkIds.contains(filtered[i].id)
-                                        ? 'Chat'
-                                        : 'Join',
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => SparkDetailScreen(
-                                          spark: filtered[i],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-                sliver: SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      if (loadingMore)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.accent,
-                              ),
-                            ),
-                          ),
-                        ),
-                      if (filtered.isNotEmpty && !loadingMore)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
-                          child: Text(
-                            'You\'re all caught up nearby.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      const _CreateNudge(),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -425,21 +549,22 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => LocationPickerSheet(
-        title: 'Choose location',
-        selectedLocation: selected,
-        savedLocations: saved,
-        recentLocations: recent,
-        catalogLocations: catalog,
-        placesService: placesService,
-        onSelect: (place) {
-          ref.read(selectedLocationProvider.notifier).state = place;
-          ref
-              .read(sparkDataControllerProvider)
-              .refreshNearby(radiusKm: radius.toDouble());
-          Navigator.of(context).pop();
-        },
-      ),
+      builder:
+          (_) => LocationPickerSheet(
+            title: 'Choose location',
+            selectedLocation: selected,
+            savedLocations: saved,
+            recentLocations: recent,
+            catalogLocations: catalog,
+            placesService: placesService,
+            onSelect: (place) {
+              ref.read(selectedLocationProvider.notifier).state = place;
+              ref
+                  .read(sparkDataControllerProvider)
+                  .refreshNearby(radiusKm: radius.toDouble());
+              Navigator.of(context).pop();
+            },
+          ),
     );
   }
 
@@ -452,197 +577,225 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setSheetState) => SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Search Preferences',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'Manrope',
-                    letterSpacing: -0.6,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Customize your discovery feed',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    fontFamily: 'Manrope',
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Discovery Radius',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '$draftRadius km',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                SliderTheme(
-                  data: SliderTheme.of(context).copyWith(
-                    trackHeight: 4,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
-                    activeTrackColor: AppColors.accent,
-                    inactiveTrackColor: AppColors.accent.withValues(alpha: 0.1),
-                    thumbColor: AppColors.accent,
-                  ),
-                  child: Slider(
-                    value: draftRadius.toDouble(),
-                    min: 1,
-                    max: 10,
-                    divisions: 9,
-                    onChanged: (value) {
-                      setSheetState(() => draftRadius = value.round());
-                    },
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Activity Type',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _SelectionChip(
-                      label: 'Any',
-                      selected: draftCategory == null,
-                      onTap: () => setSheetState(() => draftCategory = null),
-                    ),
-                    ...SparkCategory.values
-                        .where((c) => c != SparkCategory.hangout)
-                        .map(
-                          (category) => _SelectionChip(
-                            label: category.label,
-                            selected: draftCategory == category,
-                            onTap: () => setSheetState(() => draftCategory = category),
+      builder:
+          (_) => StatefulBuilder(
+            builder:
+                (context, setSheetState) => SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 22),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Search Preferences',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Manrope',
+                            letterSpacing: -0.6,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Timing',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _SelectionChip(
-                      label: 'All',
-                      selected: draftTiming == 'all',
-                      onTap: () => setSheetState(() => draftTiming = 'all'),
-                    ),
-                    _SelectionChip(
-                      label: 'Now',
-                      selected: draftTiming == 'now',
-                      onTap: () => setSheetState(() => draftTiming = 'now'),
-                    ),
-                    _SelectionChip(
-                      label: 'Soon',
-                      selected: draftTiming == 'soon',
-                      onTap: () => setSheetState(() => draftTiming = 'soon'),
-                    ),
-                    _SelectionChip(
-                      label: 'Tonight',
-                      selected: draftTiming == 'tonight',
-                      onTap: () => setSheetState(() => draftTiming = 'tonight'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Container(
-                    width: double.infinity,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.15),
-                          blurRadius: 12,
-                          offset: const Offset(0, 5),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Customize your discovery feed',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary.withValues(
+                              alpha: 0.7,
+                            ),
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Discovery Radius',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '$draftRadius km',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 4,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 9,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 18,
+                            ),
+                            activeTrackColor: AppColors.accent,
+                            inactiveTrackColor: AppColors.accent.withValues(
+                              alpha: 0.1,
+                            ),
+                            thumbColor: AppColors.accent,
+                          ),
+                          child: Slider(
+                            value: draftRadius.toDouble(),
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            onChanged: (value) {
+                              setSheetState(() => draftRadius = value.round());
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Activity Type',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _SelectionChip(
+                              label: 'Any',
+                              selected: draftCategory == null,
+                              onTap:
+                                  () =>
+                                      setSheetState(() => draftCategory = null),
+                            ),
+                            ...SparkCategory.values
+                                .where((c) => c != SparkCategory.hangout)
+                                .map(
+                                  (category) => _SelectionChip(
+                                    label: category.label,
+                                    selected: draftCategory == category,
+                                    onTap:
+                                        () => setSheetState(
+                                          () => draftCategory = category,
+                                        ),
+                                  ),
+                                ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Timing',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _SelectionChip(
+                              label: 'All',
+                              selected: draftTiming == 'all',
+                              onTap:
+                                  () =>
+                                      setSheetState(() => draftTiming = 'all'),
+                            ),
+                            _SelectionChip(
+                              label: 'Now',
+                              selected: draftTiming == 'now',
+                              onTap:
+                                  () =>
+                                      setSheetState(() => draftTiming = 'now'),
+                            ),
+                            _SelectionChip(
+                              label: 'Soon',
+                              selected: draftTiming == 'soon',
+                              onTap:
+                                  () =>
+                                      setSheetState(() => draftTiming = 'soon'),
+                            ),
+                            _SelectionChip(
+                              label: 'Tonight',
+                              selected: draftTiming == 'tonight',
+                              onTap:
+                                  () => setSheetState(
+                                    () => draftTiming = 'tonight',
+                                  ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Container(
+                            width: double.infinity,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accent.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  radius = draftRadius;
+                                  selectedCategory = draftCategory;
+                                  _timingTab = draftTiming;
+                                });
+                                ref
+                                    .read(sparkDataControllerProvider)
+                                    .refreshNearby(
+                                      radiusKm: draftRadius.toDouble(),
+                                    );
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Apply Preferences'),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          radius = draftRadius;
-                          selectedCategory = draftCategory;
-                          _timingTab = draftTiming;
-                        });
-                        ref
-                            .read(sparkDataControllerProvider)
-                            .refreshNearby(radiusKm: draftRadius.toDouble());
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('Apply Preferences'),
-                    ),
                   ),
                 ),
-              ],
-            ),
           ),
-        ),
-      ),
     );
   }
 }
 
 // ── Heights must match the measured content inside each state ──────────────
-const double _kExpandedHeightBase = 315.0;
-const double _kCollapsedHeightBase = 96.0;
+const double _kExpandedHeightBase = 276.0;
+const double _kCollapsedHeightBase = 124.0;
 
 class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
   const _DiscoverHeaderDelegate({
@@ -700,31 +853,42 @@ class _DiscoverHeaderDelegate extends SliverPersistentHeaderDelegate {
         height: maxExtent,
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
-          transitionBuilder: (child, animation) =>
-              FadeTransition(opacity: animation, child: child),
-          child: collapsed
-              ? _HeroCollapsed(
-                  key: const ValueKey('c'),
-                  displayName: displayName,
-                  selectedLocation: selectedLocation,
-                  onNotificationTap: onNotificationTap,
-                  onProfileTap: onProfileTap,
-                  searchQuery: searchQuery,
-                  onSearchChanged: onSearchChanged,
-                  onSearchSubmitted: onSearchSubmitted,
-                )
-              : _HeroPanel(
-                  key: const ValueKey('e'),
-                  selectedLocation: selectedLocation,
-                  radius: radius,
-                  onLocationTap: onLocationTap,
-                  onRadiusTap: onRadiusTap,
-                  onNotificationTap: onNotificationTap,
-                  onProfileTap: onProfileTap,
-                  searchQuery: searchQuery,
-                  onSearchChanged: onSearchChanged,
-                  onSearchSubmitted: onSearchSubmitted,
-                ),
+          layoutBuilder: (currentChild, previousChildren) {
+            return Stack(
+              alignment: Alignment.topCenter,
+              children: <Widget>[
+                ...previousChildren,
+                if (currentChild != null) currentChild,
+              ],
+            );
+          },
+          transitionBuilder:
+              (child, animation) =>
+                  FadeTransition(opacity: animation, child: child),
+          child:
+              collapsed
+                  ? _HeroCollapsed(
+                    key: const ValueKey('c'),
+                    displayName: displayName,
+                    selectedLocation: selectedLocation,
+                    onNotificationTap: onNotificationTap,
+                    onProfileTap: onProfileTap,
+                    searchQuery: searchQuery,
+                    onSearchChanged: onSearchChanged,
+                    onSearchSubmitted: onSearchSubmitted,
+                  )
+                  : _HeroPanel(
+                    key: const ValueKey('e'),
+                    selectedLocation: selectedLocation,
+                    radius: radius,
+                    onLocationTap: onLocationTap,
+                    onRadiusTap: onRadiusTap,
+                    onNotificationTap: onNotificationTap,
+                    onProfileTap: onProfileTap,
+                    searchQuery: searchQuery,
+                    onSearchChanged: onSearchChanged,
+                    onSearchSubmitted: onSearchSubmitted,
+                  ),
         ),
       ),
     );
@@ -777,11 +941,11 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  String get _greeting {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+  String _compactLocation(String value) {
+    final cleaned = value.trim();
+    if (cleaned.isEmpty) return 'Near you';
+    if (cleaned.length <= 22) return cleaned;
+    return '${cleaned.substring(0, 22)}…';
   }
 
   @override
@@ -821,7 +985,9 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF4F46E5).withValues(alpha: 0.12 + floatT * 0.04),
+                          const Color(
+                            0xFF4F46E5,
+                          ).withValues(alpha: 0.12 + floatT * 0.04),
                           Colors.transparent,
                         ],
                       ),
@@ -839,7 +1005,9 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          const Color(0xFF6366F1).withValues(alpha: 0.1 + floatT * 0.05),
+                          const Color(
+                            0xFF6366F1,
+                          ).withValues(alpha: 0.1 + floatT * 0.05),
                           Colors.transparent,
                         ],
                       ),
@@ -849,14 +1017,17 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
                 // Magical "Sparkle" Orbs
                 for (var i = 0; i < 3; i++)
                   Positioned(
-                    left: 40.0 + (i * 100) + (floatT * 20 * (i.isEven ? 1 : -1)),
+                    left:
+                        40.0 + (i * 100) + (floatT * 20 * (i.isEven ? 1 : -1)),
                     top: 60.0 + (i * 40) - (floatT * 15 * (i.isOdd ? 1 : -1)),
                     child: Container(
                       width: 2 + (i.toDouble()),
                       height: 2 + (i.toDouble()),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.4 + floatT * 0.3),
+                        color: Colors.white.withValues(
+                          alpha: 0.4 + floatT * 0.3,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.white.withValues(alpha: 0.3),
@@ -877,25 +1048,120 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(22, 13 + MediaQuery.paddingOf(context).top, 22, 16),
+              padding: EdgeInsets.fromLTRB(
+                22,
+                13 + MediaQuery.paddingOf(context).top,
+                22,
+                8,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Greeting row ──────────────────────────────────────────
+                  // ── Top row: location, radius, actions ───────────────────
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Text(
-                        _greeting,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white.withValues(alpha: 0.52),
-                          fontFamily: 'Manrope',
-                          letterSpacing: 0.1,
+                      Expanded(
+                        child: Row(
+                          children: [
+                              Flexible(
+                                child: GestureDetector(
+                                  onTap: widget.onLocationTap,
+                                  child: Container(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      9,
+                                      6,
+                                      9,
+                                      6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Color(0xFF86EFAC),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            _compactLocation(
+                                              widget.selectedLocation,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.9,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          size: 14,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: widget.onRadiusTap,
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.12),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '${widget.radius}km',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Icon(
+                                        Icons.tune_rounded,
+                                        size: 12,
+                                        color: Colors.white.withValues(alpha: 0.4),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       IconButton(
                         onPressed: widget.onNotificationTap,
                         padding: EdgeInsets.zero,
@@ -928,93 +1194,13 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 7),
-                  // ── Location pill ─────────────────────────────────────────
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onTap: widget.onLocationTap,
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(9, 6, 9, 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF86EFAC),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                widget.selectedLocation,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                              Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 14,
-                                color: Colors.white.withValues(alpha: 0.4),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: widget.onRadiusTap,
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '${widget.radius}km',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                              ),
-                              const SizedBox(width: 3),
-                              Icon(
-                                Icons.tune_rounded,
-                                size: 12,
-                                color: Colors.white.withValues(alpha: 0.4),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
                   // ── Headline ──────────────────────────────────────────────
                   ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Colors.white, Color(0xFFA5B4FC)],
-                    ).createShader(bounds),
+                    shaderCallback:
+                        (bounds) => const LinearGradient(
+                          colors: [Colors.white, Color(0xFFA5B4FC)],
+                        ).createShader(bounds),
                     child: const Text(
                       'Explore what\'s\nhappening near you.',
                       style: TextStyle(
@@ -1027,7 +1213,7 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Text(
                     'Real people. Real plans. Right now.',
                     style: TextStyle(
@@ -1038,7 +1224,7 @@ class _HeroPanelState extends State<_HeroPanel> with TickerProviderStateMixin {
                       letterSpacing: -0.2,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   _HeroBannerSearch(
                     currentQuery: widget.searchQuery,
                     onQueryChanged: (v) {
@@ -1073,8 +1259,8 @@ class _HeroBannerSearch extends StatelessWidget {
         opaque: false,
         barrierColor: Colors.transparent,
         pageBuilder: (_, __, ___) => _SearchScreen(initialQuery: currentQuery),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
+        transitionsBuilder:
+            (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 180),
       ),
     );
@@ -1113,7 +1299,10 @@ class _HeroBannerSearch extends StatelessWidget {
                 hasQuery ? currentQuery : 'Search activities, sports, study...',
                 style: TextStyle(
                   fontSize: 15,
-                  color: hasQuery ? AppColors.textPrimary : AppColors.textSecondary.withValues(alpha: 0.7),
+                  color:
+                      hasQuery
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary.withValues(alpha: 0.7),
                   fontFamily: 'Manrope',
                   letterSpacing: -0.2,
                 ),
@@ -1164,173 +1353,190 @@ class _SearchScreenState extends State<_SearchScreen> {
 
   void _submit(String value) {
     final q = value.trim();
-    if (q.isNotEmpty) Navigator.of(context).pop(q.toLowerCase());
+    Navigator.of(context).pop(q.toLowerCase());
+  }
+
+  void _closeWithCurrentQuery() {
+    Navigator.of(context).pop(_query.toLowerCase());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Top bar: back + search field ─────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
-              child: Row(
-                children: [
-                  // back arrow
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      size: 22,
-                      color: AppColors.onSurfaceEmphasis,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(null),
-                  ),
-                  // search field
-                  Expanded(
-                    child: TextField(
-                      controller: _ctrl,
-                      autofocus: true,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      contextMenuBuilder: null,
-                      textInputAction: TextInputAction.search,
-                      onChanged: (v) => setState(() => _query = v.trim()),
-                      onSubmitted: _submit,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _closeWithCurrentQuery();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Top bar: back + search field ─────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
+                child: Row(
+                  children: [
+                    // back arrow
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        size: 22,
+                        color: AppColors.onSurfaceEmphasis,
                       ),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: AppColors.chipBg,
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          size: 20,
-                          color: AppColors.accent,
-                        ),
-                        suffixIcon: _query.isNotEmpty
-                            ? GestureDetector(
-                                onTap: () {
-                                  _ctrl.clear();
-                                  setState(() => _query = '');
-                                },
-                                child: const Icon(
-                                  Icons.close_rounded,
-                                  size: 18,
-                                  color: AppColors.textSecondary,
-                                ),
-                              )
-                            : null,
-                        hintText: 'Search plans, sports, study, ride…',
-                        hintStyle: const TextStyle(
+                      onPressed: _closeWithCurrentQuery,
+                    ),
+                    // search field
+                    Expanded(
+                      child: TextField(
+                        controller: _ctrl,
+                        autofocus: true,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        contextMenuBuilder: null,
+                        textInputAction: TextInputAction.search,
+                        onChanged: (v) => setState(() => _query = v.trim()),
+                        onSubmitted: _submit,
+                        style: const TextStyle(
                           fontSize: 15,
-                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 13,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: AppColors.chipBorder,
-                            width: 1.5,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: AppColors.chipBorder,
-                            width: 1.5,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: AppColors.chipBg,
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            size: 20,
                             color: AppColors.accent,
-                            width: 1.5,
                           ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            // ── Recently searched ─────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'RECENTLY SEARCHED',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _recentTags.map((tag) {
-                  final isActive = _query.toLowerCase() == tag.toLowerCase();
-                  return GestureDetector(
-                    onTap: () => _submit(tag),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? AppColors.accent
-                            : AppColors.chipSelectedBg,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: isActive
-                              ? AppColors.accent
-                              : AppColors.chipBorder,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.history_rounded,
-                            size: 13,
-                            color: isActive
-                                ? Colors.white
-                                : AppColors.textSecondary,
+                          suffixIcon:
+                              _query.isNotEmpty
+                                  ? GestureDetector(
+                                    onTap: () {
+                                      _ctrl.clear();
+                                      setState(() => _query = '');
+                                    },
+                                    child: const Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  )
+                                  : null,
+                          hintText: 'Search plans, sports, study, ride…',
+                          hintStyle: const TextStyle(
+                            fontSize: 15,
+                            color: AppColors.textSecondary,
                           ),
-                          const SizedBox(width: 5),
-                          Text(
-                            tag,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: isActive
-                                  ? Colors.white
-                                  : AppColors.textPrimary,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 13,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: AppColors.chipBorder,
+                              width: 1.5,
                             ),
                           ),
-                        ],
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: AppColors.chipBorder,
+                              width: 1.5,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: AppColors.accent,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                }).toList(),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              // ── Recently searched ─────────────────────────────────
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'RECENTLY SEARCHED',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      _recentTags.map((tag) {
+                        final isActive =
+                            _query.toLowerCase() == tag.toLowerCase();
+                        return GestureDetector(
+                          onTap: () => _submit(tag),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  isActive
+                                      ? AppColors.accent
+                                      : AppColors.chipSelectedBg,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color:
+                                    isActive
+                                        ? AppColors.accent
+                                        : AppColors.chipBorder,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.history_rounded,
+                                  size: 13,
+                                  color:
+                                      isActive
+                                          ? Colors.white
+                                          : AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  tag,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        isActive
+                                            ? Colors.white
+                                            : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1374,7 +1580,12 @@ class _HeroCollapsed extends StatelessWidget {
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(16, 8 + MediaQuery.paddingOf(context).top, 16, 8),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8 + MediaQuery.paddingOf(context).top,
+        16,
+        8,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1478,42 +1689,48 @@ class _SortToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
-        children: SparkSort.values.map((sort) {
-          final isSelected = sort == selected;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onSelect(sort),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 240),
-                curve: Curves.easeOutCubic,
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  sort.label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppColors.textPrimary : AppColors.textMuted,
-                    fontFamily: 'Manrope',
-                    letterSpacing: -0.2,
+        children:
+            SparkSort.values.map((sort) {
+              final isSelected = sort == selected;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onSelect(sort),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeOutCubic,
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow:
+                          isSelected
+                              ? [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                              : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      sort.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color:
+                            isSelected
+                                ? AppColors.textPrimary
+                                : AppColors.textMuted,
+                        fontFamily: 'Manrope',
+                        letterSpacing: -0.2,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          );
-        }).toList(),
+              );
+            }).toList(),
       ),
     );
   }
@@ -1537,7 +1754,7 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEmpty = count != null && count! == 0;
-    
+
     const activeBg = AppColors.accent;
     const activeText = Colors.white;
     const iconColor = Colors.white;
@@ -1551,29 +1768,32 @@ class _CategoryChip extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: const EdgeInsets.fromLTRB(14, 9, 14, 9),
           decoration: BoxDecoration(
-            color: selected
-                ? activeBg
-                : isEmpty
+            color:
+                selected
+                    ? activeBg
+                    : isEmpty
                     ? AppColors.pillSurface.withValues(alpha: 0.5)
                     : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected
-                  ? activeBg
-                  : isEmpty
+              color:
+                  selected
+                      ? activeBg
+                      : isEmpty
                       ? AppColors.border.withValues(alpha: 0.3)
                       : AppColors.border.withValues(alpha: 0.8),
               width: 1,
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: activeBg.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ]
-                : null,
+            boxShadow:
+                selected
+                    ? [
+                      BoxShadow(
+                        color: activeBg.withValues(alpha: 0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1587,9 +1807,10 @@ class _CategoryChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  color: selected
-                      ? activeText
-                      : isEmpty
+                  color:
+                      selected
+                          ? activeText
+                          : isEmpty
                           ? AppColors.textMuted
                           : AppColors.textPrimary,
                   fontFamily: 'Manrope',
@@ -1602,8 +1823,6 @@ class _CategoryChip extends StatelessWidget {
       ),
     );
   }
-
-
 }
 
 class _EmptyState extends ConsumerWidget {
@@ -1651,8 +1870,7 @@ class _EmptyState extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: () =>
-                ref.read(bottomTabProvider.notifier).state = 1,
+            onPressed: () => ref.read(bottomTabProvider.notifier).state = 1,
             icon: const Icon(Icons.add_circle_outline, size: 16),
             label: const Text('Be the first — create one'),
             style: OutlinedButton.styleFrom(
@@ -1676,11 +1894,13 @@ class _EmptyState extends ConsumerWidget {
 class _NearbyCard extends StatefulWidget {
   const _NearbyCard({
     required this.spark,
+    required this.isHostedByYou,
     required this.onTap,
     required this.ctaLabel,
   });
 
   final Spark spark;
+  final bool isHostedByYou;
   final VoidCallback onTap;
   final String ctaLabel;
 
@@ -1759,11 +1979,7 @@ class _NearbyCardState extends State<_NearbyCard> {
                 color: _catBg(spark.category),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                size: 22,
-                color: _catColor(spark.category),
-              ),
+              child: Icon(icon, size: 22, color: _catColor(spark.category)),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1782,13 +1998,38 @@ class _NearbyCardState extends State<_NearbyCard> {
                       letterSpacing: -0.4,
                     ),
                   ),
+                  if (widget.isHostedByYou)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentSurface,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Hosted by you',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ),
+                    ),
                   if (spark.isRecurring)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Row(
                         children: [
-                          Icon(Icons.repeat_rounded,
-                              size: 11, color: AppColors.accent),
+                          Icon(
+                            Icons.repeat_rounded,
+                            size: 11,
+                            color: AppColors.accent,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             spark.recurrenceType == 'DAILY'
@@ -1809,17 +2050,26 @@ class _NearbyCardState extends State<_NearbyCard> {
                       Icon(
                         CupertinoIcons.time_solid,
                         size: 13,
-                        color: isHappeningNow
-                            ? AppColors.action.withValues(alpha: 0.8)
-                            : AppColors.textSecondary.withValues(alpha: 0.5),
+                        color:
+                            isHappeningNow
+                                ? AppColors.action.withValues(alpha: 0.8)
+                                : AppColors.textSecondary.withValues(
+                                  alpha: 0.5,
+                                ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _countdown(),
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isHappeningNow ? FontWeight.w800 : FontWeight.w600,
-                          color: isHappeningNow ? AppColors.action : AppColors.textSecondary,
+                          fontWeight:
+                              isHappeningNow
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                          color:
+                              isHappeningNow
+                                  ? AppColors.action
+                                  : AppColors.textSecondary,
                           fontFamily: 'Manrope',
                         ),
                       ),
@@ -2137,7 +2387,6 @@ class _MapListToggle extends StatelessWidget {
   }
 }
 
-
 class _SelectionChip extends StatelessWidget {
   const _SelectionChip({
     required this.label,
@@ -2163,15 +2412,16 @@ class _SelectionChip extends StatelessWidget {
             color: selected ? AppColors.accent : AppColors.chipBorder,
             width: 1,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.12),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
+          boxShadow:
+              selected
+                  ? [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                  : null,
         ),
         child: Text(
           label,
@@ -2186,4 +2436,3 @@ class _SelectionChip extends StatelessWidget {
     );
   }
 }
-

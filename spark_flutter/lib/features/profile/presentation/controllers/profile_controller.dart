@@ -45,7 +45,11 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
     try {
       final updated = await ref
           .read(profileApiRepositoryProvider)
-          .updateProfile(displayName: displayName);
+          .updateProfile(
+            displayName: displayName,
+            ageBand: prev?.ageBand.isNotEmpty == true ? prev!.ageBand : '25-34',
+            gender: prev?.gender.isNotEmpty == true ? prev!.gender : 'OTHER',
+          );
       state = AsyncValue.data(updated);
       final current = ref.read(authSessionProvider);
       if (current != null) {
@@ -54,9 +58,12 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
           userId: current.userId,
           phoneNumber: current.phoneNumber,
           displayName: updated.displayName,
+          ageBand: updated.ageBand,
+          gender: updated.gender,
+          hidePhoneNumber: current.hidePhoneNumber,
         );
       }
-    } catch (e, st) {
+    } catch (e) {
       if (prev != null) state = AsyncValue.data(prev);
       rethrow;
     }
@@ -78,6 +85,8 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
         userId: current.userId,
         phoneNumber: current.phoneNumber,
         displayName: current.displayName,
+        ageBand: current.ageBand,
+        gender: current.gender,
         hidePhoneNumber: hide,
       );
     }
