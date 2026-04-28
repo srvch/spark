@@ -37,7 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/sparks/nearby", "/api/v1/sparks/nearby/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/sparks/**").permitAll()
                         .requestMatchers("/api/v1/sparks/*/public").permitAll()
                         .anyRequest().authenticated()
                 )
