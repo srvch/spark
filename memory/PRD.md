@@ -126,6 +126,21 @@ _(see full list above)_
 - Category chips: now show emoji (`⚽ Sports`, `📚 Study`, `🛵 Ride`, `🎉 Events`, `☕ Hangout`)
 - 2 suggestion chips shown (up from 1); `_smartSuggestions()` returns 3 per time-slot
 
+### Session 4 – Create Spark Full Visual Redesign (Feb 2026)
+- **Sectioned card layout** replacing single-card form: `What → When → Where → Who → Extras`
+- **Sticky bottom CTA** `_StickyCreateBar` with live preview ("title · in 30 min · Near you · 5 spots") + Create button
+- **Slimmer header** (`_CreateScreenHeader`): back-arrow circle button, title + tagline, animated category icon orb (uses `category.accentColor`)
+- **Title input** redesigned (`_TitleField`): borderless, large 17px Manrope, light-gray fill, focuses to action-blue
+- **Category rail** (`_CategoryRail`): vertical icon-tile design (78px wide), icon circle + label. Selected = category accent tint background + colored shadow
+- **Time chips** (`_TimeChips`): Now / 30 min / 1 hr / 2 hr / Custom — with selected drop-shadow pop & `_TimeConfirmation` accent pill below ("Today, 6:30 PM · in 30 min")
+- **Place row** (`_PlaceTile`): icon-circle + title + subline ("Tap to change place" / "We'll use your current area")
+- **Visibility toggle** (`_VisibilitySegmented`): animated sliding-thumb segmented control (Public ↔ Private), 240ms easeOutCubic glide
+- **Group size block** (`_GroupSizeBlock`): switch row for "Open group" + animated stepper for limited spots. Uses `_BigStepper` w/ ScaleTransition on count change
+- **Note tile** (`_NoteTile`): tappable icon-row with helpful subtext when empty
+- **Recurrence** preserved as-is inside the When card
+- **All preserved**: AI parsing logic (dormant), `_createSpark`, validation, location picker, recurrence, audience pickers
+- File grew from 3777 → 4549 lines (new widgets appended; old build replaced)
+
 ## P2 / Future
 - [ ] Read receipts in chat
 - [ ] Scroll-to-bottom FAB when user has scrolled up in chat

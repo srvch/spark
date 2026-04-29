@@ -167,695 +167,368 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
             ? selectedLocation
             : _manualLocationController.text.trim();
     final isNearYou = _isNearYouLocationLabel(manualLocation);
+    final startsAt = _manualStartsAt();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FB),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _CreateScreenHeader(
-                category: _manualCategory,
-                onBackTap: () => backOrGoDiscover(context, ref),
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _SectionCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        _LabeledField(
-                          label: 'What\'s the spark about?',
-                          child: TextField(
+        bottom: false,
+        child: Column(
+          children: [
+            _CreateScreenHeader(
+              category: _manualCategory,
+              onBackTap: () => backOrGoDiscover(context, ref),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 180),
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ─────────── WHAT ───────────
+                    _SoftCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionLabel(
+                            icon: Icons.bolt_rounded,
+                            text: 'What\'s the spark?',
+                          ),
+                          const SizedBox(height: 12),
+                          _TitleField(
                             controller: _manualTitleController,
-                            onChanged: (_) => setState(() {}),
-                            maxLines: 1,
-                            maxLength: 60,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'e.g. Cricket at Central Park',
-                              hintStyle: TextStyle(
-                                color: AppColors.textPrimary.withValues(
-                                  alpha: 0.35,
-                                ),
-                                fontWeight: FontWeight.w500,
-                              ),
-                              counterText: '',
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 12,
-                              ),
-                              filled: true,
-                              fillColor: AppColors.surfaceDim,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: AppColors.cardBorder,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: AppColors.cardBorder,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: _kActionBlue,
-                                  width: 1.5,
-                                ),
-                              ),
-                            ),
+                            onChanged: () => setState(() {}),
                           ),
-                        ),
-                        if (_manualTitleController.text.trim().isEmpty) ...[
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children:
-                                dynamicSuggestions
-                                    .take(2)
-                                    .map(
-                                      (label) => _SuggestionChip(
-                                        label: label,
-                                        onTap: () {
-                                          _manualTitleController.text = label;
-                                          _manualTitleController.selection =
-                                              TextSelection.fromPosition(
-                                                TextPosition(
-                                                  offset:
-                                                      _manualTitleController
-                                                          .text
-                                                          .length,
-                                                ),
-                                              );
-                                          setState(() {});
-                                        },
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
-                        ],
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Category',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children:
-                                SparkCategory.values
-                                    .map(
-                                      (c) => Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: 8,
-                                        ),
-                                        child: _QuickChoiceChip(
-                                          label:
-                                              '${_categoryEmoji(c)} ${c.label}',
-                                          selected: c == _manualCategory,
-                                          onTap:
-                                              () => setState(() {
-                                                _manualCategory = c;
-                                                if (_manualCategory ==
-                                                    SparkCategory.ride) {
-                                                  _manualOpenGroup = false;
-                                                }
-                                              }),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Who can see the spark?',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _QuickChoiceChip(
-                              label: 'Public',
-                              selected:
-                                  _manualVisibility ==
-                                  SparkVisibility.publicSpark,
-                              onTap:
-                                  () => setState(() {
-                                    _manualVisibility =
-                                        SparkVisibility.publicSpark;
-                                    _selectedCircleIds.clear();
-                                    _selectedInviteUserIds.clear();
-                                    _manualInvitePhones.clear();
-                                    _guestPhoneInlineError = null;
-                                  }),
-                            ),
-                            _QuickChoiceChip(
-                              label: 'Private',
-                              selected:
-                                  _manualVisibility == SparkVisibility.invite ||
-                                  _manualVisibility == SparkVisibility.circle,
-                              onTap:
-                                  () => setState(() {
-                                    _manualVisibility = SparkVisibility.invite;
-                                    _selectedCircleIds.clear();
-                                    _guestPhoneInlineError = null;
-                                  }),
-                            ),
-                          ],
-                        ),
-                        if (_manualVisibility == SparkVisibility.invite) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            'Private sparks are hidden from Discover. Share via link or phone invites only.',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary.withValues(
-                                alpha: 0.85,
-                              ),
-                            ),
-                          ),
-                        ],
-                        if (_manualVisibility == SparkVisibility.circle) ...[
-                          const SizedBox(height: 8),
-                          _AudiencePickerRow(
-                            title: 'Groups',
-                            cta: 'Select groups',
-                            value:
-                                _selectedCircleIds.isEmpty
-                                    ? 'No groups selected'
-                                    : '${_selectedCircleIds.length} selected',
-                            onTap: _pickCircles,
-                          ),
-                        ],
-                        if (_manualVisibility == SparkVisibility.invite) ...[
-                          const SizedBox(height: 8),
-                          _AudiencePickerRow(
-                            title: 'Guest phone invites',
-                            cta: 'Add phone',
-                            value:
-                                _manualInvitePhones.isEmpty
-                                    ? 'No guest phones added'
-                                    : '${_manualInvitePhones.length} phones added',
-                            onTap: _addGuestPhoneInvite,
-                          ),
-                          if (_guestPhoneInlineError != null) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              _guestPhoneInlineError!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.dangerText,
-                              ),
-                            ),
-                          ],
-                          if (_manualInvitePhones.isNotEmpty) ...[
-                            const SizedBox(height: 6),
+                          if (_manualTitleController.text.trim().isEmpty &&
+                              dynamicSuggestions.isNotEmpty) ...[
+                            const SizedBox(height: 10),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children:
-                                  _manualInvitePhones
-                                      .map(
-                                        (phone) => _RemovablePill(
-                                          text: phone,
-                                          onRemove:
-                                              () => setState(() {
-                                                _manualInvitePhones.remove(
-                                                  phone,
-                                                );
-                                                if (_manualInvitePhones
-                                                    .isNotEmpty) {
-                                                  _guestPhoneInlineError = null;
-                                                }
-                                              }),
-                                        ),
-                                      )
-                                      .toList(),
+                              children: dynamicSuggestions
+                                  .take(3)
+                                  .map(
+                                    (label) => _SuggestionChip(
+                                      label: label,
+                                      onTap: () {
+                                        HapticFeedback.selectionClick();
+                                        _manualTitleController.text = label;
+                                        _manualTitleController.selection =
+                                            TextSelection.fromPosition(
+                                              TextPosition(
+                                                offset: _manualTitleController
+                                                    .text.length,
+                                              ),
+                                            );
+                                        setState(() {});
+                                      },
+                                    ),
+                                  )
+                                  .toList(),
                             ),
                           ],
-                        ],
-                        const SizedBox(height: 10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Time',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    _QuickChoiceChip(
-                                      label: 'Now',
-                                      selected:
-                                          _manualStartsAt()
-                                              .difference(DateTime.now())
-                                              .inMinutes <=
-                                          5,
-                                      onTap:
-                                          () => _setManualTimeFromDateTime(
-                                            DateTime.now().add(
-                                              const Duration(minutes: 2),
-                                            ),
-                                          ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _QuickChoiceChip(
-                                      label: '30 min',
-                                      selected:
-                                          _manualStartsAt()
-                                                  .difference(DateTime.now())
-                                                  .inMinutes >
-                                              5 &&
-                                          _manualStartsAt()
-                                                  .difference(DateTime.now())
-                                                  .inMinutes <=
-                                              35,
-                                      onTap:
-                                          () => _setManualTimeFromDateTime(
-                                            DateTime.now().add(
-                                              const Duration(minutes: 30),
-                                            ),
-                                          ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _QuickChoiceChip(
-                                      label: '1 hr',
-                                      selected:
-                                          _manualStartsAt()
-                                                  .difference(DateTime.now())
-                                                  .inMinutes >
-                                              35 &&
-                                          _manualStartsAt()
-                                                  .difference(DateTime.now())
-                                                  .inMinutes <=
-                                              65,
-                                      onTap:
-                                          () => _setManualTimeFromDateTime(
-                                            DateTime.now().add(
-                                              const Duration(hours: 1),
-                                            ),
-                                          ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _QuickChoiceChip(
-                                      label: 'Custom',
-                                      selected: (() {
-                                        final diff = _manualStartsAt()
-                                            .difference(DateTime.now())
-                                            .inMinutes;
-                                        return diff > 65;
-                                      })(),
-                                      onTap: _editManualTime,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Time confirmation feedback
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6, left: 2),
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                color: AppColors.textSecondary,
-                                fontFamily: 'Manrope',
-                              ),
-                              children: [
-                                const TextSpan(text: 'Starting '),
-                                TextSpan(
-                                  text: _previewTimeLabel(
-                                    _manualStartsAt(),
-                                  ),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: _kActionBlue,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          const SizedBox(height: 18),
+                          const _SectionLabel(
+                            icon: Icons.category_rounded,
+                            text: 'Category',
                           ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Place / Venue',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _showLocationPicker(context);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceDim,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.cardBorder),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.location_on_rounded,
-                                  size: 18,
-                                  color: AppColors.accent,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    isNearYou ? 'Near you' : manualLocation,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                      fontFamily: 'Manrope',
-                                    ),
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 20,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'People',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _QuickChoiceChip(
-                              label: 'Limited',
-                              selected: !_manualOpenGroup,
-                              onTap:
-                                  () =>
-                                      setState(() => _manualOpenGroup = false),
-                            ),
-                            const SizedBox(width: 8),
-                            _QuickChoiceChip(
-                              label: 'Open group',
-                              selected: _manualOpenGroup,
-                              onTap: () {
-                                if (_manualCategory == SparkCategory.ride) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Ride sparks require a seat count.',
-                                      ),
-                                    ),
-                                  );
-                                  return;
+                          const SizedBox(height: 10),
+                          _CategoryRail(
+                            selected: _manualCategory,
+                            onChanged: (c) {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _manualCategory = c;
+                                if (c == SparkCategory.ride) {
+                                  _manualOpenGroup = false;
                                 }
-                                setState(() => _manualOpenGroup = true);
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (_manualOpenGroup)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceDim,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.cardBorder),
-                            ),
-                            child: const Text(
-                              'Anyone can join',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // ─────────── WHEN ───────────
+                    _SoftCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionLabel(
+                            icon: Icons.schedule_rounded,
+                            text: 'When',
+                          ),
+                          const SizedBox(height: 12),
+                          _TimeChips(
+                            startsAt: startsAt,
+                            onPickQuick: (dt) {
+                              HapticFeedback.selectionClick();
+                              _setManualTimeFromDateTime(dt);
+                            },
+                            onPickCustom: _editManualTime,
+                          ),
+                          const SizedBox(height: 12),
+                          _TimeConfirmation(
+                            label: _previewTimeLabel(startsAt),
+                            relative: _previewRelativeTime(startsAt),
+                          ),
+                          const SizedBox(height: 14),
+                          _RecurrenceSection(
+                            isRecurring: _isRecurring,
+                            recurrenceType: _recurrenceType,
+                            recurrenceDayOfWeek: _recurrenceDayOfWeek,
+                            recurrenceEndDate: _recurrenceEndDate,
+                            onToggle: (v) =>
+                                setState(() => _isRecurring = v),
+                            onTypeChanged: (t) =>
+                                setState(() => _recurrenceType = t),
+                            onDayChanged: (d) =>
+                                setState(() => _recurrenceDayOfWeek = d),
+                            onEndDateChanged: (dt) =>
+                                setState(() => _recurrenceEndDate = dt),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // ─────────── WHERE ───────────
+                    _SoftCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionLabel(
+                            icon: Icons.place_rounded,
+                            text: 'Where',
+                          ),
+                          const SizedBox(height: 12),
+                          _PlaceTile(
+                            location: isNearYou ? 'Near you' : manualLocation,
+                            isNearYou: isNearYou,
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _showLocationPicker(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // ─────────── WHO ───────────
+                    _SoftCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionLabel(
+                            icon: Icons.people_alt_rounded,
+                            text: 'Who can join',
+                          ),
+                          const SizedBox(height: 12),
+                          _VisibilitySegmented(
+                            isPublic: _manualVisibility ==
+                                SparkVisibility.publicSpark,
+                            onChanged: (isPublic) {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                if (isPublic) {
+                                  _manualVisibility =
+                                      SparkVisibility.publicSpark;
+                                  _selectedCircleIds.clear();
+                                  _selectedInviteUserIds.clear();
+                                  _manualInvitePhones.clear();
+                                  _guestPhoneInlineError = null;
+                                } else {
+                                  _manualVisibility = SparkVisibility.invite;
+                                  _selectedCircleIds.clear();
+                                  _guestPhoneInlineError = null;
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            transitionBuilder: (child, anim) => SizeTransition(
+                              sizeFactor: anim,
+                              axisAlignment: -1,
+                              child: FadeTransition(
+                                opacity: anim,
+                                child: child,
                               ),
                             ),
-                          )
-                        else
-                          _PeopleStepper(
-                            value: _manualSpotsValue(),
-                            onDecrease: () {
-                              final next = (_manualSpotsValue() - 1).clamp(
-                                1,
-                                20,
-                              );
-                              setState(
-                                () => _manualSpotsController.text = '$next',
-                              );
+                            child: _manualVisibility == SparkVisibility.invite
+                                ? Column(
+                                    key: const ValueKey('invite-block'),
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          top: 4,
+                                          bottom: 8,
+                                        ),
+                                        child: Text(
+                                          'Hidden from Discover. Share via link or invite by phone.',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textSecondary
+                                                .withValues(alpha: 0.85),
+                                          ),
+                                        ),
+                                      ),
+                                      _AudiencePickerRow(
+                                        title: 'Guest phone invites',
+                                        cta: 'Add phone',
+                                        value: _manualInvitePhones.isEmpty
+                                            ? 'No guest phones added'
+                                            : '${_manualInvitePhones.length} added',
+                                        onTap: _addGuestPhoneInvite,
+                                      ),
+                                      if (_guestPhoneInlineError != null) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          _guestPhoneInlineError!,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.dangerText,
+                                          ),
+                                        ),
+                                      ],
+                                      if (_manualInvitePhones.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: _manualInvitePhones
+                                              .map(
+                                                (phone) => _RemovablePill(
+                                                  text: phone,
+                                                  onRemove: () => setState(() {
+                                                    _manualInvitePhones
+                                                        .remove(phone);
+                                                    if (_manualInvitePhones
+                                                        .isNotEmpty) {
+                                                      _guestPhoneInlineError =
+                                                          null;
+                                                    }
+                                                  }),
+                                                ),
+                                              )
+                                              .toList(),
+                                        ),
+                                      ],
+                                    ],
+                                  )
+                                : const SizedBox.shrink(
+                                    key: ValueKey('public-empty'),
+                                  ),
+                          ),
+                          const SizedBox(height: 14),
+                          _GroupSizeBlock(
+                            isOpenGroup: _manualOpenGroup,
+                            spots: _manualSpotsValue(),
+                            isRideCategory:
+                                _manualCategory == SparkCategory.ride,
+                            onSetOpen: (open) {
+                              if (open &&
+                                  _manualCategory == SparkCategory.ride) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Ride sparks require a seat count.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              HapticFeedback.selectionClick();
+                              setState(() => _manualOpenGroup = open);
                             },
                             onIncrease: () {
-                              final next = (_manualSpotsValue() + 1).clamp(
-                                1,
-                                20,
-                              );
-                              setState(
-                                () => _manualSpotsController.text = '$next',
-                              );
+                              HapticFeedback.lightImpact();
+                              final next = (_manualSpotsValue() + 1)
+                                  .clamp(1, 20);
+                              setState(() =>
+                                  _manualSpotsController.text = '$next');
+                            },
+                            onDecrease: () {
+                              HapticFeedback.lightImpact();
+                              final next = (_manualSpotsValue() - 1)
+                                  .clamp(1, 20);
+                              setState(() =>
+                                  _manualSpotsController.text = '$next');
                             },
                           ),
-                        const SizedBox(height: 10),
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _editManualNote();
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceDim,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.cardBorder),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.notes_rounded,
-                                  size: 18,
-                                  color: AppColors.accent,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _manualNoteController.text.trim().isEmpty
-                                        ? 'Add details (optional)'
-                                        : _manualNoteController.text.trim(),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color:
-                                          _manualNoteController.text
-                                                  .trim()
-                                                  .isEmpty
-                                              ? AppColors.textPrimary
-                                                  .withValues(alpha: 0.4)
-                                              : AppColors.textPrimary,
-                                      fontFamily: 'Manrope',
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // ─── Repeat this Spark (Recurrence) ─────────────
-                        _RecurrenceSection(
-                          isRecurring: _isRecurring,
-                          recurrenceType: _recurrenceType,
-                          recurrenceDayOfWeek: _recurrenceDayOfWeek,
-                          recurrenceEndDate: _recurrenceEndDate,
-                          onToggle: (v) => setState(() => _isRecurring = v),
-                          onTypeChanged:
-                              (t) => setState(() => _recurrenceType = t),
-                          onDayChanged:
-                              (d) => setState(() => _recurrenceDayOfWeek = d),
-                          onEndDateChanged:
-                              (dt) => setState(() => _recurrenceEndDate = dt),
-                        ),
-                        const SizedBox(height: 10),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap:
-                              () => setState(
-                                () => _previewExpanded = !_previewExpanded,
-                              ),
-                          child: Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Preview',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                              Icon(
-                                _previewExpanded
-                                    ? Icons.expand_less
-                                    : Icons.expand_more,
-                                size: 18,
-                                color: AppColors.textSecondary,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        if (!_previewExpanded)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.accent.withValues(alpha: 0.15),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome_rounded,
-                                  size: 16,
-                                  color: AppColors.accent,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    '${manualPlan.title} • ${isNearYou ? "Near you" : manualLocation} • ${_previewRelativeTime(manualPlan.startsAt ?? DateTime.now())}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.accent.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                      fontFamily: 'Manrope',
-                                      letterSpacing: -0.2,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (_previewExpanded)
-                          _AutoPreviewCard(
-                            plan: manualPlan,
-                            selectedLocation: selectedLocation,
-                            timeText: _previewTimeLabel(
-                              manualPlan.startsAt ?? DateTime.now(),
-                            ),
-                            relativeTimeText: _previewRelativeTime(
-                              manualPlan.startsAt ??
-                                  DateTime.now().add(
-                                    const Duration(minutes: 1),
-                                  ),
-                            ),
-                            hasExplicitSpots: !_manualOpenGroup,
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 14),
+                    // ─────────── EXTRAS ───────────
+                    _SoftCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionLabel(
+                            icon: Icons.tune_rounded,
+                            text: 'Extras',
+                          ),
+                          const SizedBox(height: 12),
+                          _NoteTile(
+                            note: _manualNoteController.text.trim(),
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _editManualNote();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              PrimaryButton(
-                label:
-                    _isCreatingSpark
-                        ? (_isEditMode ? 'Saving…' : 'Creating…')
-                        : (_isEditMode ? 'Save changes' : 'Create'),
-                backgroundColor: _kActionBlue,
-                onPressed:
-                    _isCreatingSpark
-                        ? null
-                        : () async {
-                          final message = _manualValidationMessage();
-                          if (message == null) {
-                            await _createSpark();
-                            return;
-                          }
-                          if (_manualVisibility == SparkVisibility.invite &&
-                              _manualInvitePhones.isEmpty) {
-                            setState(() {
-                              _guestPhoneInlineError =
-                                  'Add at least one valid phone number';
-                            });
-                          }
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(message),
-                              backgroundColor: AppColors.danger,
-                            ),
-                          );
-                        },
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
+      bottomNavigationBar: _StickyCreateBar(
+        title: manualPlan.title.isEmpty ? 'Your spark' : manualPlan.title,
+        location: isNearYou ? 'Near you' : manualLocation,
+        timeRelative: _previewRelativeTime(startsAt),
+        spotsLabel: _manualOpenGroup
+            ? 'Open group'
+            : (_manualCategory == SparkCategory.ride
+                ? '${_manualSpotsValue()} seats'
+                : '${_manualSpotsValue()} spots'),
+        category: _manualCategory,
+        ctaLabel: _isCreatingSpark
+            ? (_isEditMode ? 'Saving…' : 'Creating…')
+            : (_isEditMode ? 'Save changes' : 'Create spark'),
+        loading: _isCreatingSpark,
+        onPressed: _isCreatingSpark
+            ? null
+            : () async {
+                final message = _manualValidationMessage();
+                if (message == null) {
+                  await _createSpark();
+                  return;
+                }
+                if (_manualVisibility == SparkVisibility.invite &&
+                    _manualInvitePhones.isEmpty) {
+                  setState(() {
+                    _guestPhoneInlineError =
+                        'Add at least one valid phone number';
+                  });
+                }
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    backgroundColor: AppColors.danger,
+                  ),
+                );
+              },
       ),
     );
   }
@@ -3072,67 +2745,111 @@ class _CreateScreenHeader extends StatelessWidget {
   const _CreateScreenHeader({required this.category, required this.onBackTap});
   final SparkCategory category;
   final VoidCallback onBackTap;
-  static const double _kScreenTitleSize = 24;
-
-  static Color _accentColor(SparkCategory cat) => AppColors.accent;
-
-  static IconData _icon(SparkCategory cat) => switch (cat) {
-    SparkCategory.sports => Icons.directions_run_rounded,
-    SparkCategory.study => Icons.auto_stories_rounded,
-    SparkCategory.ride => Icons.drive_eta_rounded,
-    SparkCategory.events => Icons.confirmation_number_outlined,
-    SparkCategory.hangout => Icons.coffee_outlined,
-  };
 
   @override
   Widget build(BuildContext context) {
-    final accent = _accentColor(category);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        IconButton(
-          onPressed: onBackTap,
-          icon: const Icon(
-            Icons.chevron_left_rounded,
-            size: 28,
-            color: AppColors.accent,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _CircleIconButton(
+            icon: Icons.arrow_back_rounded,
+            onTap: onBackTap,
           ),
-        ),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Text(
-            "What's your plan?",
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: _kScreenTitleSize,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.7,
-              fontFamily: 'Manrope',
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Create a spark',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                    letterSpacing: -0.6,
+                    fontFamily: 'Manrope',
+                    height: 1.1,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Plan something quick & local',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                    letterSpacing: -0.1,
+                    fontFamily: 'Manrope',
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          const SizedBox(width: 12),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            transitionBuilder: (child, anim) => ScaleTransition(
+              scale: anim,
+              child: FadeTransition(opacity: anim, child: child),
+            ),
+            child: Container(
+              key: ValueKey(category),
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: category.accentColor.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                category.icon,
+                color: category.accentColor,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      elevation: 0,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        child: Container(
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.2),
+            color: Colors.white,
             shape: BoxShape.circle,
+            border: Border.all(color: AppColors.border),
           ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              _icon(category),
-              key: ValueKey(category),
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
+          alignment: Alignment.center,
+          child: Icon(icon, size: 20, color: AppColors.textPrimary),
         ),
-      ],
+      ),
     );
   }
 }
@@ -3769,6 +3486,1062 @@ class _TypeChip extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: selected ? Colors.white : AppColors.textSecondary,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+
+// ──────────────────────────────────────────────────────────────────────
+// New design components for Create Spark redesign (Feb 2026)
+// ──────────────────────────────────────────────────────────────────────
+
+/// Soft white card used per-section. Subtle shadow + generous padding.
+class _SoftCard extends StatelessWidget {
+  const _SoftCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Section eyebrow label with a small leading icon.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: AppColors.accentSurface,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, size: 14, color: AppColors.accent),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+            letterSpacing: -0.2,
+            fontFamily: 'Manrope',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Large, friendly title input with no harsh border.
+class _TitleField extends StatelessWidget {
+  const _TitleField({required this.controller, required this.onChanged});
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6FA),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: (_) => onChanged(),
+        maxLines: 1,
+        maxLength: 60,
+        textInputAction: TextInputAction.done,
+        style: const TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+          letterSpacing: -0.3,
+          fontFamily: 'Manrope',
+        ),
+        decoration: InputDecoration(
+          hintText: 'e.g. Cricket at Central Park',
+          hintStyle: TextStyle(
+            color: AppColors.textPrimary.withValues(alpha: 0.32),
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          counterText: '',
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide:
+                const BorderSide(color: _kActionBlue, width: 1.4),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Horizontal category icon-rail. Selected = colored bg using category accent.
+class _CategoryRail extends StatelessWidget {
+  const _CategoryRail({required this.selected, required this.onChanged});
+  final SparkCategory selected;
+  final ValueChanged<SparkCategory> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: SparkCategory.values
+            .map(
+              (c) => Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: _CategoryTile(
+                  category: c,
+                  selected: c == selected,
+                  onTap: () => onChanged(c),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+  final SparkCategory category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = category.accentColor;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        width: 78,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? accent.withValues(alpha: 0.14) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected
+                ? accent.withValues(alpha: 0.55)
+                : AppColors.border,
+            width: selected ? 1.4 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.22),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: selected ? accent : accent.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                category.icon,
+                size: 18,
+                color: selected ? Colors.white : accent,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              category.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                letterSpacing: -0.1,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Quick time chips: Now / 30m / 1h / 2h / Custom.
+class _TimeChips extends StatelessWidget {
+  const _TimeChips({
+    required this.startsAt,
+    required this.onPickQuick,
+    required this.onPickCustom,
+  });
+
+  final DateTime startsAt;
+  final ValueChanged<DateTime> onPickQuick;
+  final VoidCallback onPickCustom;
+
+  int get _diffMinutes => startsAt.difference(DateTime.now()).inMinutes;
+
+  @override
+  Widget build(BuildContext context) {
+    final diff = _diffMinutes;
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          _TimePresetChip(
+            label: 'Now',
+            selected: diff <= 5,
+            onTap: () =>
+                onPickQuick(DateTime.now().add(const Duration(minutes: 2))),
+          ),
+          const SizedBox(width: 8),
+          _TimePresetChip(
+            label: '30 min',
+            selected: diff > 5 && diff <= 35,
+            onTap: () =>
+                onPickQuick(DateTime.now().add(const Duration(minutes: 30))),
+          ),
+          const SizedBox(width: 8),
+          _TimePresetChip(
+            label: '1 hr',
+            selected: diff > 35 && diff <= 65,
+            onTap: () =>
+                onPickQuick(DateTime.now().add(const Duration(hours: 1))),
+          ),
+          const SizedBox(width: 8),
+          _TimePresetChip(
+            label: '2 hr',
+            selected: diff > 65 && diff <= 125,
+            onTap: () =>
+                onPickQuick(DateTime.now().add(const Duration(hours: 2))),
+          ),
+          const SizedBox(width: 8),
+          _TimePresetChip(
+            label: 'Custom',
+            icon: Icons.edit_calendar_rounded,
+            selected: diff > 125,
+            onTap: onPickCustom,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TimePresetChip extends StatelessWidget {
+  const _TimePresetChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? _kActionBlue : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? _kActionBlueDeep : AppColors.border,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: _kActionBlueDeep.withValues(alpha: 0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? Colors.white : AppColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : AppColors.textSecondary,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Today, 6:30 PM · in 30 min" confirmation pill.
+class _TimeConfirmation extends StatelessWidget {
+  const _TimeConfirmation({required this.label, required this.relative});
+  final String label;
+  final String relative;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.access_time_filled_rounded,
+            size: 16,
+            color: AppColors.accent,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+                color: AppColors.accent,
+                letterSpacing: -0.2,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '· $relative',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: AppColors.accent.withValues(alpha: 0.75),
+              fontFamily: 'Manrope',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tappable row showing the chosen place.
+class _PlaceTile extends StatelessWidget {
+  const _PlaceTile({
+    required this.location,
+    required this.isNearYou,
+    required this.onTap,
+  });
+
+  final String location;
+  final bool isNearYou;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F6FA),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  size: 18,
+                  color: AppColors.accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      location,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isNearYou
+                          ? 'We\'ll use your current area'
+                          : 'Tap to change place',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 22,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated public/private segmented toggle.
+class _VisibilitySegmented extends StatelessWidget {
+  const _VisibilitySegmented({
+    required this.isPublic,
+    required this.onChanged,
+  });
+  final bool isPublic;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final segWidth = (width - 8) / 2;
+        return Container(
+          height: 46,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F3F8),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                alignment:
+                    isPublic ? Alignment.centerLeft : Alignment.centerRight,
+                child: Container(
+                  width: segWidth,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(11),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: _segmentTile(
+                      icon: Icons.public_rounded,
+                      label: 'Public',
+                      selected: isPublic,
+                      onTap: () => onChanged(true),
+                    ),
+                  ),
+                  Expanded(
+                    child: _segmentTile(
+                      icon: Icons.lock_rounded,
+                      label: 'Private',
+                      selected: !isPublic,
+                      onTap: () => onChanged(false),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _segmentTile({
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: selected ? AppColors.accent : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w800,
+                color: selected ? AppColors.accent : AppColors.textSecondary,
+                letterSpacing: -0.2,
+                fontFamily: 'Manrope',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Group size block: Limited (with stepper) ↔ Open group switch.
+class _GroupSizeBlock extends StatelessWidget {
+  const _GroupSizeBlock({
+    required this.isOpenGroup,
+    required this.spots,
+    required this.isRideCategory,
+    required this.onSetOpen,
+    required this.onIncrease,
+    required this.onDecrease,
+  });
+
+  final bool isOpenGroup;
+  final int spots;
+  final bool isRideCategory;
+  final ValueChanged<bool> onSetOpen;
+  final VoidCallback onIncrease;
+  final VoidCallback onDecrease;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6FA),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          // Open group switch row
+          Padding(
+            padding:
+                const EdgeInsets.fromLTRB(14, 12, 10, isOpenGroup ? 12 : 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.public_rounded,
+                    size: 16,
+                    color: AppColors.accent,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Open group',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.2,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        isOpenGroup
+                            ? 'Anyone can join — no spot limit.'
+                            : 'Limited spots. Tap to switch.',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(
+                  value: isOpenGroup,
+                  onChanged: onSetOpen,
+                  activeColor: _kActionBlue,
+                ),
+              ],
+            ),
+          ),
+          // Stepper (only when limited)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: isOpenGroup
+                ? const SizedBox(width: double.infinity, height: 0)
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
+                    child: _BigStepper(
+                      value: spots,
+                      label: isRideCategory ? 'seats' : 'spots',
+                      onIncrease: onIncrease,
+                      onDecrease: onDecrease,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BigStepper extends StatelessWidget {
+  const _BigStepper({
+    required this.value,
+    required this.label,
+    required this.onIncrease,
+    required this.onDecrease,
+  });
+
+  final int value;
+  final String label;
+  final VoidCallback onIncrease;
+  final VoidCallback onDecrease;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          _StepCircle(icon: Icons.remove_rounded, onTap: onDecrease),
+          Expanded(
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder: (child, anim) => ScaleTransition(
+                  scale: anim,
+                  child: FadeTransition(opacity: anim, child: child),
+                ),
+                child: RichText(
+                  key: ValueKey(value),
+                  text: TextSpan(
+                    style: const TextStyle(fontFamily: 'Manrope'),
+                    children: [
+                      TextSpan(
+                        text: '$value',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '  $label',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _StepCircle(icon: Icons.add_rounded, onTap: onIncrease),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepCircle extends StatelessWidget {
+  const _StepCircle({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.accent.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, size: 18, color: AppColors.accent),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tappable note / details row.
+class _NoteTile extends StatelessWidget {
+  const _NoteTile({required this.note, required this.onTap});
+  final String note;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmpty = note.isEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F6FA),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.notes_rounded,
+                  size: 16,
+                  color: AppColors.accent,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isEmpty ? 'Add details' : note,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight:
+                            isEmpty ? FontWeight.w700 : FontWeight.w600,
+                        color: isEmpty
+                            ? AppColors.textPrimary.withValues(alpha: 0.5)
+                            : AppColors.textPrimary,
+                        letterSpacing: -0.2,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                    if (isEmpty) ...[
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Tell guests what to bring or where to meet',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          fontFamily: 'Manrope',
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                isEmpty ? Icons.add_rounded : Icons.edit_rounded,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Sticky bottom bar: live preview + create CTA.
+class _StickyCreateBar extends StatelessWidget {
+  const _StickyCreateBar({
+    required this.title,
+    required this.location,
+    required this.timeRelative,
+    required this.spotsLabel,
+    required this.category,
+    required this.ctaLabel,
+    required this.loading,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String location;
+  final String timeRelative;
+  final String spotsLabel;
+  final SparkCategory category;
+  final String ctaLabel;
+  final bool loading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = category.accentColor;
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Live preview row
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child:
+                        Icon(category.icon, size: 16, color: accent),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                            letterSpacing: -0.2,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          '$timeRelative · $location · $spotsLabel',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                            letterSpacing: -0.1,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: _kActionBlue,
+                  disabledBackgroundColor:
+                      _kActionBlue.withValues(alpha: 0.6),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: onPressed,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (loading)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    else
+                      const Icon(Icons.bolt_rounded, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      ctaLabel,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
