@@ -4132,7 +4132,7 @@ class _GroupSizeBlock extends StatelessWidget {
           // Open group switch row
           Padding(
             padding:
-                const EdgeInsets.fromLTRB(14, 12, 10, isOpenGroup ? 12 : 4),
+                EdgeInsets.fromLTRB(14, 12, 10, isOpenGroup ? 12 : 4),
             child: Row(
               children: [
                 Container(
