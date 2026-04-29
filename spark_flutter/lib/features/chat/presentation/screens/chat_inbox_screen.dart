@@ -7,8 +7,8 @@ import '../../../spark/domain/spark.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import 'chat_screen.dart';
 
-const _kNavy = Color(0xFF355588);
-const _kNavyLight = Color(0xFFEAF0FB);
+const _kNavy      = Color(0xFF1E3A5F);
+const _kNavyLight = Color(0xFFEAF2FF);
 const _kScreenTitleSize = 24.0;
 
 class ChatInboxScreen extends ConsumerStatefulWidget {
@@ -32,16 +32,18 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
     final available = byId.values.toList();
 
     return Scaffold(
-      backgroundColor: context.palette.background,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
+            // Header
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 16, 16, 14),
+              padding: const EdgeInsets.fromLTRB(4, 12, 16, 12),
               decoration: BoxDecoration(
-                color: context.palette.surface,
+                color: AppColors.background,
                 border: Border(
-                  bottom: BorderSide(color: AppColors.cardDivider, width: 0.5),
+                  bottom: BorderSide(
+                      color: AppColors.cardDivider, width: 0.5),
                 ),
               ),
               child: Row(
@@ -50,18 +52,18 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
                     onPressed: () => backOrGoDiscover(context, ref),
                     icon: const Icon(
                       Icons.chevron_left_rounded,
-                      color: AppColors.accent,
+                      color: _kNavy,
                       size: 28,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 2),
                   const Expanded(
                     child: Text(
                       'Chats',
                       style: TextStyle(
                         fontSize: _kScreenTitleSize,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                        color: _kNavy,
                         letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
@@ -70,38 +72,37 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
                 ],
               ),
             ),
+
             Expanded(
-              child:
-                  available.isEmpty
-                      ? _EmptyInbox()
-                      : ListView.separated(
-                        padding: EdgeInsets.zero,
-                        itemCount: available.length,
-                        separatorBuilder:
-                            (_, __) => Container(
-                              height: 1,
-                              margin: const EdgeInsets.only(left: 72),
-                              color: AppColors.cardDivider,
-                            ),
-                        itemBuilder: (context, index) {
-                          final spark = available[index];
-                          final isJoined = joinedIds.contains(spark.id);
-                          final createdByMe = created.any(
-                            (s) => s.id == spark.id,
-                          );
-                          return _InboxRow(
-                            spark: spark,
-                            joined: isJoined,
-                            created: createdByMe,
-                            onTap:
-                                () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => ChatScreen(spark: spark),
-                                  ),
-                                ),
-                          );
-                        },
+              child: available.isEmpty
+                  ? const _EmptyInbox()
+                  : ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: available.length,
+                      separatorBuilder: (_, __) => Container(
+                        height: 1,
+                        margin: const EdgeInsets.only(left: 74),
+                        color: AppColors.cardDivider,
                       ),
+                      itemBuilder: (context, index) {
+                        final spark = available[index];
+                        final isJoined =
+                            joinedIds.contains(spark.id);
+                        final createdByMe =
+                            created.any((s) => s.id == spark.id);
+                        return _InboxRow(
+                          spark: spark,
+                          joined: isJoined,
+                          created: createdByMe,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ChatScreen(spark: spark),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -110,7 +111,11 @@ class _ChatInboxScreenState extends ConsumerState<ChatInboxScreen> {
   }
 }
 
+// ── Empty inbox ───────────────────────────────────────────────────────────────
+
 class _EmptyInbox extends StatelessWidget {
+  const _EmptyInbox();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -123,20 +128,13 @@ class _EmptyInbox extends StatelessWidget {
             height: 84,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.06),
+              color: _kNavyLight,
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: const Icon(
               Icons.chat_bubble_outline_rounded,
               size: 38,
-              color: AppColors.accent,
+              color: _kNavy,
             ),
           ),
           const SizedBox(height: 24),
@@ -145,7 +143,7 @@ class _EmptyInbox extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: _kNavy,
               fontFamily: 'Manrope',
               letterSpacing: -0.4,
             ),
@@ -154,7 +152,7 @@ class _EmptyInbox extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
-              'Your joining and created sparks will appear here once you start chatting.',
+              'Your joined and created sparks will appear here.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -170,6 +168,8 @@ class _EmptyInbox extends StatelessWidget {
   }
 }
 
+// ── Inbox row ─────────────────────────────────────────────────────────────────
+
 class _InboxRow extends StatelessWidget {
   const _InboxRow({
     required this.spark,
@@ -183,12 +183,20 @@ class _InboxRow extends StatelessWidget {
   final bool created;
   final VoidCallback onTap;
 
-  static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
-    SparkCategory.sports => Icons.directions_run_rounded,
-    SparkCategory.study => Icons.auto_stories_rounded,
-    SparkCategory.ride => Icons.drive_eta_rounded,
-    SparkCategory.events => Icons.confirmation_number_outlined,
-    SparkCategory.hangout => Icons.coffee_outlined,
+  static String _categoryEmoji(SparkCategory cat) => switch (cat) {
+    SparkCategory.sports  => '⚽',
+    SparkCategory.study   => '📚',
+    SparkCategory.ride    => '🛵',
+    SparkCategory.events  => '🎉',
+    SparkCategory.hangout => '☕',
+  };
+
+  static Color _categoryBg(SparkCategory cat) => switch (cat) {
+    SparkCategory.sports  => AppColors.catSports,
+    SparkCategory.study   => AppColors.catStudy,
+    SparkCategory.ride    => AppColors.catRide,
+    SparkCategory.events  => AppColors.catEvents,
+    SparkCategory.hangout => AppColors.catHangout,
   };
 
   @override
@@ -196,21 +204,22 @@ class _InboxRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 13),
         child: Row(
           children: [
+            // Category emoji badge
             Container(
-              width: 42,
-              height: 42,
+              width: 46,
+              height: 46,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: AppColors.iconBg,
+              decoration: BoxDecoration(
+                color: _categoryBg(spark.category),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                _categoryIcon(spark.category),
-                color: AppColors.accent,
-                size: 19,
+              child: Text(
+                _categoryEmoji(spark.category),
+                style: const TextStyle(fontSize: 20),
               ),
             ),
             const SizedBox(width: 13),
@@ -229,7 +238,7 @@ class _InboxRow extends StatelessWidget {
                       fontFamily: 'Manrope',
                     ),
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     '${spark.timeLabel} · ${spark.distanceLabel}',
                     style: const TextStyle(
@@ -243,7 +252,8 @@ class _InboxRow extends StatelessWidget {
                     Row(
                       children: [
                         if (joined) _Badge(label: 'Joined'),
-                        if (joined && created) const SizedBox(width: 5),
+                        if (joined && created)
+                          const SizedBox(width: 5),
                         if (created) _Badge(label: 'Host'),
                       ],
                     ),
@@ -255,7 +265,7 @@ class _InboxRow extends StatelessWidget {
             const Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color: AppColors.onSurfaceFaint,
+              color: AppColors.textMuted,
             ),
           ],
         ),
@@ -264,6 +274,8 @@ class _InboxRow extends StatelessWidget {
   }
 }
 
+// ── Badge ─────────────────────────────────────────────────────────────────────
+
 class _Badge extends StatelessWidget {
   const _Badge({required this.label});
   final String label;
@@ -271,7 +283,8 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
         color: _kNavyLight,
         borderRadius: BorderRadius.circular(6),
@@ -288,6 +301,3 @@ class _Badge extends StatelessWidget {
     );
   }
 }
-
-
-

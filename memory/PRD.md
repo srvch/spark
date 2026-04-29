@@ -51,10 +51,20 @@
 - `_initialMessages()` and `_nameFromInitial()` methods removed from `chat_screen.dart`
 
 #### UI/UX Polish
-- **Chat empty state** – blank chat now shows icon + "No messages yet / Be the first to say hi!"
+- **Chat empty state** – blank chat now shows spark category emoji + "No messages yet / Be the first to say hi!"
 - **Chat auto-scroll to bottom** – `ref.listen` scrolls to bottom when history first loads; `_sendMessage` scrolls after each sent message
-- **Chat date separators** – helper methods `_buildMessageItems`, `_isSameDay`, `_dateLabelFor`, `_buildDateSeparator` inserted; messages grouped under "Today / Yesterday / Jan 15" headers
+- **Chat date separators** – WhatsApp-style centered pill ("Today / Yesterday / Jan 15") between message groups
+- **Chat bubble tails** – WhatsApp-style tail (bottom-right for own, bottom-left for other), 4px radius on tail corner
+- **Incoming bubble shadow** – subtle drop shadow on white bubbles against gray canvas
+- **Colored sender names** – each participant gets a unique color from a 6-color palette (like WhatsApp groups)
+- **Avatar on last bubble** – small initials circle shown next to the last message in each group
+- **Animated send/mic button** – mic icon when field is empty, animated transition to send arrow when typing (with color change)
+- **Multi-line input** – text field expands up to 120px, then scrolls
+- **Double-tick icon** – visual sent indicator on own messages
+- **Category emoji badge** – app bar shows spark category emoji in category-tinted circle
 - **`ChatMessage` model** – added `createdAt: DateTime` field used for date grouping
+- **Chat background** – subtle warm-gray (`#F0F2F5`) matching WhatsApp's chat canvas (not pure white)
+- **Chat inbox** – emoji badges replacing icon badges, consistent light theme, improved empty state with navy colors
 - **Location catalog** – made generic (city-agnostic options first: "Current location", "Downtown", "Campus", etc.) with Bangalore-specific ones at the bottom
 - **Recent locations** – changed from Bangalore-specific to generic (`'Downtown'`, `'City Center'`, `'Campus'`)
 
