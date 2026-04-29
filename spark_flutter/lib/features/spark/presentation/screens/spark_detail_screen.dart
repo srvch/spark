@@ -9,13 +9,16 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/network/dio_provider.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/phone_privacy.dart';
 import '../../../../features/chat/presentation/screens/chat_screen.dart';
 import '../../../../shared/widgets/invite_friends_sheet.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../data/safety_api_repository.dart';
 import '../../domain/spark.dart';
 import '../controllers/spark_controller.dart';
+import 'create_spark_screen.dart';
+
+const _kActionBlue = Color(0xFF355588);
+const _kActionBlueDeep = Color(0xFF294975);
 
 final safetyApiRepositoryProvider = Provider<SafetyApiRepository>((ref) {
   return SafetyApiRepository(dio: ref.watch(dioProvider));
@@ -57,7 +60,9 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
 
   Future<void> _openInMaps(BuildContext context) async {
     final encoded = Uri.encodeComponent(widget.spark.location);
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$encoded');
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$encoded',
+    );
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
         context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -67,16 +72,16 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
   }
 
   Future<void> _joinSpark() async {
-    final alreadyJoined = ref.read(joinedSparkIdsProvider).contains(widget.spark.id);
+    final alreadyJoined = ref
+        .read(joinedSparkIdsProvider)
+        .contains(widget.spark.id);
     if (alreadyJoined) return;
     HapticFeedback.mediumImpact();
     try {
       await ref.read(sparkDataControllerProvider).joinSpark(widget.spark.id);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
       return;
     }
 
@@ -109,9 +114,9 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     HapticFeedback.lightImpact();
     await ref.read(sparkDataControllerProvider).leaveSpark(widget.spark.id);
     if (showMessage && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You left this spark')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You left this spark')));
     }
   }
 
@@ -139,7 +144,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     color: AppColors.pillSurface,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_rounded, size: 30, color: AppColors.accent),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 30,
+                    color: AppColors.accent,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -160,7 +169,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.schedule_rounded, size: 13, color: AppColors.textSecondary),
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       widget.spark.timeLabel,
@@ -171,7 +184,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Icon(Icons.near_me_rounded, size: 13, color: AppColors.textSecondary),
+                    Icon(
+                      Icons.near_me_rounded,
+                      size: 13,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       widget.spark.distanceLabel,
@@ -193,10 +210,12 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     ),
                   ),
                   onPressed: () {
-                    ref.read(analyticsServiceProvider).track(
-                      'open_chat_from_join_sheet',
-                      properties: {'spark_id': widget.spark.id},
-                    );
+                    ref
+                        .read(analyticsServiceProvider)
+                        .track(
+                          'open_chat_from_join_sheet',
+                          properties: {'spark_id': widget.spark.id},
+                        );
                     Navigator.of(ctx).pop();
                     Navigator.of(this.context).push(
                       MaterialPageRoute(
@@ -212,11 +231,12 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                   icon: Icons.person_add_rounded,
                   label: 'Invite friends',
                   subtitle: 'Fill spots faster by sharing',
-                  onTap: () => showInviteFriendsBottomSheet(
-                    context: this.context,
-                    spark: widget.spark,
-                    source: 'post_join',
-                  ),
+                  onTap:
+                      () => showInviteFriendsBottomSheet(
+                        context: this.context,
+                        spark: widget.spark,
+                        source: 'post_join',
+                      ),
                 ),
                 _JoinedActionTile(
                   icon: Icons.map_rounded,
@@ -294,10 +314,9 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
 
     await Share.share(message, subject: 'Join my Spark: ${spark.title}');
 
-    ref.read(analyticsServiceProvider).track(
-      'spark_shared',
-      properties: {'spark_id': spark.id},
-    );
+    ref
+        .read(analyticsServiceProvider)
+        .track('spark_shared', properties: {'spark_id': spark.id});
   }
 
   @override
@@ -322,10 +341,10 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       rawLocation: spark.location,
       selectedLocation: selectedLocation,
     );
-    final fillRatio = ((spark.maxSpots - spark.spotsLeft) / spark.maxSpots).clamp(
-      0.0,
-      1.0,
-    ).toDouble();
+    final fillRatio =
+        ((spark.maxSpots - spark.spotsLeft) / spark.maxSpots)
+            .clamp(0.0, 1.0)
+            .toDouble();
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -348,17 +367,21 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                     child: Text(
                       spark.category.label,
                       style: const TextStyle(
-                        fontSize: 34,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                        letterSpacing: -0.5,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
                   ),
                   IconButton(
                     onPressed: _copyShareLink,
-                    icon: const Icon(Icons.ios_share_rounded, size: 20, color: AppColors.textPrimary),
+                    icon: const Icon(
+                      Icons.ios_share_rounded,
+                      size: 20,
+                      color: AppColors.textPrimary,
+                    ),
                     tooltip: 'Share',
                   ),
                 ],
@@ -419,8 +442,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check_circle_rounded,
-                                      size: 12, color: AppColors.accent),
+                                  Icon(
+                                    Icons.check_circle_rounded,
+                                    size: 12,
+                                    color: AppColors.accent,
+                                  ),
                                   SizedBox(width: 4),
                                   Text(
                                     'Joined',
@@ -448,7 +474,8 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         ),
                       ),
                       const SizedBox(height: 10),
-                      if (spark.note != null && spark.note!.trim().isNotEmpty) ...[
+                      if (spark.note != null &&
+                          spark.note!.trim().isNotEmpty) ...[
                         Text(
                           spark.note!,
                           style: const TextStyle(
@@ -532,59 +559,6 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                           ],
                         ),
                       ),
-                      if (spark.hostPhoneNumber != null &&
-                          spark.hostPhoneNumber!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                alignment: Alignment.center,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.iconBg,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.phone_outlined,
-                                  size: 15,
-                                  color: AppColors.accent,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  PhonePrivacy.mask(spark.hostPhoneNumber!,
-                                      hide: spark.hideHostPhoneNumber),
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.accent,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                                ),
-                                onPressed: () => _callHost(spark.hostPhoneNumber!),
-                                child: const Text(
-                                  'Call host',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.all(10),
@@ -623,7 +597,9 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             TextButton(
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.accent,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                               ),
                               onPressed: () => _openInMaps(context),
                               child: const Text(
@@ -652,14 +628,17 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             TextButton(
                               style: TextButton.styleFrom(
                                 foregroundColor: AppColors.accent,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                                 minimumSize: const Size(0, 28),
                               ),
-                              onPressed: () => _openParticipantsSheet(
-                                spark: spark,
-                                currentUserId: currentUserId,
-                                isJoined: joined,
-                              ),
+                              onPressed:
+                                  () => _openParticipantsSheet(
+                                    spark: spark,
+                                    currentUserId: currentUserId,
+                                    isJoined: joined,
+                                  ),
                               child: const Text(
                                 'See participants',
                                 style: TextStyle(
@@ -674,10 +653,12 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                         Row(
                           children: [
                             _ParticipantStack(
-                              participants:
-                                  ref.watch(sparkParticipantsProvider(spark.id)),
-                              currentUserInitials:
-                                  ref.watch(currentUserInitialsProvider),
+                              participants: ref.watch(
+                                sparkParticipantsProvider(spark.id),
+                              ),
+                              currentUserInitials: ref.watch(
+                                currentUserInitialsProvider,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Container(
@@ -711,7 +692,8 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
                             minHeight: 7,
                             backgroundColor: AppColors.border,
                             valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.accent),
+                              AppColors.accent,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -775,145 +757,213 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
               padding: const EdgeInsets.all(16),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
-                child: (!joined && !isCreator)
-                    ? (spark.spotsLeft == 0
-                        ? SizedBox(
-                            key: const ValueKey('full-btn'),
-                            height: 50,
-                            width: double.infinity,
-                            child: FilledButton(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.pillSurface,
-                                foregroundColor: AppColors.textMuted,
-                                elevation: 0,
-                                shadowColor: Colors.transparent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                child:
+                    (!joined && !isCreator)
+                        ? (spark.spotsLeft == 0
+                            ? SizedBox(
+                              key: const ValueKey('full-btn'),
+                              height: 50,
+                              width: double.infinity,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.pillSurface,
+                                  foregroundColor: AppColors.textMuted,
+                                  elevation: 0,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
-                              ),
-                              onPressed: null,
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.lock_outline_rounded, size: 16),
-                                  SizedBox(width: 7),
-                                  Text('Spark Full',
+                                onPressed: null,
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.lock_outline_rounded, size: 16),
+                                    SizedBox(width: 7),
+                                    Text(
+                                      'Spark Full',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 15)),
-                                ],
-                              ),
-                            ),
-                          )
-                        : PrimaryButton(
-                            key: const ValueKey('join-btn'),
-                            label: 'Join Spark',
-                            backgroundColor: AppColors.accent,
-                            onPressed: _joinSpark,
-                          ))
-                    : (isCreator
-                        ? Row(
-                            key: const ValueKey('creator-actions'),
-                            children: [
-                              Expanded(
-                                child: PrimaryButton(
-                                  label: 'Open Host Chat',
-                                  compact: true,
-                                  backgroundColor: AppColors.accent,
-                                  onPressed: () {
-                                    ref.read(analyticsServiceProvider).track(
-                                      'open_chat_from_detail',
-                                      properties: {'spark_id': spark.id},
-                                    );
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => ChatScreen(spark: spark),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
                                       ),
-                                    );
-                                  },
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(46),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                            )
+                            : PrimaryButton(
+                              key: const ValueKey('join-btn'),
+                              label: 'Join Spark',
+                              backgroundColor: _kActionBlue,
+                              onPressed: _joinSpark,
+                            ))
+                        : (isCreator
+                            ? Column(
+                              key: const ValueKey('creator-actions'),
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: PrimaryButton(
+                                        label: 'Open Host Chat',
+                                        compact: true,
+                                        backgroundColor: _kActionBlue,
+                                        onPressed: () {
+                                          ref
+                                              .read(analyticsServiceProvider)
+                                              .track(
+                                                'open_chat_from_detail',
+                                                properties: {
+                                                  'spark_id': spark.id,
+                                                },
+                                              );
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) =>
+                                                      ChatScreen(spark: spark),
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                  onPressed: () {
-                                    showInviteFriendsBottomSheet(
-                                      context: context,
-                                      spark: spark,
-                                      source: 'detail_host',
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Share Invite',
-                                    style: TextStyle(
-                                      color: AppColors.accent,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            key: const ValueKey('joined-actions'),
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: PrimaryButton(
-                                      label: 'Open Chat',
-                                      compact: true,
-                                      backgroundColor: AppColors.accent,
-                                      onPressed: () {
-                                        ref.read(analyticsServiceProvider).track(
-                                          'open_chat_from_detail',
-                                          properties: {'spark_id': widget.spark.id},
-                                        );
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (_) => ChatScreen(spark: widget.spark),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          minimumSize: const Size.fromHeight(
+                                            46,
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      style: OutlinedButton.styleFrom(
-                                        minimumSize: const Size.fromHeight(46),
-                                        foregroundColor: AppColors.onSurfaceStrong,
-                                        side: const BorderSide(
-                                            color: AppColors.chipBorder),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          foregroundColor: _kActionBlue,
+                                          side: const BorderSide(
+                                            color: _kActionBlueDeep,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          showInviteFriendsBottomSheet(
+                                            context: context,
+                                            spark: spark,
+                                            source: 'detail_host',
+                                          );
+                                        },
+                                        child: const Text(
+                                          'Share Invite',
+                                          style: TextStyle(
+                                            color: _kActionBlue,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
                                       ),
-                                      onPressed: () => _leaveSpark(),
-                                      child: const Text(
-                                        'Leave',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              _OnMyWayButton(sparkId: widget.spark.id),
-                              if (spark.startsInMinutes <= 15) ...[
+                                  ],
+                                ),
                                 const SizedBox(height: 8),
-                                _CheckInButton(sparkId: widget.spark.id),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size.fromHeight(46),
+                                      foregroundColor: _kActionBlue,
+                                      side: const BorderSide(
+                                        color: _kActionBlueDeep,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => CreateSparkScreen(
+                                                prefill: spark,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'Edit Spark',
+                                      style: TextStyle(
+                                        color: _kActionBlue,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
-                            ],
-                          )),
+                            )
+                            : Column(
+                              key: const ValueKey('joined-actions'),
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: PrimaryButton(
+                                        label: 'Open Chat',
+                                        compact: true,
+                                        backgroundColor: _kActionBlue,
+                                        onPressed: () {
+                                          ref
+                                              .read(analyticsServiceProvider)
+                                              .track(
+                                                'open_chat_from_detail',
+                                                properties: {
+                                                  'spark_id': widget.spark.id,
+                                                },
+                                              );
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => ChatScreen(
+                                                    spark: widget.spark,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          minimumSize: const Size.fromHeight(
+                                            46,
+                                          ),
+                                          foregroundColor:
+                                              AppColors.onSurfaceStrong,
+                                          side: const BorderSide(
+                                            color: AppColors.chipBorder,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        onPressed: () => _leaveSpark(),
+                                        child: const Text(
+                                          'Leave',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                _OnMyWayButton(sparkId: widget.spark.id),
+                                if (spark.startsInMinutes <= 15) ...[
+                                  const SizedBox(height: 8),
+                                  _CheckInButton(sparkId: widget.spark.id),
+                                ],
+                              ],
+                            )),
               ),
             ),
           ],
@@ -947,20 +997,11 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
     return raw;
   }
 
-  Future<void> _callHost(String phone) async {
-    final uri = Uri.parse('tel:${Uri.encodeComponent(phone)}');
-    final ok = await launchUrl(uri);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open dialer right now.')),
-      );
-    }
-  }
-
   Future<void> _openSafetyGuidelines() async {
     List<String> guidelines = const [];
     try {
-      guidelines = await ref.read(safetyApiRepositoryProvider).fetchGuidelines();
+      guidelines =
+          await ref.read(safetyApiRepositoryProvider).fetchGuidelines();
     } catch (_) {
       guidelines = const [
         'Meet only in public, well-lit places.',
@@ -975,121 +1016,128 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      builder:
+          (_) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.warmSurface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.shield_rounded,
-                      size: 22,
-                      color: AppColors.warmAccent,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(
-                        'Safety Guidelines',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                      ),
-                      Text(
-                        'Please review before meetup',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.warmSurface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.shield_rounded,
+                          size: 22,
+                          color: AppColors.warmAccent,
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Safety Guidelines',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            'Please review before meetup',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  ...guidelines.asMap().entries.map(
+                    (entry) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${entry.key + 1}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              entry.value,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                height: 1.4,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        minimumSize: const Size.fromHeight(50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Understood',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              ...guidelines.asMap().entries.map(
-                (entry) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: const BoxDecoration(
-                          color: AppColors.accent,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${entry.key + 1}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          entry.value,
-                          style: const TextStyle(
-                            fontSize: 13.5,
-                            height: 1.4,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    minimumSize: const Size.fromHeight(50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Understood',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -1108,90 +1156,91 @@ class _SparkDetailScreenState extends ConsumerState<SparkDetailScreen>
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Participants',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${rows.length} people in this spark',
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              ...rows.map(
-                (row) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
+      builder:
+          (_) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Participants',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                   ),
-                  child: Row(
-                    children: [
-                      _ParticipantChip(text: row.initials),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              row.name,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              row.role,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${rows.length} people in this spark',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...rows.map(
+                    (row) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: row.badgeColor.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          row.badge,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: row.badgeColor,
+                      child: Row(
+                        children: [
+                          _ParticipantChip(text: row.initials),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  row.name,
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  row.role,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: row.badgeColor.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              row.badge,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: row.badgeColor,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -1355,7 +1404,11 @@ class _JoinedActionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+            const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: AppColors.textSecondary,
+            ),
           ],
         ),
       ),
@@ -1417,8 +1470,10 @@ class _CountdownBadgeState extends State<_CountdownBadge>
     vsync: this,
     duration: const Duration(milliseconds: 800),
   )..repeat(reverse: true);
-  late final Animation<double> _opacity =
-      Tween<double>(begin: 0.5, end: 1.0).animate(_pulse);
+  late final Animation<double> _opacity = Tween<double>(
+    begin: 0.5,
+    end: 1.0,
+  ).animate(_pulse);
 
   @override
   void dispose() {
@@ -1428,9 +1483,10 @@ class _CountdownBadgeState extends State<_CountdownBadge>
 
   @override
   Widget build(BuildContext context) {
-    final label = widget.minutes <= 0
-        ? 'Starting now'
-        : widget.minutes == 1
+    final label =
+        widget.minutes <= 0
+            ? 'Starting now'
+            : widget.minutes == 1
             ? 'In 1 min'
             : 'In ${widget.minutes} min';
     return FadeTransition(
@@ -1568,7 +1624,9 @@ class _CheckInButtonState extends ConsumerState<_CheckInButton>
   }
 
   Future<void> _checkIn() async {
-    final checkedIn = ref.read(checkedInSparkIdsProvider).contains(widget.sparkId);
+    final checkedIn = ref
+        .read(checkedInSparkIdsProvider)
+        .contains(widget.sparkId);
     if (checkedIn) return;
     HapticFeedback.mediumImpact();
     final next = {...ref.read(checkedInSparkIdsProvider)}..add(widget.sparkId);
@@ -1586,12 +1644,14 @@ class _CheckInButtonState extends ConsumerState<_CheckInButton>
 
   @override
   Widget build(BuildContext context) {
-    final isCheckedIn =
-        ref.watch(checkedInSparkIdsProvider).contains(widget.sparkId);
+    final isCheckedIn = ref
+        .watch(checkedInSparkIdsProvider)
+        .contains(widget.sparkId);
     return ScaleTransition(
-      scale: Tween<double>(begin: 1, end: 1.04).animate(
-        CurvedAnimation(parent: _pulse, curve: Curves.easeOut),
-      ),
+      scale: Tween<double>(
+        begin: 1,
+        end: 1.04,
+      ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeOut)),
       child: GestureDetector(
         onTap: isCheckedIn ? null : _checkIn,
         child: AnimatedContainer(
@@ -1599,14 +1659,12 @@ class _CheckInButtonState extends ConsumerState<_CheckInButton>
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
-            color: isCheckedIn
-                ? const Color(0xFFECFDF5)
-                : AppColors.pillSurface,
+            color:
+                isCheckedIn ? const Color(0xFFECFDF5) : AppColors.pillSurface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isCheckedIn
-                  ? const Color(0xFF16A34A)
-                  : AppColors.chipBorder,
+              color:
+                  isCheckedIn ? const Color(0xFF16A34A) : AppColors.chipBorder,
             ),
           ),
           child: Row(
@@ -1617,9 +1675,10 @@ class _CheckInButtonState extends ConsumerState<_CheckInButton>
                     ? Icons.check_circle_rounded
                     : Icons.location_on_outlined,
                 size: 16,
-                color: isCheckedIn
-                    ? const Color(0xFF16A34A)
-                    : AppColors.textSecondary,
+                color:
+                    isCheckedIn
+                        ? const Color(0xFF16A34A)
+                        : AppColors.textSecondary,
               ),
               const SizedBox(width: 7),
               Text(
@@ -1627,9 +1686,10 @@ class _CheckInButtonState extends ConsumerState<_CheckInButton>
                 style: TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
-                  color: isCheckedIn
-                      ? const Color(0xFF16A34A)
-                      : AppColors.textSecondary,
+                  color:
+                      isCheckedIn
+                          ? const Color(0xFF16A34A)
+                          : AppColors.textSecondary,
                 ),
               ),
             ],

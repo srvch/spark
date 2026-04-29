@@ -31,6 +31,7 @@ public class AuthController {
                 auth.userId(),
                 auth.phoneNumber(),
                 auth.displayName(),
+                auth.handle(),
                 auth.ageBand(),
                 auth.gender()
         );
@@ -61,6 +62,7 @@ public class AuthController {
                 auth.userId(),
                 auth.phoneNumber(),
                 auth.displayName(),
+                auth.handle(),
                 auth.ageBand(),
                 auth.gender()
         );
@@ -75,6 +77,7 @@ public class AuthController {
                 auth.userId(),
                 auth.phoneNumber(),
                 auth.displayName(),
+                auth.handle(),
                 auth.ageBand(),
                 auth.gender()
         );
@@ -111,6 +114,7 @@ public class AuthController {
             String userId,
             String phoneNumber,
             String displayName,
+            String handle,
             String ageBand,
             String gender
     ) {

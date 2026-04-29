@@ -35,17 +35,18 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     if (!_canCreate || _isSaving) return;
     setState(() => _isSaving = true);
     try {
-      final group = await ref.read(socialControllerProvider).createGroup(
-        name: _name.text.trim(),
-        description: _description.text.trim(),
-      );
+      final group = await ref
+          .read(socialControllerProvider)
+          .createGroup(
+            name: _name.text.trim(),
+            description: _description.text.trim(),
+          );
 
       for (final friendId in _selectedFriends) {
         try {
-          await ref.read(socialControllerProvider).inviteFriendToGroup(
-            groupId: group.groupId,
-            userId: friendId,
-          );
+          await ref
+              .read(socialControllerProvider)
+              .inviteFriendToGroup(groupId: group.groupId, userId: friendId);
         } catch (_) {}
       }
       for (final phone in _phoneNumbers) {
@@ -81,10 +82,10 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   }
 
   void _toggleFriend(String id) => setState(() {
-        _selectedFriends.contains(id)
-            ? _selectedFriends.remove(id)
-            : _selectedFriends.add(id);
-      });
+    _selectedFriends.contains(id)
+        ? _selectedFriends.remove(id)
+        : _selectedFriends.add(id);
+  });
 
   void _toast(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -103,7 +104,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     final friends = ref.watch(friendsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -124,29 +125,31 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                     child: Text(
                       'New group',
                       style: TextStyle(
-                        fontSize: 34,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                        letterSpacing: -0.5,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: (_canCreate && !_isSaving) ? _create : null,
-                    child: _isSaving
-                        ? const CupertinoActivityIndicator(radius: 10)
-                        : Text(
-                            'Create',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: _canCreate
-                                  ? AppColors.accent
-                                  : const Color(0xFFC7C7CC),
-                              fontFamily: 'Manrope',
+                    child:
+                        _isSaving
+                            ? const CupertinoActivityIndicator(radius: 10)
+                            : Text(
+                              'Create',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color:
+                                    _canCreate
+                                        ? AppColors.accent
+                                        : const Color(0xFFC7C7CC),
+                                fontFamily: 'Manrope',
+                              ),
                             ),
-                          ),
                   ),
                 ],
               ),
@@ -181,16 +184,19 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                   if (friends.isNotEmpty) ...[
                     _SectionHeader(
                       'INVITE FRIENDS',
-                      trailing: _selectedFriends.isNotEmpty
-                          ? '${_selectedFriends.length} selected'
-                          : null,
+                      trailing:
+                          _selectedFriends.isNotEmpty
+                              ? '${_selectedFriends.length} selected'
+                              : null,
                     ),
                     _WhiteCard(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: List.generate(friends.length, (i) {
                           final friend = friends[i];
-                          final selected = _selectedFriends.contains(friend.userId);
+                          final selected = _selectedFriends.contains(
+                            friend.userId,
+                          );
                           final isLast = i == friends.length - 1;
                           return Column(
                             mainAxisSize: MainAxisSize.min,
@@ -201,11 +207,15 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                                   onTap: () => _toggleFriend(friend.userId),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 14, vertical: 12),
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
                                     child: Row(
                                       children: [
                                         PersonAvatar(
-                                            name: friend.displayName, radius: 18),
+                                          name: friend.displayName,
+                                          radius: 18,
+                                        ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
@@ -217,7 +227,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                                                 style: const TextStyle(
                                                   fontSize: 15.5,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF000000),
+                                                  color: AppColors.textPrimary,
                                                   fontFamily: 'Manrope',
                                                 ),
                                               ),
@@ -232,25 +242,33 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                                           ),
                                         ),
                                         AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
                                           width: 24,
                                           height: 24,
                                           decoration: BoxDecoration(
-                                            color: selected
-                                                ? AppColors.accent
-                                                : Colors.transparent,
+                                            color:
+                                                selected
+                                                    ? AppColors.accent
+                                                    : Colors.transparent,
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: selected
-                                                  ? AppColors.accent
-                                                  : const Color(0xFFC7C7CC),
+                                              color:
+                                                  selected
+                                                      ? AppColors.accent
+                                                      : const Color(0xFFC7C7CC),
                                               width: 2,
                                             ),
                                           ),
-                                          child: selected
-                                              ? const Icon(Icons.check_rounded,
-                                                  color: Colors.white, size: 14)
-                                              : null,
+                                          child:
+                                              selected
+                                                  ? const Icon(
+                                                    Icons.check_rounded,
+                                                    color: Colors.white,
+                                                    size: 14,
+                                                  )
+                                                  : null,
                                         ),
                                       ],
                                     ),
@@ -272,14 +290,18 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                   ],
 
                   // ── Invite by phone ─────────────────────────────────────
-                  _SectionHeader('INVITE BY PHONE',
-                      trailing: 'People not on Spark yet'),
+                  _SectionHeader(
+                    'INVITE BY PHONE',
+                    trailing: 'People not on Spark yet',
+                  ),
                   _WhiteCard(
                     child: Column(
                       children: [
                         Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 4,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
@@ -287,17 +309,22 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                                   controller: _phone,
                                   keyboardType: TextInputType.phone,
                                   style: const TextStyle(
-                                      fontSize: 15, color: Color(0xFF000000)),
+                                    fontSize: 15,
+                                    color: Color(0xFF000000),
+                                  ),
                                   decoration: const InputDecoration(
                                     hintText: '+91 98765 43210',
                                     hintStyle: TextStyle(
-                                        color: Color(0xFF8E8E93), fontSize: 15),
+                                      color: Color(0xFF8E8E93),
+                                      fontSize: 15,
+                                    ),
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
                                     isDense: true,
-                                    contentPadding:
-                                        EdgeInsets.symmetric(vertical: 10),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
                                     filled: false,
                                   ),
                                   onSubmitted: (_) => _addPhone(),
@@ -312,8 +339,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                                     color: AppColors.accent,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(CupertinoIcons.add,
-                                      size: 16, color: Colors.white),
+                                  child: const Icon(
+                                    CupertinoIcons.add,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ],
@@ -321,20 +351,28 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         ),
                         if (_phoneNumbers.isNotEmpty) ...[
                           const Divider(
-                              height: 1, thickness: 0.5, color: Color(0xFFE5E5EA)),
+                            height: 1,
+                            thickness: 0.5,
+                            color: Color(0xFFE5E5EA),
+                          ),
                           Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                             child: Wrap(
                               spacing: 6,
                               runSpacing: 6,
-                              children: _phoneNumbers
-                                  .map((phone) => _PhoneChip(
-                                        label: phone,
-                                        onRemove: () => setState(
-                                            () => _phoneNumbers.remove(phone)),
-                                      ))
-                                  .toList(),
+                              children:
+                                  _phoneNumbers
+                                      .map(
+                                        (phone) => _PhoneChip(
+                                          label: phone,
+                                          onRemove:
+                                              () => setState(
+                                                () =>
+                                                    _phoneNumbers.remove(phone),
+                                              ),
+                                        ),
+                                      )
+                                      .toList(),
                             ),
                           ),
                         ],
@@ -351,22 +389,28 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                       duration: const Duration(milliseconds: 150),
                       height: 52,
                       decoration: BoxDecoration(
-                        color: _canCreate ? AppColors.accent : const Color(0xFFC7C7CC),
+                        color:
+                            _canCreate
+                                ? AppColors.accent
+                                : const Color(0xFFC7C7CC),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Center(
-                        child: _isSaving
-                            ? const CupertinoActivityIndicator(
-                                color: Colors.white, radius: 10)
-                            : const Text(
-                                'Create group',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                        child:
+                            _isSaving
+                                ? const CupertinoActivityIndicator(
                                   color: Colors.white,
-                                  fontFamily: 'Manrope',
+                                  radius: 10,
+                                )
+                                : const Text(
+                                  'Create group',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                    fontFamily: 'Manrope',
+                                  ),
                                 ),
-                              ),
                       ),
                     ),
                   ),
@@ -429,10 +473,7 @@ class _WhiteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
-      child: Container(
-        color: Colors.white,
-        child: child,
-      ),
+      child: Container(color: Colors.white, child: child),
     );
   }
 }
@@ -464,7 +505,7 @@ class _InsetField extends StatelessWidget {
         onChanged: onChanged,
         style: const TextStyle(
           fontSize: 16,
-          color: Color(0xFF000000),
+          color: AppColors.textPrimary,
           fontFamily: 'Manrope',
           fontWeight: FontWeight.w400,
         ),
@@ -511,7 +552,7 @@ class _PhoneChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F7),
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(99),
       ),
       child: Row(
@@ -522,7 +563,7 @@ class _PhoneChip extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: Color(0xFF000000),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(width: 4),

@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/auth/auth_state.dart';
+import '../../features/auth/presentation/screens/mandatory_profile_screen.dart';
 import '../../features/chat/presentation/screens/chat_inbox_screen.dart';
-import '../../features/social/presentation/controllers/social_controller.dart';
-import '../../features/social/presentation/screens/social_screen.dart';
 import '../../features/spark/domain/spark_invite.dart';
 import '../../features/spark/presentation/controllers/spark_controller.dart';
 import '../../features/spark/presentation/screens/create_spark_screen.dart';
@@ -30,9 +29,19 @@ class RootShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(authSessionProvider);
+    final shouldBlockForProfile =
+        session != null &&
+        !session.isGuestShowcase &&
+        !session.hasCompletedMandatoryProfile;
+    if (shouldBlockForProfile) {
+      return const MandatoryProfileScreen();
+    }
+
     final tab = ref.watch(bottomTabProvider);
+    final activeTab = tab > 2 ? 2 : tab;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.darkBackground : Colors.white;
+    final navBackground = isDark ? const Color(0xFF151B2F) : Colors.white;
 
     // Handle deep links — navigate to spark detail when a link arrives
     ref.listen<String?>(pendingDeepLinkSparkIdProvider, (_, sparkId) {
@@ -51,9 +60,7 @@ class RootShell extends ConsumerWidget {
         final spark = sparks.where((s) => s.id == sparkId).firstOrNull;
         if (spark != null && context.mounted) {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SparkDetailScreen(spark: spark),
-            ),
+            MaterialPageRoute(builder: (_) => SparkDetailScreen(spark: spark)),
           );
         }
       });
@@ -63,81 +70,69 @@ class RootShell extends ConsumerWidget {
     final createdCount = ref.watch(myCreatedSparksProvider).length;
     final chatCount = joinedCount + createdCount;
     final seenCount = ref.watch(seenChatCountProvider);
-    final pendingInvitesCount = ref
-        .watch(sparkInvitesProvider)
-        .where((invite) => invite.status == SparkInviteStatus.pending)
-        .length;
+    final pendingInvitesCount =
+        ref
+            .watch(sparkInvitesProvider)
+            .where((invite) => invite.status == SparkInviteStatus.pending)
+            .length;
     final hasUnreadChat = chatCount > seenCount || pendingInvitesCount > 0;
-    final incomingFriendCount = ref
-        .watch(incomingFriendRequestsProvider)
-        .length;
-    final incomingGroupInviteCount = ref
-        .watch(incomingGroupInvitesProvider)
-        .length;
-    final hasUnreadPeople = incomingFriendCount + incomingGroupInviteCount > 0;
-
     final screens = const [
       DiscoverScreen(),
       CreateSparkScreen(),
       ChatInboxScreen(),
-      SocialScreen(),
     ];
 
     return Scaffold(
-      extendBody: true,
-      body: screens[tab],
-      bottomNavigationBar: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            decoration: BoxDecoration(
-              color: bg.withValues(alpha: isDark ? 0.78 : 0.88),
-              border: Border(
-                top: BorderSide(
-                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
-                  width: 0.5,
-                ),
+      extendBody: false,
+      body: screens[activeTab],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: navBackground,
+          border: Border(
+            top: BorderSide(
+              color: (isDark ? Colors.white : Colors.black).withValues(
+                alpha: 0.08,
               ),
+              width: 0.5,
             ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 72,
-                child: Row(
-                  children: [
-                    _NavItem(
-                      label: 'Explore',
-                      icon: CupertinoIcons.compass,
-                      activeIcon: CupertinoIcons.compass_fill,
-                      selected: tab == 0,
-                      onTap: () => ref.read(bottomTabProvider.notifier).state = 0,
-                    ),
-                    _CreateNavItem(
-                      selected: tab == 1,
-                      onTap: () => ref.read(bottomTabProvider.notifier).state = 1,
-                    ),
-                    _NavItem(
-                      label: 'Chat',
-                      icon: CupertinoIcons.bubble_left,
-                      activeIcon: CupertinoIcons.bubble_left_fill,
-                      selected: tab == 2,
-                      showBadge: hasUnreadChat && tab != 2,
-                      onTap: () {
-                        ref.read(bottomTabProvider.notifier).state = 2;
-                        ref.read(seenChatCountProvider.notifier).state = chatCount;
-                      },
-                    ),
-                    _NavItem(
-                      label: 'People',
-                      icon: CupertinoIcons.person_2,
-                      activeIcon: CupertinoIcons.person_2_fill,
-                      selected: tab == 3,
-                      showBadge: hasUnreadPeople && tab != 3,
-                      onTap: () => ref.read(bottomTabProvider.notifier).state = 3,
-                    ),
-                  ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 72,
+            child: Row(
+              children: [
+                _NavItem(
+                  label: 'Explore',
+                  icon: CupertinoIcons.compass,
+                  activeIcon: CupertinoIcons.compass_fill,
+                  selected: activeTab == 0,
+                  onTap: () => ref.read(bottomTabProvider.notifier).state = 0,
                 ),
-              ),
+                _CreateNavItem(
+                  selected: activeTab == 1,
+                  onTap: () => ref.read(bottomTabProvider.notifier).state = 1,
+                ),
+                _NavItem(
+                  label: 'Chat',
+                  icon: CupertinoIcons.bubble_left,
+                  activeIcon: CupertinoIcons.bubble_left_fill,
+                  selected: activeTab == 2,
+                  showBadge: hasUnreadChat && activeTab != 2,
+                  onTap: () {
+                    ref.read(bottomTabProvider.notifier).state = 2;
+                    ref.read(seenChatCountProvider.notifier).state = chatCount;
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -174,13 +169,19 @@ class _CreateNavItem extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: selected
-                      ? [AppColors.accent, AppColors.accentLight]
-                      : [AppColors.accent.withValues(alpha: 0.1), AppColors.accent.withValues(alpha: 0.05)],
+                  colors:
+                      selected
+                          ? [AppColors.accent, AppColors.accentLight]
+                          : [
+                            AppColors.accent.withValues(alpha: 0.1),
+                            AppColors.accent.withValues(alpha: 0.05),
+                          ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.accent.withValues(alpha: selected ? 0.3 : 0),
+                    color: AppColors.accent.withValues(
+                      alpha: selected ? 0.3 : 0,
+                    ),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -233,9 +234,8 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const activeColor = AppColors.accent;
-    final inactiveColor = isDark
-        ? AppColors.darkTextSecondary
-        : AppColors.darkTextSecondary;
+    final inactiveColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.darkTextSecondary;
 
     return Expanded(
       child: GestureDetector(
@@ -249,11 +249,12 @@ class _NavItem extends StatelessWidget {
               curve: Curves.easeOutCubic,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
-                color: selected
-                    ? (isDark
-                          ? AppColors.darkAccent.withValues(alpha: 0.15)
-                          : AppColors.accent.withValues(alpha: 0.08))
-                    : Colors.transparent,
+                color:
+                    selected
+                        ? (isDark
+                            ? AppColors.darkAccent.withValues(alpha: 0.15)
+                            : AppColors.accent.withValues(alpha: 0.08))
+                        : Colors.transparent,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Stack(

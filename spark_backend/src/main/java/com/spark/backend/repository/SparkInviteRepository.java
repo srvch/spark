@@ -27,4 +27,9 @@ public interface SparkInviteRepository extends JpaRepository<SparkInviteEntity, 
     @Modifying
     @Query("delete from SparkInviteEntity i where i.toUserId = :userId or i.fromUserId = :userId")
     void deleteByUser(@Param("userId") String userId);
+
+    @Transactional
+    @Modifying
+    @Query("delete from SparkInviteEntity i where i.sparkId = :sparkId")
+    void deleteBySparkId(@Param("sparkId") UUID sparkId);
 }

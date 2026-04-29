@@ -93,6 +93,7 @@ public class PhoneAuthService {
                     user.getId().toString(),
                     user.getPhoneNumber(),
                     user.getDisplayName(),
+                    user.getHandle(),
                     user.getAgeBand(),
                     user.getGender()
             );
@@ -151,6 +152,7 @@ public class PhoneAuthService {
                 user.getId().toString(),
                 user.getPhoneNumber(),
                 user.getDisplayName(),
+                user.getHandle(),
                 user.getAgeBand(),
                 user.getGender()
         );
@@ -198,6 +200,7 @@ public class PhoneAuthService {
             String userId,
             String phoneNumber,
             String displayName,
+            String handle,
             String ageBand,
             String gender
     ) {
@@ -222,6 +225,7 @@ public class PhoneAuthService {
                 user.getId().toString(),
                 user.getPhoneNumber(),
                 user.getDisplayName(),
+                user.getHandle(),
                 user.getAgeBand(),
                 user.getGender()
         );

@@ -38,8 +38,9 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   Future<GroupDetail> _load() =>
       ref.read(socialApiRepositoryProvider).fetchGroupDetail(widget.groupId);
 
-  Future<List<OutgoingGroupInvite>> _loadPendingInvites() =>
-      ref.read(socialApiRepositoryProvider).fetchPendingGroupInvites(widget.groupId);
+  Future<List<OutgoingGroupInvite>> _loadPendingInvites() => ref
+      .read(socialApiRepositoryProvider)
+      .fetchPendingGroupInvites(widget.groupId);
 
   Future<void> _refresh() async {
     setState(() {
@@ -54,8 +55,9 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     HapticFeedback.lightImpact();
     setState(() => _nudging.add(member.userId));
     try {
-      await ref.read(socialControllerProvider).nudgePendingMember(
-            groupId: widget.groupId, userId: member.userId);
+      await ref
+          .read(socialControllerProvider)
+          .nudgePendingMember(groupId: widget.groupId, userId: member.userId);
       if (!mounted) return;
       _toast('Nudge sent to ${member.displayName}');
     } catch (_) {
@@ -70,37 +72,43 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     HapticFeedback.mediumImpact();
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: Text(member.displayName),
-        message: const Text('Remove this person from the group?'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              if (_removing.contains(member.userId)) return;
-              setState(() => _removing.add(member.userId));
-              try {
-                await ref.read(socialControllerProvider).removeMemberFromGroup(
-                      groupId: widget.groupId, userId: member.userId);
-                if (!mounted) return;
-                _toast('${member.displayName} removed');
-                await _refresh();
-              } catch (_) {
-                if (!mounted) return;
-                _toast('Could not remove', error: true);
-              } finally {
-                if (mounted) setState(() => _removing.remove(member.userId));
-              }
-            },
-            child: const Text('Remove from group'),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: Text(member.displayName),
+            message: const Text('Remove this person from the group?'),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  if (_removing.contains(member.userId)) return;
+                  setState(() => _removing.add(member.userId));
+                  try {
+                    await ref
+                        .read(socialControllerProvider)
+                        .removeMemberFromGroup(
+                          groupId: widget.groupId,
+                          userId: member.userId,
+                        );
+                    if (!mounted) return;
+                    _toast('${member.displayName} removed');
+                    await _refresh();
+                  } catch (_) {
+                    if (!mounted) return;
+                    _toast('Could not remove', error: true);
+                  } finally {
+                    if (mounted)
+                      setState(() => _removing.remove(member.userId));
+                  }
+                },
+                child: const Text('Remove from group'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Cancel'),
-        ),
-      ),
     );
   }
 
@@ -108,66 +116,80 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     HapticFeedback.lightImpact();
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: Text(member.displayName),
-        actions: [
-          if (group.isOwner && member.canBePromoted)
-            CupertinoActionSheetAction(
-              onPressed: () async {
-                Navigator.of(ctx).pop();
-                try {
-                  await ref.read(socialControllerProvider).promoteToAdmin(
-                        groupId: widget.groupId, userId: member.userId);
-                  _toast('${member.displayName} is now an admin');
-                  HapticFeedback.mediumImpact();
-                  await _refresh();
-                } catch (_) {
-                  _toast('Could not promote', error: true);
-                }
-              },
-              child: const Text('Make admin'),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: Text(member.displayName),
+            actions: [
+              if (group.isOwner && member.canBePromoted)
+                CupertinoActionSheetAction(
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    try {
+                      await ref
+                          .read(socialControllerProvider)
+                          .promoteToAdmin(
+                            groupId: widget.groupId,
+                            userId: member.userId,
+                          );
+                      _toast('${member.displayName} is now an admin');
+                      HapticFeedback.mediumImpact();
+                      await _refresh();
+                    } catch (_) {
+                      _toast('Could not promote', error: true);
+                    }
+                  },
+                  child: const Text('Make admin'),
+                ),
+              if (group.isOwner && member.canBeDemoted)
+                CupertinoActionSheetAction(
+                  onPressed: () async {
+                    Navigator.of(ctx).pop();
+                    try {
+                      await ref
+                          .read(socialControllerProvider)
+                          .demoteToMember(
+                            groupId: widget.groupId,
+                            userId: member.userId,
+                          );
+                      _toast('${member.displayName} is now a member');
+                      await _refresh();
+                    } catch (_) {
+                      _toast('Could not demote', error: true);
+                    }
+                  },
+                  child: const Text('Remove admin role'),
+                ),
+              if (group.canEdit && !member.isOwner)
+                CupertinoActionSheetAction(
+                  isDestructiveAction: true,
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    _removeMember(group, member);
+                  },
+                  child: const Text('Remove from group'),
+                ),
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  await _reportMember(member);
+                },
+                child: const Text('Report'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
             ),
-          if (group.isOwner && member.canBeDemoted)
-            CupertinoActionSheetAction(
-              onPressed: () async {
-                Navigator.of(ctx).pop();
-                try {
-                  await ref.read(socialControllerProvider).demoteToMember(
-                        groupId: widget.groupId, userId: member.userId);
-                  _toast('${member.displayName} is now a member');
-                  await _refresh();
-                } catch (_) {
-                  _toast('Could not demote', error: true);
-                }
-              },
-              child: const Text('Remove admin role'),
-            ),
-          if (group.canEdit && !member.isOwner)
-            CupertinoActionSheetAction(
-              isDestructiveAction: true,
-              onPressed: () { Navigator.of(ctx).pop(); _removeMember(group, member); },
-              child: const Text('Remove from group'),
-            ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              await _reportMember(member);
-            },
-            child: const Text('Report'),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Cancel'),
-        ),
-      ),
     );
   }
 
   Future<void> _reportMember(GroupMember member) async {
     try {
-      await ref.read(socialControllerProvider).reportUser(userId: member.userId);
+      await ref
+          .read(socialControllerProvider)
+          .reportUser(userId: member.userId);
       _toast('Report submitted');
     } catch (_) {
       _toast('Could not submit report', error: true);
@@ -182,36 +204,40 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => _EditGroupSheet(
-          nameController: nameCtrl,
-          descController: descCtrl,
-          saving: _saving,
-          onSave: () async {
-            final name = nameCtrl.text.trim();
-            if (name.isEmpty) return;
-            setModal(() => _saving = true);
-            try {
-              await ref.read(socialControllerProvider).updateGroup(
-                    groupId: widget.groupId,
-                    name: name,
-                    description: descCtrl.text.trim(),
-                  );
-              if (!mounted) return;
-              Navigator.of(ctx).pop();
-              _toast('Group updated');
-              HapticFeedback.mediumImpact();
-              await _refresh();
-            } catch (_) {
-              if (!mounted) return;
-              _toast('Could not update group', error: true);
-            } finally {
-              if (mounted) setModal(() => _saving = false);
-            }
-          },
-          onCancel: () => Navigator.of(ctx).pop(),
-        ),
-      ),
+      builder:
+          (ctx) => StatefulBuilder(
+            builder:
+                (ctx, setModal) => _EditGroupSheet(
+                  nameController: nameCtrl,
+                  descController: descCtrl,
+                  saving: _saving,
+                  onSave: () async {
+                    final name = nameCtrl.text.trim();
+                    if (name.isEmpty) return;
+                    setModal(() => _saving = true);
+                    try {
+                      await ref
+                          .read(socialControllerProvider)
+                          .updateGroup(
+                            groupId: widget.groupId,
+                            name: name,
+                            description: descCtrl.text.trim(),
+                          );
+                      if (!mounted) return;
+                      Navigator.of(ctx).pop();
+                      _toast('Group updated');
+                      HapticFeedback.mediumImpact();
+                      await _refresh();
+                    } catch (_) {
+                      if (!mounted) return;
+                      _toast('Could not update group', error: true);
+                    } finally {
+                      if (mounted) setModal(() => _saving = false);
+                    }
+                  },
+                  onCancel: () => Navigator.of(ctx).pop(),
+                ),
+          ),
     );
   }
 
@@ -219,26 +245,31 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     HapticFeedback.mediumImpact();
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: const Text('Leave Group'),
-        message: const Text('You will no longer be a member of this group.'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Leave group'),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: const Text('Leave Group'),
+            message: const Text(
+              'You will no longer be a member of this group.',
+            ),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Leave group'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancel'),
-        ),
-      ),
     );
     if (confirmed != true || !mounted) return;
     setState(() => _leavingOrArchiving = true);
     try {
-      await ref.read(socialControllerProvider).leaveGroup(groupId: widget.groupId);
+      await ref
+          .read(socialControllerProvider)
+          .leaveGroup(groupId: widget.groupId);
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
@@ -253,26 +284,31 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     HapticFeedback.mediumImpact();
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: const Text('Archive Group'),
-        message: const Text('The group will be hidden from your list. Members won\'t be notified.'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Archive group'),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: const Text('Archive Group'),
+            message: const Text(
+              'The group will be hidden from your list. Members won\'t be notified.',
+            ),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Archive group'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancel'),
-        ),
-      ),
     );
     if (confirmed != true || !mounted) return;
     setState(() => _leavingOrArchiving = true);
     try {
-      await ref.read(socialControllerProvider).archiveGroup(groupId: widget.groupId);
+      await ref
+          .read(socialControllerProvider)
+          .archiveGroup(groupId: widget.groupId);
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (e) {
@@ -284,13 +320,15 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
   }
 
   void _toast(String msg, {bool error = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: error ? AppColors.errorText : AppColors.accent,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? AppColors.errorText : AppColors.accent,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -303,7 +341,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         }
         if (snap.hasError || !snap.hasData) {
           return Scaffold(
-            backgroundColor: const Color(0xFFF2F2F7),
+            backgroundColor: AppColors.background,
             body: SafeArea(
               child: Column(
                 children: [
@@ -316,7 +354,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         }
         final group = snap.data!;
         return Scaffold(
-          backgroundColor: const Color(0xFFF2F2F7),
+          backgroundColor: AppColors.background,
           body: SafeArea(
             child: Column(
               children: [
@@ -340,15 +378,21 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                               leavingOrArchiving: _leavingOrArchiving,
                               onCreateSpark: () {
                                 HapticFeedback.lightImpact();
-                                ref.read(sparkCreationContextProvider.notifier).state = widget.groupId;
+                                ref
+                                    .read(sparkCreationContextProvider.notifier)
+                                    .state = widget.groupId;
                                 ref.read(bottomTabProvider.notifier).state = 1;
                                 Navigator.of(context).pop();
                               },
-                              onInvite: () => showInviteToGroupSheet(
-                                context,
-                                groupId: widget.groupId,
-                                existingMemberIds: group.members.map((m) => m.userId).toList(),
-                              ).then((_) => _refresh()),
+                              onInvite:
+                                  () => showInviteToGroupSheet(
+                                    context,
+                                    groupId: widget.groupId,
+                                    existingMemberIds:
+                                        group.members
+                                            .map((m) => m.userId)
+                                            .toList(),
+                                  ).then((_) => _refresh()),
                               onLeave: group.isOwner ? null : _leaveGroup,
                               onArchive: group.isOwner ? _archiveGroup : null,
                             ),
@@ -375,7 +419,9 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                               borderRadius: BorderRadius.circular(14),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
-                                children: List.generate(group.members.length, (i) {
+                                children: List.generate(group.members.length, (
+                                  i,
+                                ) {
                                   final m = group.members[i];
                                   return _MemberRow(
                                     member: m,
@@ -385,21 +431,27 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                     canManage: group.canEdit && !m.isOwner,
                                     isNudging: _nudging.contains(m.userId),
                                     isRemoving: _removing.contains(m.userId),
-                                    onNudge: group.canEdit && !m.isOwner ? () => _nudge(m) : null,
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => FriendProfileScreen(
-                                          friend: FriendUser(
-                                            userId: m.userId,
-                                            displayName: m.displayName,
-                                            phoneNumber: m.phoneNumber,
+                                    onNudge:
+                                        group.canEdit && !m.isOwner
+                                            ? () => _nudge(m)
+                                            : null,
+                                    onTap:
+                                        () => Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => FriendProfileScreen(
+                                                  friend: FriendUser(
+                                                    userId: m.userId,
+                                                    displayName: m.displayName,
+                                                    phoneNumber: m.phoneNumber,
+                                                  ),
+                                                ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                    onManage: group.canEdit && !m.isOwner
-                                        ? () => _memberActions(group, m)
-                                        : null,
+                                    onManage:
+                                        group.canEdit && !m.isOwner
+                                            ? () => _memberActions(group, m)
+                                            : null,
                                   );
                                 }),
                               ),
@@ -420,7 +472,11 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, {required String title, GroupDetail? group}) {
+  Widget _buildHeader(
+    BuildContext context, {
+    required String title,
+    GroupDetail? group,
+  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
       child: Row(
@@ -438,10 +494,10 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             child: Text(
               title,
               style: const TextStyle(
-                fontSize: 34,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: Colors.black,
-                letterSpacing: -0.5,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.7,
                 fontFamily: 'Manrope',
               ),
               overflow: TextOverflow.ellipsis,
@@ -450,7 +506,11 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           if (group != null && group.canEdit)
             IconButton(
               onPressed: () => _editGroup(group),
-              icon: const Icon(CupertinoIcons.pencil_circle, color: AppColors.accent, size: 24),
+              icon: const Icon(
+                CupertinoIcons.pencil_circle,
+                color: AppColors.accent,
+                size: 24,
+              ),
             ),
         ],
       ),
@@ -501,45 +561,68 @@ class _PendingInvitesSection extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 11,
+                            ),
                             child: Row(
                               children: [
                                 PersonAvatar(name: inv.inviteeName, radius: 18),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(inv.inviteeName,
-                                          style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF000000),
-                                              fontFamily: 'Manrope')),
-                                      Text(inv.inviteePhone,
-                                          style: const TextStyle(
-                                              fontSize: 12.5,
-                                              color: Color(0xFF8E8E93))),
+                                      Text(
+                                        inv.inviteeName,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
+                                          fontFamily: 'Manrope',
+                                        ),
+                                      ),
+                                      Text(
+                                        inv.inviteePhone,
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          color: Color(0xFF8E8E93),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFF9500).withValues(alpha: 0.1),
+                                    color: const Color(
+                                      0xFFFF9500,
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(99),
                                   ),
-                                  child: const Text('Pending',
-                                      style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: Color(0xFFFF9500),
-                                          fontWeight: FontWeight.w600)),
+                                  child: const Text(
+                                    'Pending',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: Color(0xFFFF9500),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           if (i < items.length - 1)
-                            const Divider(height: 1, thickness: 0.5, indent: 58, color: Color(0xFFE5E5EA)),
+                            const Divider(
+                              height: 1,
+                              thickness: 0.5,
+                              indent: 58,
+                              color: Color(0xFFE5E5EA),
+                            ),
                         ],
                       );
                     }),
@@ -554,7 +637,6 @@ class _PendingInvitesSection extends StatelessWidget {
   }
 }
 
-
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 class _SkeletonDetail extends StatefulWidget {
@@ -564,18 +646,22 @@ class _SkeletonDetail extends StatefulWidget {
   State<_SkeletonDetail> createState() => _SkeletonDetailState();
 }
 
-class _SkeletonDetailState extends State<_SkeletonDetail> with SingleTickerProviderStateMixin {
+class _SkeletonDetailState extends State<_SkeletonDetail>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))
-      ..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -588,50 +674,59 @@ class _SkeletonDetailState extends State<_SkeletonDetail> with SingleTickerProvi
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (context, _) => Opacity(
-        opacity: _anim.value,
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF2F2F7),
-          appBar: AppBar(backgroundColor: const Color(0xFFF2F2F7), elevation: 0),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Container(
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E5EA),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE5E5EA),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                for (int i = 0; i < 3; i++) ...[
-                  Container(
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE5E5EA),
-                      borderRadius: i == 0
-                          ? const BorderRadius.vertical(top: Radius.circular(14))
-                          : i == 2
-                              ? const BorderRadius.vertical(bottom: Radius.circular(14))
-                              : BorderRadius.zero,
+      builder:
+          (context, _) => Opacity(
+            opacity: _anim.value,
+            child: Scaffold(
+              backgroundColor: AppColors.background,
+              appBar: AppBar(
+                backgroundColor: AppColors.background,
+                elevation: 0,
+              ),
+              body: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5E5EA),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                  ),
-                  if (i < 2) const SizedBox(height: 1),
-                ],
-              ],
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE5E5EA),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    for (int i = 0; i < 3; i++) ...[
+                      Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE5E5EA),
+                          borderRadius:
+                              i == 0
+                                  ? const BorderRadius.vertical(
+                                    top: Radius.circular(14),
+                                  )
+                                  : i == 2
+                                  ? const BorderRadius.vertical(
+                                    bottom: Radius.circular(14),
+                                  )
+                                  : BorderRadius.zero,
+                        ),
+                      ),
+                      if (i < 2) const SizedBox(height: 1),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 }
@@ -656,11 +751,12 @@ class _EditGroupSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(
-        left: 8, right: 8,
+        left: 8,
+        right: 8,
         bottom: MediaQuery.of(context).viewInsets.bottom + 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F7),
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Padding(
@@ -671,7 +767,8 @@ class _EditGroupSheet extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 18),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD1D1D6),
@@ -679,14 +776,16 @@ class _EditGroupSheet extends StatelessWidget {
                 ),
               ),
             ),
-            const Text('Edit Group',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF000000),
-                  letterSpacing: -0.3,
-                  fontFamily: 'Manrope',
-                )),
+            const Text(
+              'Edit Group',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.3,
+                fontFamily: 'Manrope',
+              ),
+            ),
             const SizedBox(height: 18),
             Container(
               decoration: BoxDecoration(
@@ -700,25 +799,55 @@ class _EditGroupSheet extends StatelessWidget {
                     decoration: const InputDecoration(
                       hintText: 'Group name',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                     ),
-                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w500, fontFamily: 'Manrope'),
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Manrope',
+                    ),
                     maxLength: 140,
-                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    buildCounter:
+                        (
+                          _, {
+                          required currentLength,
+                          required isFocused,
+                          maxLength,
+                        }) => null,
                   ),
-                  const Divider(height: 1, thickness: 0.5, indent: 14, color: Color(0xFFE5E5EA)),
+                  const Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    indent: 14,
+                    color: Color(0xFFE5E5EA),
+                  ),
                   TextField(
                     controller: descController,
                     decoration: const InputDecoration(
                       hintText: 'Description (optional)',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                     ),
-                    style: const TextStyle(fontSize: 15, color: Color(0xFF3C3C43)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF3C3C43),
+                    ),
                     maxLength: 280,
                     maxLines: 3,
                     minLines: 1,
-                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    buildCounter:
+                        (
+                          _, {
+                          required currentLength,
+                          required isFocused,
+                          maxLength,
+                        }) => null,
                   ),
                 ],
               ),
@@ -736,15 +865,20 @@ class _EditGroupSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(13),
                   ),
                   alignment: Alignment.center,
-                  child: saving
-                      ? const CupertinoActivityIndicator(color: Colors.white)
-                      : const Text('Save changes',
-                          style: TextStyle(
+                  child:
+                      saving
+                          ? const CupertinoActivityIndicator(
                             color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Manrope',
-                          )),
+                          )
+                          : const Text(
+                            'Save changes',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Manrope',
+                            ),
+                          ),
                 ),
               ),
             ),
@@ -753,8 +887,10 @@ class _EditGroupSheet extends StatelessWidget {
               width: double.infinity,
               child: CupertinoButton(
                 onPressed: onCancel,
-                child: const Text('Cancel',
-                    style: TextStyle(color: Color(0xFF8E8E93), fontSize: 15)),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Color(0xFF8E8E93), fontSize: 15),
+                ),
               ),
             ),
           ],
@@ -774,7 +910,10 @@ class _GroupHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -784,27 +923,39 @@ class _GroupHeaderCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(group.name,
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF000000),
-                        fontFamily: 'Manrope')),
+                Text(
+                  group.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    fontFamily: 'Manrope',
+                  ),
+                ),
                 if (group.description.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(group.description,
-                      style: const TextStyle(
-                          fontSize: 13.5, color: Color(0xFF8E8E93), height: 1.3)),
+                  Text(
+                    group.description,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: Color(0xFF8E8E93),
+                      height: 1.3,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _Pill(icon: CupertinoIcons.person_2_fill, label: '${group.members.length}'),
+                    _Pill(
+                      icon: CupertinoIcons.person_2_fill,
+                      label: '${group.members.length}',
+                    ),
                     const SizedBox(width: 6),
                     _Pill(
-                      icon: group.isOwner
-                          ? CupertinoIcons.star_fill
-                          : group.isAdmin
+                      icon:
+                          group.isOwner
+                              ? CupertinoIcons.star_fill
+                              : group.isAdmin
                               ? CupertinoIcons.shield_fill
                               : CupertinoIcons.person_fill,
                       label: group.myRole,
@@ -841,9 +992,14 @@ class _Pill extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: color),
           const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11.5, fontWeight: FontWeight.w600, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -905,7 +1061,8 @@ class _ActionRow extends StatelessWidget {
                     destructive: true,
                   ),
                 ),
-              if (onLeave != null && onArchive != null) const SizedBox(width: 10),
+              if (onLeave != null && onArchive != null)
+                const SizedBox(width: 10),
               if (onArchive != null)
                 Expanded(
                   child: _ActionButton(
@@ -939,9 +1096,10 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fgColor = primary
-        ? Colors.white
-        : destructive
+    final fgColor =
+        primary
+            ? Colors.white
+            : destructive
             ? const Color(0xFFFF3B30)
             : const Color(0xFF000000);
     return GestureDetector(
@@ -957,12 +1115,15 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, size: 15, color: fgColor),
             const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: fgColor,
-                    fontFamily: 'Manrope')),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: fgColor,
+                fontFamily: 'Manrope',
+              ),
+            ),
           ],
         ),
       ),
@@ -1015,21 +1176,37 @@ class _MemberRow extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(member.displayName,
-                            style: const TextStyle(
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF000000),
-                                fontFamily: 'Manrope')),
-                        Text(member.phoneNumber,
-                            style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93))),
+                        Text(
+                          member.displayName,
+                          style: const TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                            fontFamily: 'Manrope',
+                          ),
+                        ),
+                        Text(
+                          member.phoneNumber,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF8E8E93),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   if (member.isOwner)
-                    _Pill(icon: CupertinoIcons.star_fill, label: 'Owner', accent: true)
+                    _Pill(
+                      icon: CupertinoIcons.star_fill,
+                      label: 'Owner',
+                      accent: true,
+                    )
                   else if (member.isAdmin)
-                    _Pill(icon: CupertinoIcons.shield_fill, label: 'Admin', accent: true)
+                    _Pill(
+                      icon: CupertinoIcons.shield_fill,
+                      label: 'Admin',
+                      accent: true,
+                    )
                   else if (canManage) ...[
                     if (isNudging || isRemoving)
                       const CupertinoActivityIndicator(radius: 9)
@@ -1044,18 +1221,30 @@ class _MemberRow extends StatelessWidget {
                               onTap: onNudge!,
                             ),
                           const SizedBox(width: 4),
-                          const Icon(CupertinoIcons.chevron_right,
-                              size: 14, color: Color(0xFFC7C7CC)),
+                          const Icon(
+                            CupertinoIcons.chevron_right,
+                            size: 14,
+                            color: Color(0xFFC7C7CC),
+                          ),
                         ],
                       ),
                   ] else
-                    const Icon(CupertinoIcons.chevron_right,
-                        size: 14, color: Color(0xFFC7C7CC)),
+                    const Icon(
+                      CupertinoIcons.chevron_right,
+                      size: 14,
+                      color: Color(0xFFC7C7CC),
+                    ),
                 ],
               ),
             ),
             if (showSeparator)
-              const Divider(height: 1, thickness: 0.5, indent: 58, endIndent: 0, color: Color(0xFFE5E5EA)),
+              const Divider(
+                height: 1,
+                thickness: 0.5,
+                indent: 58,
+                endIndent: 0,
+                color: Color(0xFFE5E5EA),
+              ),
           ],
         ),
       ),
@@ -1064,7 +1253,11 @@ class _MemberRow extends StatelessWidget {
 }
 
 class _IconAction extends StatelessWidget {
-  const _IconAction({required this.icon, required this.color, required this.onTap});
+  const _IconAction({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
@@ -1076,7 +1269,10 @@ class _IconAction extends StatelessWidget {
       child: Container(
         width: 32,
         height: 32,
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
         child: Icon(icon, size: 15, color: color),
       ),
     );
@@ -1092,10 +1288,19 @@ class _ErrorView extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(CupertinoIcons.exclamationmark_circle, size: 36, color: Color(0xFF8E8E93)),
+        const Icon(
+          CupertinoIcons.exclamationmark_circle,
+          size: 36,
+          color: Color(0xFF8E8E93),
+        ),
         const SizedBox(height: 12),
-        const Text('Could not load group',
-            style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF000000))),
+        const Text(
+          'Could not load group',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF000000),
+          ),
+        ),
         const SizedBox(height: 16),
         CupertinoButton(onPressed: onRetry, child: const Text('Try again')),
       ],

@@ -13,6 +13,7 @@ import 'spark_detail_screen.dart';
 const _kNavy = AppColors.accent;
 const _kNavyLight = AppColors.accentSurface;
 const _kSurface = AppColors.surfaceSubtle;
+const _kScreenTitleSize = 24.0;
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -25,6 +26,87 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     with SingleTickerProviderStateMixin {
   int _tabIndex = 0;
 
+  Future<bool> _confirmCancelSpark(BuildContext context, Spark spark) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (ctx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Cancel Spark?',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This will remove "${spark.title}" for all participants.',
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            side: const BorderSide(color: AppColors.border),
+                            foregroundColor: AppColors.textPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Keep',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            backgroundColor: AppColors.accent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancel Spark',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+    return result == true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final joined = ref.watch(joinedSparksProvider);
@@ -32,7 +114,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
     final items = _tabIndex == 0 ? joined : created;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.palette.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,10 +136,10 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
                     child: Text(
                       'My Activity',
                       style: TextStyle(
-                        fontSize: 34,
+                        fontSize: _kScreenTitleSize,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                        letterSpacing: -0.5,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -83,94 +165,77 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen>
             Container(height: 4, color: AppColors.pillSurface),
             // ── List or empty ──────────────────────────────────────
             Expanded(
-              child: items.isEmpty
-                  ? _EmptyState(
-                      tab: _tabIndex == 0 ? 'joined' : 'created',
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final spark = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _ActivityCard(
-                            spark: spark,
-                            createdMode: _tabIndex == 1,
-                            onView: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => SparkDetailScreen(spark: spark),
-                              ),
-                            ),
-                            onChat: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ChatScreen(spark: spark),
-                              ),
-                            ),
-                            onLeave: () async {
-                              await ref
-                                  .read(sparkDataControllerProvider)
-                                  .leaveSpark(spark.id);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('You left this spark')),
-                                );
-                              }
-                            },
-                            onCancel: () async {
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('Cancel Spark?'),
-                                  content: Text(
-                                    'This will remove "${spark.title}" for all participants.',
+              child:
+                  items.isEmpty
+                      ? _EmptyState(tab: _tabIndex == 0 ? 'joined' : 'created')
+                      : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final spark = items[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _ActivityCard(
+                              spark: spark,
+                              createdMode: _tabIndex == 1,
+                              onView:
+                                  () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) =>
+                                              SparkDetailScreen(spark: spark),
+                                    ),
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(ctx).pop(false),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: AppColors.accent,
-                                      ),
-                                      child: const Text('Keep'),
+                              onChat:
+                                  () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ChatScreen(spark: spark),
                                     ),
-                                    FilledButton(
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: AppColors.errorText,
-                                      ),
-                                      onPressed: () =>
-                                          Navigator.of(ctx).pop(true),
-                                      child: const Text('Cancel Spark'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirmed == true && context.mounted) {
-                                HapticFeedback.mediumImpact();
+                                  ),
+                              onLeave: () async {
                                 await ref
                                     .read(sparkDataControllerProvider)
-                                    .cancelSpark(spark.id);
+                                    .leaveSpark(spark.id);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                        content: Text('Spark cancelled')),
+                                      content: Text('You left this spark'),
+                                    ),
                                   );
                                 }
-                              }
-                            },
-                            onPostAgain: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      CreateSparkScreen(prefill: spark),
-                                ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                              },
+                              onCancel: () async {
+                                final confirmed = await _confirmCancelSpark(
+                                  context,
+                                  spark,
+                                );
+                                if (confirmed && context.mounted) {
+                                  HapticFeedback.mediumImpact();
+                                  await ref
+                                      .read(sparkDataControllerProvider)
+                                      .cancelSpark(spark.id);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Spark cancelled'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              onPostAgain: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) =>
+                                            CreateSparkScreen(prefill: spark),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),
@@ -212,15 +277,16 @@ class _SegmentedTabs extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected ? _kNavy : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: _kNavy.withValues(alpha: 0.18),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
+                  boxShadow:
+                      isSelected
+                          ? [
+                            BoxShadow(
+                              color: _kNavy.withValues(alpha: 0.18),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                          : null,
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -381,8 +447,11 @@ class _ActivityCard extends StatelessWidget {
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          const Icon(Icons.schedule_rounded,
-                              size: 13, color: AppColors.textMuted),
+                          const Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: AppColors.textMuted,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             spark.timeLabel,
@@ -393,8 +462,11 @@ class _ActivityCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Icon(Icons.location_on_outlined,
-                              size: 13, color: AppColors.textMuted),
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 13,
+                            color: AppColors.textMuted,
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             spark.distanceLabel,

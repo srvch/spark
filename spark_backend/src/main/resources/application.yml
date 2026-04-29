@@ -37,7 +37,7 @@ spark:
     jwt-expiry-seconds: ${SPARK_JWT_EXPIRY_SECONDS:2592000}
     otp-ttl-seconds: ${SPARK_OTP_TTL_SECONDS:180}
     expose-debug-otp: ${SPARK_AUTH_EXPOSE_DEBUG_OTP:false}
-    enable-dev-guest-login: ${SPARK_AUTH_ENABLE_DEV_GUEST_LOGIN:false}
+    enable-dev-guest-login: ${SPARK_AUTH_ENABLE_DEV_GUEST_LOGIN:true}
   push:
     enabled: ${SPARK_PUSH_ENABLED:false}
     credentials-path: ${SPARK_PUSH_CREDENTIALS_PATH:}

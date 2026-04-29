@@ -148,10 +148,29 @@ class AuthController extends StateNotifier<AuthUiState> {
           .read(authApiRepositoryProvider)
           .firebaseLogin(idToken: idToken);
 
-      ref.read(authSessionProvider.notifier).state = session;
+      AuthSession effectiveSession = session;
+      try {
+        final profile = await ref
+            .read(authApiRepositoryProvider)
+            .fetchMyProfile(token: session.token);
+        effectiveSession = AuthSession(
+          token: session.token,
+          userId: session.userId,
+          phoneNumber: session.phoneNumber,
+          displayName: profile.displayName,
+          handle: profile.handle,
+          ageBand: profile.ageBand,
+          gender: profile.gender,
+          hidePhoneNumber: session.hidePhoneNumber,
+        );
+      } catch (_) {}
+
+      ref.read(authSessionProvider.notifier).state = effectiveSession;
       ref.read(guestShowcaseModeProvider.notifier).state = false;
       unawaited(
-        ref.read(pushRegistrationServiceProvider).registerDeviceToken(session),
+        ref
+            .read(pushRegistrationServiceProvider)
+            .registerDeviceToken(effectiveSession),
       );
       state = const AuthUiState(loading: false);
     } catch (e) {
@@ -222,6 +241,7 @@ class AuthController extends StateNotifier<AuthUiState> {
 
   Future<void> completeMandatoryProfile({
     required String displayName,
+    required String handle,
     required String ageBand,
     required String gender,
   }) async {
@@ -231,6 +251,7 @@ class AuthController extends StateNotifier<AuthUiState> {
           .read(authApiRepositoryProvider)
           .completeProfile(
             displayName: displayName,
+            handle: handle,
             ageBand: ageBand,
             gender: gender,
           );
@@ -241,6 +262,7 @@ class AuthController extends StateNotifier<AuthUiState> {
           userId: current.userId,
           phoneNumber: current.phoneNumber,
           displayName: profile.displayName,
+          handle: profile.handle,
           ageBand: profile.ageBand,
           gender: profile.gender,
           hidePhoneNumber: current.hidePhoneNumber,

@@ -1,7 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+@immutable
+class SparkPalette extends ThemeExtension<SparkPalette> {
+  const SparkPalette({
+    required this.background,
+    required this.surface,
+    required this.surfaceDim,
+    required this.surfaceSubtle,
+    required this.border,
+    required this.borderStrong,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.accent,
+    required this.accentLight,
+    required this.error,
+    required this.success,
+  });
+
+  final Color background;
+  final Color surface;
+  final Color surfaceDim;
+  final Color surfaceSubtle;
+  final Color border;
+  final Color borderStrong;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textMuted;
+  final Color accent;
+  final Color accentLight;
+  final Color error;
+  final Color success;
+
+  @override
+  SparkPalette copyWith({
+    Color? background,
+    Color? surface,
+    Color? surfaceDim,
+    Color? surfaceSubtle,
+    Color? border,
+    Color? borderStrong,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textMuted,
+    Color? accent,
+    Color? accentLight,
+    Color? error,
+    Color? success,
+  }) {
+    return SparkPalette(
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      surfaceDim: surfaceDim ?? this.surfaceDim,
+      surfaceSubtle: surfaceSubtle ?? this.surfaceSubtle,
+      border: border ?? this.border,
+      borderStrong: borderStrong ?? this.borderStrong,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textMuted: textMuted ?? this.textMuted,
+      accent: accent ?? this.accent,
+      accentLight: accentLight ?? this.accentLight,
+      error: error ?? this.error,
+      success: success ?? this.success,
+    );
+  }
+
+  @override
+  SparkPalette lerp(ThemeExtension<SparkPalette>? other, double t) {
+    if (other is! SparkPalette) return this;
+    return SparkPalette(
+      background: Color.lerp(background, other.background, t) ?? background,
+      surface: Color.lerp(surface, other.surface, t) ?? surface,
+      surfaceDim: Color.lerp(surfaceDim, other.surfaceDim, t) ?? surfaceDim,
+      surfaceSubtle:
+          Color.lerp(surfaceSubtle, other.surfaceSubtle, t) ?? surfaceSubtle,
+      border: Color.lerp(border, other.border, t) ?? border,
+      borderStrong:
+          Color.lerp(borderStrong, other.borderStrong, t) ?? borderStrong,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t) ?? textPrimary,
+      textSecondary:
+          Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
+      textMuted: Color.lerp(textMuted, other.textMuted, t) ?? textMuted,
+      accent: Color.lerp(accent, other.accent, t) ?? accent,
+      accentLight: Color.lerp(accentLight, other.accentLight, t) ?? accentLight,
+      error: Color.lerp(error, other.error, t) ?? error,
+      success: Color.lerp(success, other.success, t) ?? success,
+    );
+  }
+}
+
+extension SparkPaletteContext on BuildContext {
+  SparkPalette get palette =>
+      Theme.of(this).extension<SparkPalette>() ?? AppTheme.premiumDarkPalette;
+}
+
 class AppColors {
+  // Light theme base tokens.
   static const background = Color(0xFFFFFFFF);
   static const surface = Color(0xFFFFFFFF);
   static const surfaceDim = Color(0xFFF8FAFD);
@@ -14,69 +109,102 @@ class AppColors {
   static const success = Color(0xFF10B981);
   static const action = Color(0xFFFF6B35);
 
-  static const pillSurface   = Color(0xFFF2F2F7);
+  static const pillSurface = Color(0xFFF2F2F7);
   static const neutralSurface = Color(0xFFF0F1F5);
-  static const cardDivider   = Color(0xFFF2F2F2);
-  static const cardBorder    = Color(0xFFE4E7EC);
-  static const avatarBg      = Color(0xFFE8ECF5);
+  static const cardDivider = Color(0xFFF2F2F2);
+  static const cardBorder = Color(0xFFE4E7EC);
+  static const avatarBg = Color(0xFFE8ECF5);
 
-  static const textMuted     = Color(0xFF9CA3AF);
-  static const separator     = Color(0xFFD1D5DB);
-  static const errorText     = Color(0xFFEF4444);
-  static const errorSurface  = Color(0xFFFEF2F2);
+  static const textMuted = Color(0xFF9CA3AF);
+  static const separator = Color(0xFFD1D5DB);
+  static const errorText = Color(0xFFEF4444);
+  static const errorSurface = Color(0xFFFEF2F2);
   static const accentSurface = Color(0xFFEAF2FF);
-  static const accentTint    = Color(0xFFEEF3FF);
+  static const accentTint = Color(0xFFEEF3FF);
   static const surfaceSubtle = Color(0xFFF7F8FC);
-  static const mutedIcon     = Color(0xFF6B7280);
-  static const cardShadow    = Color(0x0A000000);
-  static const heroBg1       = Color(0xFF223A5D);
-  static const heroBg2       = Color(0xFF254166);
-  static const heroBg3       = Color(0xFF2A4771);
-  static const heroBg4       = Color(0xFF2F4D78);
-  static const prefsBg1      = Color(0xFF1A2D50);
-  static const prefsBg2      = Color(0xFF243B6A);
-  static const chipBg        = Color(0xFFF5F7FC);
-  static const chipBorder    = Color(0xFFDDE3F0);
+  static const mutedIcon = Color(0xFF6B7280);
+  static const cardShadow = Color(0x0A000000);
+  static const heroBg1 = Color(0xFF223A5D);
+  static const heroBg2 = Color(0xFF254166);
+  static const heroBg3 = Color(0xFF2A4771);
+  static const heroBg4 = Color(0xFF2F4D78);
+  static const prefsBg1 = Color(0xFF1A2D50);
+  static const prefsBg2 = Color(0xFF243B6A);
+  static const chipBg = Color(0xFFF5F7FC);
+  static const chipBorder = Color(0xFFDDE3F0);
   static const chipSelectedBg = Color(0xFFF0F3FA);
-  static const chipText      = Color(0xFF374151);
-  static const chipAccentBg  = Color(0xFFE4EBFA);
+  static const chipText = Color(0xFF374151);
+  static const chipAccentBg = Color(0xFFE4EBFA);
   static const chipAccentText = Color(0xFF3E5E9E);
-  static const iconBg        = Color(0xFFF2F4F8);
-  static const iconFg        = Color(0xFF3D5070);
-  static const orbGreen      = Color(0xFF86EFAC);
-  static const warmSurface   = Color(0xFFFFF4ED);
-  static const warmAccent    = Color(0xFFEA580C);
-  static const tealAccent    = Color(0xFF0F766E);
-  static const dangerText    = Color(0xFFDC2626);
-  static const danger        = Color(0xFFB91C1C);
+  static const iconBg = Color(0xFFF2F4F8);
+  static const iconFg = Color(0xFF3D5070);
+  static const orbGreen = Color(0xFF86EFAC);
+  static const warmSurface = Color(0xFFFFF4ED);
+  static const warmAccent = Color(0xFFEA580C);
+  static const tealAccent = Color(0xFF0F766E);
+  static const dangerText = Color(0xFFDC2626);
+  static const danger = Color(0xFFB91C1C);
 
-  static const catSports     = Color(0xFF86EFAC);
-  static const catStudy      = Color(0xFF93C5FD);
-  static const catRide       = Color(0xFFC4B5FD);
-  static const catEvents     = Color(0xFFFDBA74);
-  static const catHangout    = Color(0xFFF9A8D4);
-  static const catSportsFg   = Color(0xFF15803D);
-  static const catStudyFg    = Color(0xFF1D4ED8);
-  static const catRideFg     = Color(0xFF6D28D9);
-  static const catEventsFg   = Color(0xFFB45309);
-  static const catHangoutFg  = Color(0xFFBE185D);
+  static const catSports = Color(0xFF86EFAC);
+  static const catStudy = Color(0xFF93C5FD);
+  static const catRide = Color(0xFFC4B5FD);
+  static const catEvents = Color(0xFFFDBA74);
+  static const catHangout = Color(0xFFF9A8D4);
+  static const catSportsFg = Color(0xFF15803D);
+  static const catStudyFg = Color(0xFF1D4ED8);
+  static const catRideFg = Color(0xFF6D28D9);
+  static const catEventsFg = Color(0xFFB45309);
+  static const catHangoutFg = Color(0xFFBE185D);
 
-  static const onSurfaceFaint    = Color(0x42000000);
-  static const onSurfaceLight    = Color(0x61000000);
-  static const onSurfaceMedium   = Color(0x72000000);
-  static const onSurfaceStrong   = Color(0x8A000000);
+  static const onSurfaceFaint = Color(0x42000000);
+  static const onSurfaceLight = Color(0x61000000);
+  static const onSurfaceMedium = Color(0x72000000);
+  static const onSurfaceStrong = Color(0x8A000000);
   static const onSurfaceEmphasis = Color(0xDE000000);
 
-  static const darkBackground = Color(0xFF0B1120);
-  static const darkSurface = Color(0xFF141C2E);
-  static const darkBorder = Color(0xFF1E293B);
-  static const darkBorderStrong = Color(0xFF334155);
-  static const darkTextPrimary = Color(0xFFF1F5F9);
-  static const darkTextSecondary = Color(0xFF94A3B8);
-  static const darkAccent = Color(0xFF60A5FA);
+  // Dark theme tokens.
+  static const darkBackground = Color(0xFF070F24);
+  static const darkSurface = Color(0xFF0F1C3B);
+  static const darkBorder = Color(0xFF28416F);
+  static const darkBorderStrong = Color(0xFF3A588F);
+  static const darkTextPrimary = Color(0xFFEAF1FF);
+  static const darkTextSecondary = Color(0xFFA9BCE6);
+  static const darkAccent = Color(0xFF5C84FF);
 }
 
 class AppTheme {
+  static const SparkPalette premiumLightPalette = SparkPalette(
+    background: AppColors.background,
+    surface: AppColors.surface,
+    surfaceDim: AppColors.surfaceDim,
+    surfaceSubtle: AppColors.surfaceSubtle,
+    border: AppColors.border,
+    borderStrong: AppColors.borderStrong,
+    textPrimary: AppColors.textPrimary,
+    textSecondary: AppColors.textSecondary,
+    textMuted: AppColors.textMuted,
+    accent: AppColors.accent,
+    accentLight: AppColors.accentLight,
+    error: AppColors.errorText,
+    success: AppColors.success,
+  );
+
+  static const SparkPalette premiumDarkPalette = SparkPalette(
+    background: AppColors.darkBackground,
+    surface: AppColors.darkSurface,
+    surfaceDim: Color(0xFF142448),
+    surfaceSubtle: Color(0xFF122445),
+    border: AppColors.darkBorder,
+    borderStrong: AppColors.darkBorderStrong,
+    textPrimary: AppColors.darkTextPrimary,
+    textSecondary: AppColors.darkTextSecondary,
+    textMuted: Color(0xFF7E93BF),
+    accent: AppColors.darkAccent,
+    accentLight: Color(0xFF7298FF),
+    error: Color(0xFFFF6F7A),
+    success: AppColors.success,
+  );
+
   static ThemeData get light {
     const colorScheme = ColorScheme.light(
       primary: AppColors.accent,
@@ -88,6 +216,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
+      extensions: const [premiumLightPalette],
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -156,11 +285,15 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+          borderSide: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.5),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -249,6 +382,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.darkBackground,
+      extensions: const [premiumDarkPalette],
       appBarTheme: const AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,

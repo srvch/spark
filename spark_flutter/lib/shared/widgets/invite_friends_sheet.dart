@@ -4,6 +4,9 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/spark/domain/spark.dart';
 
+const _kActionBlue = Color(0xFF355588);
+const _kActionBlueDeep = Color(0xFF294975);
+
 Future<void> showInviteFriendsBottomSheet({
   required BuildContext context,
   required Spark spark,
@@ -115,7 +118,7 @@ Future<void> showInviteFriendsBottomSheet({
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  backgroundColor: AppColors.accent,
+                  backgroundColor: _kActionBlue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -149,7 +152,7 @@ Future<void> showInviteFriendsBottomSheet({
                       child: const Text(
                         'VIEW SPARK',
                         style: TextStyle(
-                          color: AppColors.accent,
+                          color: _kActionBlueDeep,
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                         ),

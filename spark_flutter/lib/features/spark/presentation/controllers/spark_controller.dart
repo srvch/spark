@@ -1,9 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/mock_spark_repository.dart';
 import '../../data/plan_parse_api_repository.dart';
 import '../../data/places_autocomplete_service.dart';
 import '../../data/spark_api_repository.dart';
@@ -13,18 +12,12 @@ import '../../../../core/network/dio_provider.dart';
 import '../../../../core/analytics/analytics_service.dart';
 import '../../../../core/auth/auth_state.dart';
 
-final mockSparkRepositoryProvider = Provider<MockSparkRepository>((ref) {
-  return const MockSparkRepository();
-});
-
 final selectedCategoryProvider = StateProvider<SparkCategory?>((ref) => null);
 final selectedRadiusProvider = StateProvider<int>((ref) => 5);
 final selectedSortProvider = StateProvider<SparkSort>(
   (ref) => SparkSort.nearest,
 );
-final selectedLocationProvider = StateProvider<String>(
-  (ref) => 'Indiranagar',
-);
+final selectedLocationProvider = StateProvider<String>((ref) => 'Indiranagar');
 
 /// Holds an optional groupId for pre-filling "Create Spark" from a group screen
 final sparkCreationContextProvider = StateProvider<String?>((ref) => null);
@@ -75,7 +68,9 @@ final placesApiKeyProvider = Provider<String>((ref) {
   return const String.fromEnvironment('GOOGLE_PLACES_API_KEY');
 });
 
-final placesAutocompleteServiceProvider = Provider<PlacesAutocompleteService>((ref) {
+final placesAutocompleteServiceProvider = Provider<PlacesAutocompleteService>((
+  ref,
+) {
   return PlacesAutocompleteService(apiKey: ref.watch(placesApiKeyProvider));
 });
 
@@ -87,7 +82,9 @@ final sparksLoadingMoreProvider = StateProvider<bool>((ref) => false);
 final sparksErrorProvider = StateProvider<String?>((ref) => null);
 final nearbyPageProvider = StateProvider<int>((ref) => 0);
 final nearbyHasMoreProvider = StateProvider<bool>((ref) => false);
-final sparkInvitesProvider = StateProvider<List<SparkInvite>>((ref) => const []);
+final sparkInvitesProvider = StateProvider<List<SparkInvite>>(
+  (ref) => const [],
+);
 final sparkInvitesLoadingProvider = StateProvider<bool>((ref) => false);
 final sparkInvitesLoadingMoreProvider = StateProvider<bool>((ref) => false);
 final sparkInvitesErrorProvider = StateProvider<String?>((ref) => null);
@@ -98,10 +95,19 @@ final inviteHasMoreProvider = StateProvider<bool>((ref) => false);
 final onMyWaySparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
 
 /// IDs of sparks the current user has checked in to
-final checkedInSparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
+final checkedInSparkIdsProvider = StateProvider<Set<String>>(
+  (ref) => <String>{},
+);
 
-final sparkParticipantsProvider = StateNotifierProvider.family<SparkParticipantsNotifier, List<String>, String>((ref, sparkId) {
-  return SparkParticipantsNotifier(ref.watch(sparkApiRepositoryProvider), sparkId);
+final sparkParticipantsProvider = StateNotifierProvider.family<
+  SparkParticipantsNotifier,
+  List<String>,
+  String
+>((ref, sparkId) {
+  return SparkParticipantsNotifier(
+    ref.watch(sparkApiRepositoryProvider),
+    sparkId,
+  );
 });
 
 class SparkParticipantsNotifier extends StateNotifier<List<String>> {
@@ -114,9 +120,7 @@ class SparkParticipantsNotifier extends StateNotifier<List<String>> {
   Future<void> fetch() async {
     try {
       state = await _repository.fetchParticipants(_sparkId);
-    } catch (e) {
-      debugPrint('[SparkParticipantsNotifier] fetch error: $e');
-    }
+    } catch (_) {}
   }
 }
 
@@ -133,18 +137,21 @@ final currentUserInitialsProvider = Provider<String>((ref) {
     final single = parts.first;
     return single.isEmpty ? 'ME' : single.substring(0, 1).toUpperCase();
   }
-  return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+      .toUpperCase();
 });
 
 final allSparksProvider = Provider<List<Spark>>((ref) {
   final remote = ref.watch(remoteSparksProvider);
-  final repoSparks = remote.isNotEmpty
-      ? remote
-      : ref.read(mockSparkRepositoryProvider).fetchNearbySparks();
+  final repoSparks = remote;
   final created = ref.watch(createdSparksProvider);
-  final merged = [...created, ...repoSparks]
-      .where((spark) => spark.startsInMinutes > 0 && spark.startsInMinutes <= 24 * 60)
-      .toList();
+  final merged =
+      [...created, ...repoSparks]
+          .where(
+            (spark) =>
+                spark.startsInMinutes > 0 && spark.startsInMinutes <= 24 * 60,
+          )
+          .toList();
   final deduped = <String, Spark>{};
   for (final spark in merged) {
     deduped.putIfAbsent(spark.id, () => spark);
@@ -157,9 +164,9 @@ final sparksProvider = Provider<List<Spark>>((ref) {
   final radius = ref.watch(selectedRadiusProvider);
   final sort = ref.watch(selectedSortProvider);
 
-  Iterable<Spark> sparks = ref.watch(allSparksProvider).where(
-    (spark) => spark.distanceKm <= radius,
-  );
+  Iterable<Spark> sparks = ref
+      .watch(allSparksProvider)
+      .where((spark) => spark.distanceKm <= radius);
 
   if (selectedCategory != null) {
     sparks = sparks.where((spark) => spark.category == selectedCategory);
@@ -239,26 +246,31 @@ class SparkDataController {
       final location = ref.read(selectedLocationProvider);
       final (lat, lng) = _coordsFor(location);
       final radius = radiusKm ?? ref.read(selectedRadiusProvider).toDouble();
-      final page = await ref.read(sparkApiRepositoryProvider).fetchNearby(
-        lat: lat,
-        lng: lng,
-        radiusKm: radius,
-        page: 0,
-        size: _nearbyPageSize,
-      );
+      final page = await ref
+          .read(sparkApiRepositoryProvider)
+          .fetchNearby(
+            lat: lat,
+            lng: lng,
+            radiusKm: radius,
+            page: 0,
+            size: _nearbyPageSize,
+          );
       ref.read(remoteSparksProvider.notifier).state = page.items;
       ref.read(nearbyHasMoreProvider.notifier).state = page.hasMore;
       ref.read(nearbyPageProvider.notifier).state = page.page;
-      ref.read(analyticsServiceProvider).track(
-        'nearby_refresh',
-        properties: {
-          'location': location,
-          'radius_km': radius,
-          'count': page.items.length,
-        },
-      );
+      ref
+          .read(analyticsServiceProvider)
+          .track(
+            'nearby_refresh',
+            properties: {
+              'location': location,
+              'radius_km': radius,
+              'count': page.items.length,
+            },
+          );
     } catch (e) {
-      ref.read(sparksErrorProvider.notifier).state = '$e';
+      final message = _readableSparkFetchError(e);
+      ref.read(sparksErrorProvider.notifier).state = message;
     } finally {
       ref.read(sparksLoadingProvider.notifier).state = false;
     }
@@ -273,28 +285,30 @@ class SparkDataController {
       final (lat, lng) = _coordsFor(location);
       final radius = radiusKm ?? ref.read(selectedRadiusProvider).toDouble();
       final nextPage = ref.read(nearbyPageProvider) + 1;
-      final page = await ref.read(sparkApiRepositoryProvider).fetchNearby(
-        lat: lat,
-        lng: lng,
-        radiusKm: radius,
-        page: nextPage,
-        size: _nearbyPageSize,
-      );
+      final page = await ref
+          .read(sparkApiRepositoryProvider)
+          .fetchNearby(
+            lat: lat,
+            lng: lng,
+            radiusKm: radius,
+            page: nextPage,
+            size: _nearbyPageSize,
+          );
       ref.read(remoteSparksProvider.notifier).state = [
         ...ref.read(remoteSparksProvider),
         ...page.items,
       ];
       ref.read(nearbyPageProvider.notifier).state = page.page;
       ref.read(nearbyHasMoreProvider.notifier).state = page.hasMore;
-      ref.read(analyticsServiceProvider).track(
-        'nearby_next_page',
-        properties: {
-          'page': page.page,
-          'items': page.items.length,
-        },
-      );
+      ref
+          .read(analyticsServiceProvider)
+          .track(
+            'nearby_next_page',
+            properties: {'page': page.page, 'items': page.items.length},
+          );
     } catch (e) {
-      ref.read(sparksErrorProvider.notifier).state = '$e';
+      final message = _readableSparkFetchError(e);
+      ref.read(sparksErrorProvider.notifier).state = message;
     } finally {
       ref.read(sparksLoadingMoreProvider.notifier).state = false;
     }
@@ -306,10 +320,9 @@ class SparkDataController {
     ref.read(invitePageProvider.notifier).state = 0;
     ref.read(inviteHasMoreProvider.notifier).state = false;
     try {
-      final page = await ref.read(sparkApiRepositoryProvider).fetchInvites(
-            page: 0,
-            size: _invitePageSize,
-          );
+      final page = await ref
+          .read(sparkApiRepositoryProvider)
+          .fetchInvites(page: 0, size: _invitePageSize);
       ref.read(sparkInvitesProvider.notifier).state = page.items;
       ref.read(inviteHasMoreProvider.notifier).state = page.hasMore;
       ref.read(invitePageProvider.notifier).state = page.page;
@@ -326,10 +339,9 @@ class SparkDataController {
     ref.read(sparkInvitesLoadingMoreProvider.notifier).state = true;
     try {
       final nextPage = ref.read(invitePageProvider) + 1;
-      final page = await ref.read(sparkApiRepositoryProvider).fetchInvites(
-            page: nextPage,
-            size: _invitePageSize,
-          );
+      final page = await ref
+          .read(sparkApiRepositoryProvider)
+          .fetchInvites(page: nextPage, size: _invitePageSize);
       ref.read(sparkInvitesProvider.notifier).state = [
         ...ref.read(sparkInvitesProvider),
         ...page.items,
@@ -348,25 +360,39 @@ class SparkDataController {
     required SparkInviteStatus status,
   }) async {
     final previous = ref.read(sparkInvitesProvider);
-    ref.read(sparkInvitesProvider.notifier).state = previous
-        .map((item) => item.inviteId == invite.inviteId
-            ? item.copyWith(status: status, actedAt: DateTime.now())
-            : item)
-        .toList();
+    ref.read(sparkInvitesProvider.notifier).state =
+        previous
+            .map(
+              (item) =>
+                  item.inviteId == invite.inviteId
+                      ? item.copyWith(status: status, actedAt: DateTime.now())
+                      : item,
+            )
+            .toList();
     try {
-      final confirmed = await ref.read(sparkApiRepositoryProvider).respondToInvite(
+      final confirmed = await ref
+          .read(sparkApiRepositoryProvider)
+          .respondToInvite(
             sparkId: invite.sparkId,
             inviteId: invite.inviteId,
             status: status,
           );
-      ref.read(sparkInvitesProvider.notifier).state = ref
-          .read(sparkInvitesProvider)
-          .map((item) => item.inviteId == invite.inviteId
-              ? item.copyWith(status: confirmed, actedAt: DateTime.now())
-              : item)
-          .toList();
+      ref.read(sparkInvitesProvider.notifier).state =
+          ref
+              .read(sparkInvitesProvider)
+              .map(
+                (item) =>
+                    item.inviteId == invite.inviteId
+                        ? item.copyWith(
+                          status: confirmed,
+                          actedAt: DateTime.now(),
+                        )
+                        : item,
+              )
+              .toList();
       if (confirmed == SparkInviteStatus.inStatus) {
-        final joined = {...ref.read(joinedSparkIdsProvider)}..add(invite.sparkId);
+        final joined = {...ref.read(joinedSparkIdsProvider)}
+          ..add(invite.sparkId);
         ref.read(joinedSparkIdsProvider.notifier).state = joined;
         unawaited(refreshNearby());
       }
@@ -392,47 +418,107 @@ class SparkDataController {
     String? recurrenceTime,
     DateTime? recurrenceEndDate,
   }) async {
-    if (visibility == SparkVisibility.publicSpark && (circleIds.isNotEmpty || inviteUserIds.isNotEmpty)) {
-      throw Exception('Public sparks cannot have specific circles or invitees. Change visibility to "Circle" or "Invite" first.');
+    if (visibility == SparkVisibility.publicSpark &&
+        (circleIds.isNotEmpty || inviteUserIds.isNotEmpty)) {
+      throw Exception(
+        'Public sparks cannot have specific circles or invitees. Change visibility to "Circle" or "Invite" first.',
+      );
     }
     final myActive = ref.read(myActiveCreatedSparksProvider);
     if (myActive.length >= 5) {
-      throw Exception('You already have 5 active sparks. Please close one before creating another.');
+      throw Exception(
+        'You already have 5 active sparks. Please close one before creating another.',
+      );
     }
     final location = ref.read(selectedLocationProvider);
-    final (lat, lng) = _coordsFor(locationName == 'Nearby' ? location : locationName);
-    final created = await ref.read(sparkApiRepositoryProvider).createSpark(
-      category: category,
-      title: title,
-      note: note,
-      locationName: locationName == 'Nearby' ? location : locationName,
-      latitude: lat,
-      longitude: lng,
-      startsAt: startsAt,
-      maxSpots: maxSpots,
-      visibility: visibility,
-      circleIds: circleIds,
-      inviteUserIds: inviteUserIds,
-      recurrenceType: recurrenceType,
-      recurrenceDayOfWeek: recurrenceDayOfWeek,
-      recurrenceTime: recurrenceTime,
-      recurrenceEndDate: recurrenceEndDate,
+    final (lat, lng) = _coordsFor(
+      locationName == 'Nearby' ? location : locationName,
     );
+    final created = await ref
+        .read(sparkApiRepositoryProvider)
+        .createSpark(
+          category: category,
+          title: title,
+          note: note,
+          locationName: locationName == 'Nearby' ? location : locationName,
+          latitude: lat,
+          longitude: lng,
+          startsAt: startsAt,
+          maxSpots: maxSpots,
+          visibility: visibility,
+          circleIds: circleIds,
+          inviteUserIds: inviteUserIds,
+          recurrenceType: recurrenceType,
+          recurrenceDayOfWeek: recurrenceDayOfWeek,
+          recurrenceTime: recurrenceTime,
+          recurrenceEndDate: recurrenceEndDate,
+        );
     ref.read(createdSparksProvider.notifier).state = [
       created,
       ...ref.read(createdSparksProvider),
     ];
-    ref.read(analyticsServiceProvider).track(
-      'spark_created',
-      properties: {
-        'spark_id': created.id,
-        'category': created.category.name,
-        'spots': created.maxSpots,
-        'recurring': recurrenceType ?? 'none',
-      },
-    );
+    ref
+        .read(analyticsServiceProvider)
+        .track(
+          'spark_created',
+          properties: {
+            'spark_id': created.id,
+            'category': created.category.name,
+            'spots': created.maxSpots,
+            'recurring': recurrenceType ?? 'none',
+          },
+        );
     unawaited(refreshNearby());
     return created;
+  }
+
+  Future<Spark> updateSpark({
+    required String sparkId,
+    required SparkCategory category,
+    required String title,
+    required String? note,
+    required String locationName,
+    required DateTime startsAt,
+    required int maxSpots,
+    SparkVisibility visibility = SparkVisibility.publicSpark,
+    List<String> circleIds = const [],
+    List<String> inviteUserIds = const [],
+    String? recurrenceType,
+    int? recurrenceDayOfWeek,
+    String? recurrenceTime,
+    DateTime? recurrenceEndDate,
+  }) async {
+    final location = ref.read(selectedLocationProvider);
+    final (lat, lng) = _coordsFor(
+      locationName == 'Nearby' ? location : locationName,
+    );
+    final updated = await ref
+        .read(sparkApiRepositoryProvider)
+        .updateSpark(
+          sparkId: sparkId,
+          category: category,
+          title: title,
+          note: note,
+          locationName: locationName == 'Nearby' ? location : locationName,
+          latitude: lat,
+          longitude: lng,
+          startsAt: startsAt,
+          maxSpots: maxSpots,
+          visibility: visibility,
+          circleIds: circleIds,
+          inviteUserIds: inviteUserIds,
+          recurrenceType: recurrenceType,
+          recurrenceDayOfWeek: recurrenceDayOfWeek,
+          recurrenceTime: recurrenceTime,
+          recurrenceEndDate: recurrenceEndDate,
+        );
+    _mergeSpark(updated);
+    ref.read(createdSparksProvider.notifier).state = [
+      for (final spark in ref.read(createdSparksProvider))
+        if (spark.id == updated.id) updated else spark,
+    ];
+    unawaited(refreshNearby());
+    return updated;
   }
 
   Future<void> joinSpark(String sparkId) async {
@@ -455,54 +541,45 @@ class SparkDataController {
       participantInitial: ref.read(currentUserInitialsProvider),
     );
     try {
-      final updated = await ref.read(sparkApiRepositoryProvider).joinSpark(
-        sparkId: sparkId,
-      );
+      final updated = await ref
+          .read(sparkApiRepositoryProvider)
+          .joinSpark(sparkId: sparkId);
       _mergeSpark(updated);
-      ref.read(analyticsServiceProvider).track(
-        'spark_joined',
-        properties: {'spark_id': sparkId},
-      );
+      ref
+          .read(analyticsServiceProvider)
+          .track('spark_joined', properties: {'spark_id': sparkId});
       unawaited(refreshNearby());
-    } catch (e) {
-      debugPrint('[SparkDataController] joinSpark error: $e');
+    } catch (_) {
       // Optimistic UI kept for UX; backend retry can happen later.
     }
   }
 
   Future<void> fetchSparkDetail(String sparkId) async {
     try {
-      final updated = await ref.read(sparkApiRepositoryProvider).fetchSparkDetail(sparkId);
+      final updated = await ref
+          .read(sparkApiRepositoryProvider)
+          .fetchSparkDetail(sparkId);
       _mergeSpark(updated);
-    } catch (e) {
-      debugPrint('[SparkDataController] fetchSparkDetail error: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> cancelSpark(String sparkId) async {
     // Remove from created list
-    ref.read(createdSparksProvider.notifier).state = ref
-        .read(createdSparksProvider)
-        .where((s) => s.id != sparkId)
-        .toList();
+    ref.read(createdSparksProvider.notifier).state =
+        ref.read(createdSparksProvider).where((s) => s.id != sparkId).toList();
     // Remove from remote list too
-    ref.read(remoteSparksProvider.notifier).state = ref
-        .read(remoteSparksProvider)
-        .where((s) => s.id != sparkId)
-        .toList();
+    ref.read(remoteSparksProvider.notifier).state =
+        ref.read(remoteSparksProvider).where((s) => s.id != sparkId).toList();
     // Remove any joined state for this spark
     final joined = {...ref.read(joinedSparkIdsProvider)}..remove(sparkId);
     ref.read(joinedSparkIdsProvider.notifier).state = joined;
-    ref.read(analyticsServiceProvider).track(
-      'spark_cancelled',
-      properties: {'spark_id': sparkId},
-    );
+    ref
+        .read(analyticsServiceProvider)
+        .track('spark_cancelled', properties: {'spark_id': sparkId});
     try {
       await ref.read(sparkApiRepositoryProvider).cancelSpark(sparkId: sparkId);
       unawaited(refreshNearby());
-    } catch (e) {
-      debugPrint('[SparkDataController] cancelSpark error: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> leaveSpark(String sparkId) async {
@@ -514,17 +591,15 @@ class SparkDataController {
       participantInitial: ref.read(currentUserInitialsProvider),
     );
     try {
-      final updated = await ref.read(sparkApiRepositoryProvider).leaveSpark(
-        sparkId: sparkId,
-      );
+      final updated = await ref
+          .read(sparkApiRepositoryProvider)
+          .leaveSpark(sparkId: sparkId);
       _mergeSpark(updated);
-      ref.read(analyticsServiceProvider).track(
-        'spark_left',
-        properties: {'spark_id': sparkId},
-      );
+      ref
+          .read(analyticsServiceProvider)
+          .track('spark_left', properties: {'spark_id': sparkId});
       unawaited(refreshNearby());
-    } catch (e) {
-      debugPrint('[SparkDataController] leaveSpark error: $e');
+    } catch (_) {
       // Optimistic UI kept for UX.
     }
   }
@@ -540,10 +615,21 @@ class SparkDataController {
   }
 
   void _mergeSpark(Spark updated) {
-    _updateSparkInLists(
-      sparkId: updated.id,
-      transform: (_) => updated,
-    );
+    _updateSparkInLists(sparkId: updated.id, transform: (_) => updated);
+  }
+
+  String _readableSparkFetchError(Object error) {
+    if (error is DioException) {
+      final status = error.response?.statusCode;
+      if (status == 401 || status == 403) {
+        return 'Session expired. Please login again.';
+      }
+      if (status != null) {
+        return 'Nearby fetch failed (HTTP $status)';
+      }
+      return error.message ?? 'Network request failed';
+    }
+    return error.toString();
   }
 
   void _applyOptimisticJoin({
@@ -585,10 +671,12 @@ class SparkDataController {
     _updateSparkInLists(
       sparkId: sparkId,
       transform: (spark) {
-        final participants = [...spark.participants]..remove(participantInitial);
-        final spotsLeft = spark.spotsLeft < spark.maxSpots
-            ? spark.spotsLeft + 1
-            : spark.maxSpots;
+        final participants = [...spark.participants]
+          ..remove(participantInitial);
+        final spotsLeft =
+            spark.spotsLeft < spark.maxSpots
+                ? spark.spotsLeft + 1
+                : spark.maxSpots;
         return Spark(
           id: spark.id,
           category: spark.category,

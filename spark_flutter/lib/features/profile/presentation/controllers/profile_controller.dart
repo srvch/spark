@@ -42,11 +42,21 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
 
   Future<void> updateDisplayName(String displayName) async {
     final prev = state.valueOrNull;
+    final session = ref.read(authSessionProvider);
+    final fallbackSeed = (session?.userId ?? '').replaceAll('-', '');
+    final fallbackHandle =
+        'spark_${fallbackSeed.isEmpty ? 'user' : fallbackSeed.substring(0, fallbackSeed.length > 8 ? 8 : fallbackSeed.length)}';
     try {
       final updated = await ref
           .read(profileApiRepositoryProvider)
           .updateProfile(
             displayName: displayName,
+            handle:
+                prev?.handle.isNotEmpty == true
+                    ? prev!.handle
+                    : ((session?.handle?.isNotEmpty == true)
+                        ? session!.handle!
+                        : fallbackHandle),
             ageBand: prev?.ageBand.isNotEmpty == true ? prev!.ageBand : '25-34',
             gender: prev?.gender.isNotEmpty == true ? prev!.gender : 'OTHER',
           );
@@ -58,6 +68,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
           userId: current.userId,
           phoneNumber: current.phoneNumber,
           displayName: updated.displayName,
+          handle: updated.handle,
           ageBand: updated.ageBand,
           gender: updated.gender,
           hidePhoneNumber: current.hidePhoneNumber,
@@ -85,6 +96,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
         userId: current.userId,
         phoneNumber: current.phoneNumber,
         displayName: current.displayName,
+        handle: current.handle,
         ageBand: current.ageBand,
         gender: current.gender,
         hidePhoneNumber: hide,

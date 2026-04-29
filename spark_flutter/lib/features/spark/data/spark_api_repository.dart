@@ -99,6 +99,51 @@ class SparkApiRepository {
     return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.3);
   }
 
+  Future<Spark> updateSpark({
+    required String sparkId,
+    required SparkCategory category,
+    required String title,
+    required String? note,
+    required String locationName,
+    required double latitude,
+    required double longitude,
+    required DateTime startsAt,
+    DateTime? endsAt,
+    required int maxSpots,
+    SparkVisibility visibility = SparkVisibility.publicSpark,
+    List<String> inviteUserIds = const [],
+    List<String> circleIds = const [],
+    String? recurrenceType,
+    int? recurrenceDayOfWeek,
+    String? recurrenceTime,
+    DateTime? recurrenceEndDate,
+  }) async {
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/api/v1/sparks/$sparkId',
+      data: {
+        'category': category.name,
+        'title': title,
+        'note': note,
+        'locationName': locationName,
+        'latitude': latitude,
+        'longitude': longitude,
+        'startsAt': startsAt.toUtc().toIso8601String(),
+        'endsAt': endsAt?.toUtc().toIso8601String(),
+        'maxSpots': maxSpots,
+        'visibility': _toApiVisibility(visibility),
+        if (inviteUserIds.isNotEmpty) 'inviteUserIds': inviteUserIds,
+        if (circleIds.isNotEmpty) 'circleIds': circleIds,
+        if (recurrenceType != null) 'recurrenceType': recurrenceType,
+        if (recurrenceDayOfWeek != null) 'recurrenceDayOfWeek': recurrenceDayOfWeek,
+        if (recurrenceTime != null) 'recurrenceTime': recurrenceTime,
+        if (recurrenceEndDate != null)
+          'recurrenceEndDate':
+              '${recurrenceEndDate.year}-${recurrenceEndDate.month.toString().padLeft(2, '0')}-${recurrenceEndDate.day.toString().padLeft(2, '0')}',
+      },
+    );
+    return _fromSparkJson(response.data ?? const {}, fallbackDistanceKm: 0.3);
+  }
+
   Future<Spark> joinSpark({
     required String sparkId,
   }) async {

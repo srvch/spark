@@ -18,6 +18,9 @@ public class AppUserEntity {
     @Column(name = "display_name", nullable = false, length = 120)
     private String displayName;
 
+    @Column(name = "handle", unique = true, length = 32)
+    private String handle;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -57,6 +60,9 @@ public class AppUserEntity {
 
     public String getDisplayName() { return displayName; }
     public void setDisplayName(String displayName) { this.displayName = displayName; }
+
+    public String getHandle() { return handle; }
+    public void setHandle(String handle) { this.handle = handle; }
 
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -17,10 +17,11 @@ Future<void> showInviteToGroupSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => InviteToGroupSheet(
-      groupId: groupId,
-      existingMemberIds: existingMemberIds,
-    ),
+    builder:
+        (_) => InviteToGroupSheet(
+          groupId: groupId,
+          existingMemberIds: existingMemberIds,
+        ),
   );
 }
 
@@ -35,8 +36,7 @@ class InviteToGroupSheet extends ConsumerStatefulWidget {
   final List<String> existingMemberIds;
 
   @override
-  ConsumerState<InviteToGroupSheet> createState() =>
-      _InviteToGroupSheetState();
+  ConsumerState<InviteToGroupSheet> createState() => _InviteToGroupSheetState();
 }
 
 class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
@@ -62,10 +62,13 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
     final q = _query.toLowerCase();
     return friends
         .where((f) => !widget.existingMemberIds.contains(f.userId))
-        .where((f) => q.isEmpty
-            ? true
-            : f.displayName.toLowerCase().contains(q) ||
-                f.phoneNumber.contains(q))
+        .where(
+          (f) =>
+              q.isEmpty
+                  ? true
+                  : f.displayName.toLowerCase().contains(q) ||
+                      f.phoneNumber.contains(q),
+        )
         .toList();
   }
 
@@ -73,8 +76,9 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
     if (_sending.contains(friend.userId)) return;
     setState(() => _sending.add(friend.userId));
     try {
-      await ref.read(socialControllerProvider).inviteFriendToGroup(
-            groupId: widget.groupId, userId: friend.userId);
+      await ref
+          .read(socialControllerProvider)
+          .inviteFriendToGroup(groupId: widget.groupId, userId: friend.userId);
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +86,9 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
           content: Text('Invite sent to ${friend.displayName}'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.accent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } catch (_) {
@@ -101,8 +107,9 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
   Future<void> _inviteByUserId(String userId, String displayName) async {
     setState(() => _sending.add(userId));
     try {
-      await ref.read(socialControllerProvider).inviteFriendToGroup(
-            groupId: widget.groupId, userId: userId);
+      await ref
+          .read(socialControllerProvider)
+          .inviteFriendToGroup(groupId: widget.groupId, userId: userId);
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,7 +117,9 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
           content: Text('Invite sent to $displayName'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.accent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } catch (_) {
@@ -137,9 +146,9 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
       _requestSent = false;
     });
     try {
-      final results = await ref
-          .read(socialApiRepositoryProvider)
-          .matchContacts([phone]);
+      final results = await ref.read(socialApiRepositoryProvider).matchContacts(
+        [phone],
+      );
       setState(() {
         _phoneResult = results.isNotEmpty ? results.first : null;
         _phoneResultChecked = true;
@@ -165,10 +174,12 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
     } catch (_) {
       setState(() => _sendingRequest = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Could not send request. Try again.'),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not send request. Try again.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -181,7 +192,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
 
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF2F2F7),
+        color: AppColors.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -211,7 +222,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF000000),
+                        color: AppColors.textPrimary,
                         letterSpacing: -0.2,
                         fontFamily: 'Manrope',
                       ),
@@ -226,8 +237,11 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                         color: Color(0xFFE5E5EA),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(CupertinoIcons.xmark,
-                          size: 13, color: Color(0xFF8E8E93)),
+                      child: const Icon(
+                        CupertinoIcons.xmark,
+                        size: 13,
+                        color: Color(0xFF8E8E93),
+                      ),
                     ),
                   ),
                 ],
@@ -253,12 +267,19 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                         decoration: const InputDecoration(
                           hintText: 'Search by phone number',
                           hintStyle: TextStyle(
-                              color: Color(0xFFC7C7CC), fontSize: 14),
+                            color: Color(0xFFC7C7CC),
+                            fontSize: 14,
+                          ),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          prefixIcon: Icon(CupertinoIcons.phone,
-                              size: 16, color: Color(0xFF8E8E93)),
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          prefixIcon: Icon(
+                            CupertinoIcons.phone,
+                            size: 16,
+                            color: Color(0xFF8E8E93),
+                          ),
                         ),
                         onSubmitted: (_) => _lookupPhone(),
                       ),
@@ -275,18 +296,20 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
-                        child: _lookingUp
-                            ? const CupertinoActivityIndicator(
-                                color: Colors.white)
-                            : const Text(
-                                'Find',
-                                style: TextStyle(
+                        child:
+                            _lookingUp
+                                ? const CupertinoActivityIndicator(
                                   color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  fontFamily: 'Manrope',
+                                )
+                                : const Text(
+                                  'Find',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    fontFamily: 'Manrope',
+                                  ),
                                 ),
-                              ),
                       ),
                     ),
                   ),
@@ -310,14 +333,19 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        PersonAvatar(name: _phoneResult!.displayName, radius: 20),
+                        PersonAvatar(
+                          name: _phoneResult!.displayName,
+                          radius: 20,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -334,90 +362,115 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                               Text(
                                 _phoneResult!.phoneNumber,
                                 style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: Color(0xFF8E8E93)),
+                                  fontSize: 12.5,
+                                  color: Color(0xFF8E8E93),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        if (widget.existingMemberIds
-                            .contains(_phoneResult!.userId))
-                          const Text('In group',
-                              style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: Color(0xFF8E8E93),
-                                  fontWeight: FontWeight.w500))
+                        if (widget.existingMemberIds.contains(
+                          _phoneResult!.userId,
+                        ))
+                          const Text(
+                            'In group',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xFF8E8E93),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
                         else if (friendIds.contains(_phoneResult!.userId))
                           GestureDetector(
-                            onTap: _sending.contains(_phoneResult!.userId)
-                                ? null
-                                : () => _inviteByUserId(
-                                    _phoneResult!.userId,
-                                    _phoneResult!.displayName),
+                            onTap:
+                                _sending.contains(_phoneResult!.userId)
+                                    ? null
+                                    : () => _inviteByUserId(
+                                      _phoneResult!.userId,
+                                      _phoneResult!.displayName,
+                                    ),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 6),
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.accent.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(99),
                               ),
-                              child: _sending.contains(_phoneResult!.userId)
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CupertinoActivityIndicator(
-                                          radius: 7))
-                                  : Text(
-                                      'Invite',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.accent,
+                              child:
+                                  _sending.contains(_phoneResult!.userId)
+                                      ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CupertinoActivityIndicator(
+                                          radius: 7,
+                                        ),
+                                      )
+                                      : Text(
+                                        'Invite',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.accent,
+                                        ),
                                       ),
-                                    ),
                             ),
                           )
                         else if (_requestSent)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFE5E5EA),
                               borderRadius: BorderRadius.circular(99),
                             ),
-                            child: const Text('Request sent',
-                                style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: Color(0xFF8E8E93),
-                                    fontWeight: FontWeight.w600)),
+                            child: const Text(
+                              'Request sent',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: Color(0xFF8E8E93),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           )
                         else
                           GestureDetector(
-                            onTap: _sendingRequest
-                                ? null
-                                : () => _sendFriendRequest(
-                                    _phoneResult!.phoneNumber),
+                            onTap:
+                                _sendingRequest
+                                    ? null
+                                    : () => _sendFriendRequest(
+                                      _phoneResult!.phoneNumber,
+                                    ),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 6),
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.accent,
                                 borderRadius: BorderRadius.circular(99),
                               ),
-                              child: _sendingRequest
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CupertinoActivityIndicator(
-                                          color: Colors.white, radius: 7))
-                                  : const Text(
-                                      'Add friend',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                              child:
+                                  _sendingRequest
+                                      ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CupertinoActivityIndicator(
+                                          color: Colors.white,
+                                          radius: 7,
+                                        ),
+                                      )
+                                      : const Text(
+                                        'Add friend',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
                                       ),
-                                    ),
                             ),
                           ),
                       ],
@@ -458,13 +511,20 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                       controller: _search,
                       onChanged: (v) => setState(() => _query = v),
                       style: const TextStyle(
-                          fontSize: 15, color: Color(0xFF000000)),
+                        fontSize: 15,
+                        color: Color(0xFF000000),
+                      ),
                       decoration: const InputDecoration(
                         hintText: 'Search friends',
-                        hintStyle:
-                            TextStyle(color: Color(0xFF8E8E93), fontSize: 15),
-                        prefixIcon: Icon(CupertinoIcons.search,
-                            size: 16, color: Color(0xFF8E8E93)),
+                        hintStyle: TextStyle(
+                          color: Color(0xFF8E8E93),
+                          fontSize: 15,
+                        ),
+                        prefixIcon: Icon(
+                          CupertinoIcons.search,
+                          size: 16,
+                          color: Color(0xFF8E8E93),
+                        ),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: InputBorder.none,
@@ -488,22 +548,27 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
                       itemCount: eligible.length,
-                      separatorBuilder: (_, i) => const Divider(
-                        height: 1,
-                        thickness: 0.5,
-                        indent: 58,
-                        color: Color(0xFFE5E5EA),
-                      ),
+                      separatorBuilder:
+                          (_, i) => const Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            indent: 58,
+                            color: Color(0xFFE5E5EA),
+                          ),
                       itemBuilder: (_, i) {
                         final friend = eligible[i];
                         final isSending = _sending.contains(friend.userId);
                         return Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           child: Row(
                             children: [
                               PersonAvatar(
-                                  name: friend.displayName, radius: 19),
+                                name: friend.displayName,
+                                radius: 19,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -514,7 +579,7 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                                       style: const TextStyle(
                                         fontSize: 15.5,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF000000),
+                                        color: AppColors.textPrimary,
                                         fontFamily: 'Manrope',
                                       ),
                                     ),
@@ -530,31 +595,35 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                               ),
                               isSending
                                   ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CupertinoActivityIndicator(
-                                          radius: 9))
+                                    width: 20,
+                                    height: 20,
+                                    child: CupertinoActivityIndicator(
+                                      radius: 9,
+                                    ),
+                                  )
                                   : GestureDetector(
-                                      onTap: () => _invite(friend),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 14, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.accent
-                                              .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(99),
+                                    onTap: () => _invite(friend),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accent.withValues(
+                                          alpha: 0.1,
                                         ),
-                                        child: Text(
-                                          'Invite',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.accent,
-                                          ),
+                                        borderRadius: BorderRadius.circular(99),
+                                      ),
+                                      child: Text(
+                                        'Invite',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.accent,
                                         ),
                                       ),
                                     ),
+                                  ),
                             ],
                           ),
                         );
@@ -578,9 +647,10 @@ class _InviteToGroupSheetState extends ConsumerState<InviteToGroupSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                 child: _EmptyNote(
                   icon: CupertinoIcons.checkmark_circle,
-                  text: _query.isNotEmpty
-                      ? 'No friends match your search.'
-                      : 'All your friends are already in this group.',
+                  text:
+                      _query.isNotEmpty
+                          ? 'No friends match your search.'
+                          : 'All your friends are already in this group.',
                 ),
               ),
             ],

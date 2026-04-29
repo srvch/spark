@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
@@ -97,7 +98,6 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen>
                             focusNode: _phoneFocus,
                             keyboardType: TextInputType.phone,
                             hintText: '+91 98765 43210',
-                            icon: Icons.phone_rounded,
                           ),
                         ],
                       ),
@@ -116,13 +116,9 @@ class _PhoneLoginScreenState extends ConsumerState<PhoneLoginScreen>
                               children: [
                                 const _FieldLabel('Verification code'),
                                 const SizedBox(height: 8),
-                                _GlassField(
+                                _OtpCodeField(
                                   controller: _otpController,
                                   focusNode: _otpFocus,
-                                  keyboardType: TextInputType.number,
-                                  hintText: '· · · · · ·',
-                                  icon: Icons.lock_rounded,
-                                  centerText: true,
                                 ),
                               ],
                             ),
@@ -460,29 +456,119 @@ class _GlassField extends StatefulWidget {
     required this.focusNode,
     required this.keyboardType,
     required this.hintText,
-    required this.icon,
+    this.icon,
     this.centerText = false,
   });
   final TextEditingController controller;
   final FocusNode focusNode;
   final TextInputType keyboardType;
   final String hintText;
-  final IconData icon;
+  final IconData? icon;
   final bool centerText;
 
   @override
   State<_GlassField> createState() => _GlassFieldState();
 }
 
-class _GlassFieldState extends State<_GlassField> {
+class _OtpCodeField extends StatefulWidget {
+  const _OtpCodeField({required this.controller, required this.focusNode});
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+
+  @override
+  State<_OtpCodeField> createState() => _OtpCodeFieldState();
+}
+
+class _OtpCodeFieldState extends State<_OtpCodeField> {
   bool _focused = false;
+  late final VoidCallback _focusListener;
 
   @override
   void initState() {
     super.initState();
-    widget.focusNode.addListener(
-      () => setState(() => _focused = widget.focusNode.hasFocus),
+    _focusListener = () {
+      if (!mounted) return;
+      setState(() => _focused = widget.focusNode.hasFocus);
+    };
+    widget.focusNode.addListener(_focusListener);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_focusListener);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      decoration: BoxDecoration(
+        color: _focused
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _focused
+              ? const Color(0xFF86EFAC).withValues(alpha: 0.65)
+              : Colors.white.withValues(alpha: 0.16),
+          width: _focused ? 1.6 : 1.0,
+        ),
+      ),
+      child: TextField(
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.start,
+        maxLength: 6,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(6),
+        ],
+        style: const TextStyle(
+          color: Color(0xFF1E3A8A),
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+        ),
+        decoration: InputDecoration(
+          hintText: '123456',
+          counterText: '',
+          hintStyle: TextStyle(
+            color: Colors.white.withValues(alpha: 0.22),
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 16,
+          ),
+        ),
+      ),
     );
+  }
+}
+
+class _GlassFieldState extends State<_GlassField> {
+  bool _focused = false;
+  late final VoidCallback _focusListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusListener = () {
+      if (!mounted) return;
+      setState(() => _focused = widget.focusNode.hasFocus);
+    };
+    widget.focusNode.addListener(_focusListener);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_focusListener);
+    super.dispose();
   }
 
   @override
@@ -528,10 +614,12 @@ class _GlassFieldState extends State<_GlassField> {
             fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
-          prefixIcon: Icon(widget.icon, size: 18, color: Colors.white30),
+          prefixIcon: widget.icon == null
+              ? null
+              : Icon(widget.icon, size: 18, color: Colors.white30),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
+            horizontal: 12,
             vertical: 16,
           ),
         ),

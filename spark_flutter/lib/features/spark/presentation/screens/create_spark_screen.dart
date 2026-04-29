@@ -17,6 +17,9 @@ import '../controllers/spark_controller.dart';
 import '../widgets/location_picker_sheet.dart';
 import 'spark_detail_screen.dart';
 
+const _kActionBlue = Color(0xFF355588);
+const _kActionBlueDeep = Color(0xFF294975);
+
 class CreateSparkScreen extends ConsumerStatefulWidget {
   const CreateSparkScreen({super.key, this.prefill});
 
@@ -72,6 +75,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   String _recurrenceType = 'WEEKLY'; // DAILY or WEEKLY
   int _recurrenceDayOfWeek = 1; // 1=Mon … 7=Sun
   DateTime? _recurrenceEndDate;
+  String? _prefillLocationToApply;
+
+  bool get _isEditMode => widget.prefill != null;
 
   @override
   void initState() {
@@ -106,10 +112,14 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       if (prefill.maxSpots > 0) {
         _manualSpotsController.text = prefill.maxSpots.toString();
       }
-      ref.read(selectedLocationProvider.notifier).state = prefill.location;
+      _prefillLocationToApply = prefill.location;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (_prefillLocationToApply != null) {
+        ref.read(selectedLocationProvider.notifier).state =
+            _prefillLocationToApply!;
+      }
       _scheduleAiParse();
       unawaited(ref.read(socialControllerProvider).refreshAll());
     });
@@ -781,8 +791,11 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                   ),
                 ),
               PrimaryButton(
-                label: _isCreatingSpark ? 'Creating…' : 'Create',
-                backgroundColor: AppColors.accent,
+                label:
+                    _isCreatingSpark
+                        ? (_isEditMode ? 'Saving…' : 'Creating…')
+                        : (_isEditMode ? 'Save changes' : 'Create'),
+                backgroundColor: _kActionBlue,
                 onPressed:
                     _isCreatingSpark
                         ? null
@@ -930,7 +943,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                   ),
                   FilledButton(
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.accent,
+                      backgroundColor: _kActionBlue,
                     ),
                     onPressed: () {
                       final normalized = _normalizePhone(controller.text);
@@ -1048,7 +1061,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                           Expanded(
                             child: FilledButton(
                               style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.accent,
+                                backgroundColor: _kActionBlue,
                               ),
                               onPressed:
                                   () => Navigator.of(context).pop(selected),
@@ -1493,31 +1506,60 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final draft = _isManualMode ? _manualDraft() : _effectiveAutoPlan();
     Spark createdSpark;
     try {
-      createdSpark = await ref
-          .read(sparkDataControllerProvider)
-          .createSpark(
-            category: draft.category,
-            title: draft.title,
-            note: draft.note,
-            locationName: draft.locationName,
-            startsAt:
-                draft.startsAt ??
-                DateTime.now().add(const Duration(minutes: 30)),
-            maxSpots: draft.maxSpots,
-            visibility: _manualVisibility,
-            circleIds: _selectedCircleIds.toList(),
-            inviteUserIds: [..._selectedInviteUserIds, ..._manualInvitePhones],
-            recurrenceType: _isRecurring ? _recurrenceType : null,
-            recurrenceDayOfWeek:
-                (_isRecurring && _recurrenceType == 'WEEKLY')
-                    ? _recurrenceDayOfWeek
-                    : null,
-            recurrenceTime:
-                _isRecurring
-                    ? '${_manualHour.toString().padLeft(2, '0')}:${_manualMinute.toString().padLeft(2, '0')}'
-                    : null,
-            recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
-          );
+      if (_isEditMode) {
+        createdSpark = await ref
+            .read(sparkDataControllerProvider)
+            .updateSpark(
+              sparkId: widget.prefill!.id,
+              category: draft.category,
+              title: draft.title,
+              note: draft.note,
+              locationName: draft.locationName,
+              startsAt:
+                  draft.startsAt ??
+                  DateTime.now().add(const Duration(minutes: 30)),
+              maxSpots: draft.maxSpots,
+              visibility: _manualVisibility,
+              circleIds: _selectedCircleIds.toList(),
+              inviteUserIds: [..._selectedInviteUserIds, ..._manualInvitePhones],
+              recurrenceType: _isRecurring ? _recurrenceType : null,
+              recurrenceDayOfWeek:
+                  (_isRecurring && _recurrenceType == 'WEEKLY')
+                      ? _recurrenceDayOfWeek
+                      : null,
+              recurrenceTime:
+                  _isRecurring
+                      ? '${_manualHour.toString().padLeft(2, '0')}:${_manualMinute.toString().padLeft(2, '0')}'
+                      : null,
+              recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
+            );
+      } else {
+        createdSpark = await ref
+            .read(sparkDataControllerProvider)
+            .createSpark(
+              category: draft.category,
+              title: draft.title,
+              note: draft.note,
+              locationName: draft.locationName,
+              startsAt:
+                  draft.startsAt ??
+                  DateTime.now().add(const Duration(minutes: 30)),
+              maxSpots: draft.maxSpots,
+              visibility: _manualVisibility,
+              circleIds: _selectedCircleIds.toList(),
+              inviteUserIds: [..._selectedInviteUserIds, ..._manualInvitePhones],
+              recurrenceType: _isRecurring ? _recurrenceType : null,
+              recurrenceDayOfWeek:
+                  (_isRecurring && _recurrenceType == 'WEEKLY')
+                      ? _recurrenceDayOfWeek
+                      : null,
+              recurrenceTime:
+                  _isRecurring
+                      ? '${_manualHour.toString().padLeft(2, '0')}:${_manualMinute.toString().padLeft(2, '0')}'
+                      : null,
+              recurrenceEndDate: _isRecurring ? _recurrenceEndDate : null,
+            );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isCreatingSpark = false);
@@ -1541,6 +1583,13 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     );
     HapticFeedback.mediumImpact();
     if (!mounted) return;
+    if (_isEditMode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Spark updated')),
+      );
+      Navigator.of(context).pop();
+      return;
+    }
     final isPrivateSpark = _manualVisibility == SparkVisibility.invite;
     if (isPrivateSpark) {
       await _showPrivateSparkSuccessSheet(sparkForUi);
@@ -1665,7 +1714,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                       Expanded(
                         child: FilledButton(
                           style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.accent,
+                            backgroundColor: _kActionBlue,
                           ),
                           onPressed: () async {
                             await Share.share(
@@ -1701,19 +1750,38 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   }
 
   String _userFacingSparkError(Object error) {
+    final isEdit = _isEditMode;
     String raw = error.toString();
 
     if (error is DioException) {
+      final statusCode = error.response?.statusCode;
       final data = error.response?.data;
+      if (isEdit && (statusCode == 404 || statusCode == 405)) {
+        return 'Edit API is unavailable on backend. Please redeploy latest backend build.';
+      }
       if (data is Map<String, dynamic>) {
         final serverMsg = data['message'] ?? data['error'] ?? data['detail'];
         if (serverMsg is String && serverMsg.trim().isNotEmpty) {
           raw = serverMsg.trim();
         }
+      } else if (data is String && data.trim().isNotEmpty) {
+        raw = data.trim();
       }
     }
 
     final lower = raw.toLowerCase();
+
+    if (lower.contains('only active sparks can be edited')) {
+      return 'This spark can no longer be edited because it is no longer active.';
+    }
+
+    if (lower.contains('only the host can edit')) {
+      return 'Only the organizer can edit this spark.';
+    }
+
+    if (lower.contains('spark not found')) {
+      return 'This spark is no longer available to edit.';
+    }
 
     if (lower.contains('respectful') ||
         lower.contains('offensive') ||
@@ -1740,7 +1808,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     }
 
     if (lower.contains('location')) {
-      return 'Please choose a valid place / venue before creating the spark.';
+      return isEdit
+          ? 'Please choose a valid place / venue before saving changes.'
+          : 'Please choose a valid place / venue before creating the spark.';
     }
 
     if (lower.contains('network') ||
@@ -1753,7 +1823,15 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
       return 'Server is busy right now. Please try again shortly.';
     }
 
-    return 'Could not create spark right now. Please try again.';
+    if (raw.trim().isNotEmpty &&
+        raw != error.toString() &&
+        raw.length <= 180) {
+      return raw;
+    }
+
+    return isEdit
+        ? 'Could not save spark changes right now. Please try again.'
+        : 'Could not create spark right now. Please try again.';
   }
 
   void _hydrateManualFromAuto(_InferredPlan plan) {
@@ -2002,7 +2080,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: _kActionBlue,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () {
@@ -2055,7 +2133,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
               ),
               FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.accent,
+                  backgroundColor: _kActionBlue,
                   foregroundColor: Colors.white,
                 ),
                 onPressed:
@@ -2193,7 +2271,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: _kActionBlue,
                     foregroundColor: Colors.white,
                   ),
                   onPressed: () {
@@ -2377,7 +2455,7 @@ class _ModeSwitch extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : Colors.transparent,
+          color: selected ? _kActionBlue : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Text(
@@ -3169,17 +3247,17 @@ class _QuickChoiceChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : Colors.white,
+          color: selected ? _kActionBlue : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected ? AppColors.accent : AppColors.border,
+            color: selected ? _kActionBlueDeep : AppColors.border,
             width: 1,
           ),
           boxShadow:
               selected
                   ? [
                     BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.2),
+                      color: _kActionBlueDeep.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -3484,7 +3562,7 @@ class _RecurrenceSection extends StatelessWidget {
                   Switch.adaptive(
                     value: isRecurring,
                     onChanged: onToggle,
-                    activeColor: AppColors.accent,
+                    activeColor: _kActionBlue,
                   ),
                 ],
               ),
@@ -3627,10 +3705,10 @@ class _TypeChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : Colors.white,
+          color: selected ? _kActionBlue : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.accent : AppColors.border,
+            color: selected ? _kActionBlueDeep : AppColors.border,
           ),
         ),
         child: Text(

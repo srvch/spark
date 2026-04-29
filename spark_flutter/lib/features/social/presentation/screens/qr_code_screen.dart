@@ -15,7 +15,7 @@ class QrCodeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -36,10 +36,10 @@ class QrCodeScreen extends StatelessWidget {
                     child: Text(
                       'Invite',
                       style: TextStyle(
-                        fontSize: 34,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black,
-                        letterSpacing: -0.5,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -67,7 +67,7 @@ class QrCodeScreen extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF000000),
+                              color: AppColors.textPrimary,
                               letterSpacing: -0.3,
                               fontFamily: 'Manrope',
                             ),
@@ -75,15 +75,21 @@ class QrCodeScreen extends StatelessWidget {
                           const SizedBox(height: 6),
                           const Text(
                             'Scan to add as a friend on Spark',
-                            style: TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF8E8E93),
+                            ),
                           ),
                           const SizedBox(height: 28),
                           _QrPlaceholder(link: _deepLink),
                           const SizedBox(height: 24),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF2F2F7),
+                              color: AppColors.background,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: SelectableText(
@@ -115,7 +121,9 @@ class QrCodeScreen extends StatelessWidget {
                                   backgroundColor: AppColors.accent,
                                   behavior: SnackBarBehavior.floating,
                                   duration: const Duration(seconds: 2),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
                               );
                             },
@@ -170,12 +178,14 @@ class _QrPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF000000)
-      ..style = PaintingStyle.fill;
-    final bg = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+    final paint =
+        Paint()
+          ..color = const Color(0xFF000000)
+          ..style = PaintingStyle.fill;
+    final bg =
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill;
     canvas.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(8)),
       bg,
@@ -189,10 +199,14 @@ class _QrPainter extends CustomPainter {
       Rect.fromLTWH(0, size.height - cellSize * 7, cellSize * 7, cellSize * 7),
     ];
     for (final r in finderPatterns) {
-      canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(2)), paint);
-      final inner = Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(r, const Radius.circular(2)),
+        paint,
+      );
+      final inner =
+          Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.fill;
       canvas.drawRect(r.deflate(cellSize), inner);
       canvas.drawRect(r.deflate(cellSize * 2), paint);
     }
@@ -203,8 +217,12 @@ class _QrPainter extends CustomPainter {
         final bit = ((rng ^ (row * 31 + col * 17)) & 1) == 1;
         if (bit) {
           canvas.drawRect(
-            Rect.fromLTWH(col * cellSize + 1, row * cellSize + 1,
-                cellSize - 2, cellSize - 2),
+            Rect.fromLTWH(
+              col * cellSize + 1,
+              row * cellSize + 1,
+              cellSize - 2,
+              cellSize - 2,
+            ),
             paint,
           );
         }
@@ -248,7 +266,11 @@ class _ActionButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: primary ? Colors.white : const Color(0xFF000000)),
+            Icon(
+              icon,
+              size: 16,
+              color: primary ? Colors.white : const Color(0xFF000000),
+            ),
             const SizedBox(width: 7),
             Text(
               label,

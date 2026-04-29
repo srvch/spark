@@ -282,6 +282,66 @@ public class SparkService {
                 .orElse(false);
     }
 
+    @Transactional
+    public SparkEventEntity updateSpark(UpdateSparkCommand command) {
+        SparkEventEntity spark = sparkEventRepository.findById(command.sparkId())
+                .orElseThrow(() -> new EntityNotFoundException("Spark not found."));
+        if (!spark.getHostUserId().equals(command.hostUserId())) {
+            throw new IllegalStateException("Only the host can edit the spark.");
+        }
+        if (spark.getStatus() != SparkStatus.ACTIVE) {
+            throw new IllegalStateException("Only active sparks can be edited.");
+        }
+
+        Instant now = Instant.now();
+        if (command.startsAt().isBefore(now.minusSeconds(60))) {
+            throw new IllegalArgumentException("Spark start time cannot be in the past.");
+        }
+        if (command.startsAt().isAfter(now.plus(Duration.ofHours(24)))) {
+            throw new IllegalArgumentException("Spark start time must be within 24 hours.");
+        }
+
+        var moderation = aiModerationService.moderateSparkContent(command.title(), command.note());
+        if (!moderation.allowed()) {
+            throw new IllegalArgumentException(moderation.reason());
+        }
+
+        spark.setCategory(command.category());
+        spark.setTitle(moderation.safeTitle());
+        spark.setNote((moderation.safeNote() == null || moderation.safeNote().isBlank())
+                ? null
+                : moderation.safeNote());
+        spark.setLocationName(command.locationName());
+        spark.setLatitude(command.latitude());
+        spark.setLongitude(command.longitude());
+        spark.setStartsAt(command.startsAt());
+        spark.setEndsAt(command.endsAt());
+        spark.setMaxSpots(command.maxSpots());
+        spark.setVisibility(command.visibility());
+
+        if (command.recurrenceType() != null && !command.recurrenceType().isBlank()) {
+            spark.setRecurrenceType(command.recurrenceType().toUpperCase());
+            spark.setRecurrenceDayOfWeek(command.recurrenceDayOfWeek());
+            spark.setRecurrenceTime(command.recurrenceTime());
+            spark.setRecurrenceEndDate(command.recurrenceEndDate());
+            spark.setNextOccursAt(command.startsAt());
+        } else {
+            spark.setRecurrenceType(null);
+            spark.setRecurrenceDayOfWeek(null);
+            spark.setRecurrenceTime(null);
+            spark.setRecurrenceEndDate(null);
+            spark.setNextOccursAt(null);
+        }
+
+        SparkEventEntity saved = sparkEventRepository.save(spark);
+        sparkInviteRepository.deleteBySparkId(saved.getId());
+        if (command.visibility() == SparkVisibility.INVITE) {
+            createPendingInvites(saved.getId(), command.hostUserId(), command.inviteUserIds());
+        }
+        syncLiveCache(saved);
+        return saved;
+    }
+
     private SparkEventEntity activeSpark(UUID sparkId) {
         return sparkEventRepository.findByIdAndStatus(sparkId, SparkStatus.ACTIVE)
                 .orElseThrow(() -> new EntityNotFoundException("Active spark not found."));
@@ -464,6 +524,28 @@ public class SparkService {
     }
 
     public record CreateSparkCommand(
+            String hostUserId,
+            String category,
+            String title,
+            String note,
+            String locationName,
+            double latitude,
+            double longitude,
+            Instant startsAt,
+            Instant endsAt,
+            int maxSpots,
+            SparkVisibility visibility,
+            List<UUID> circleIds,
+            List<String> inviteUserIds,
+            String recurrenceType,
+            Integer recurrenceDayOfWeek,
+            String recurrenceTime,
+            java.time.LocalDate recurrenceEndDate
+    ) {
+    }
+
+    public record UpdateSparkCommand(
+            UUID sparkId,
             String hostUserId,
             String category,
             String title,

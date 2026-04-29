@@ -44,6 +44,7 @@ class AuthApiRepository {
       userId: '${data['userId']}',
       phoneNumber: '${data['phoneNumber']}',
       displayName: '${data['displayName']}',
+      handle: data['handle']?.toString(),
       ageBand: data['ageBand']?.toString(),
       gender: data['gender']?.toString(),
     );
@@ -69,6 +70,7 @@ class AuthApiRepository {
       userId: '${data['userId']}',
       phoneNumber: '${data['phoneNumber']}',
       displayName: '${data['displayName']}',
+      handle: data['handle']?.toString(),
       ageBand: data['ageBand']?.toString(),
       gender: data['gender']?.toString(),
     );
@@ -82,6 +84,7 @@ class AuthApiRepository {
       userId: '${data['userId']}',
       phoneNumber: '${data['phoneNumber']}',
       displayName: '${data['displayName']}',
+      handle: data['handle']?.toString(),
       ageBand: data['ageBand']?.toString(),
       gender: data['gender']?.toString(),
     );
@@ -89,6 +92,7 @@ class AuthApiRepository {
 
   Future<OnboardingProfile> completeProfile({
     required String displayName,
+    required String handle,
     required String ageBand,
     required String gender,
   }) async {
@@ -96,6 +100,7 @@ class AuthApiRepository {
       '/api/v1/users/me',
       data: {
         'displayName': displayName.trim(),
+        'handle': handle.trim(),
         'ageBand': ageBand,
         'gender': gender,
       },
@@ -104,9 +109,30 @@ class AuthApiRepository {
     return OnboardingProfile(
       userId: '${data['userId']}',
       displayName: '${data['displayName']}',
+      handle: '${data['handle'] ?? handle}',
       phoneNumber: '${data['phoneNumber']}',
       ageBand: data['ageBand']?.toString() ?? ageBand,
       gender: data['gender']?.toString() ?? gender,
+    );
+  }
+
+  Future<OnboardingProfile> fetchMyProfile({
+    required String token,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/users/me',
+      options: Options(
+        headers: {'Authorization': 'Bearer $token'},
+      ),
+    );
+    final data = response.data ?? const <String, dynamic>{};
+    return OnboardingProfile(
+      userId: '${data['userId']}',
+      displayName: '${data['displayName']}',
+      handle: '${data['handle'] ?? ''}',
+      phoneNumber: '${data['phoneNumber']}',
+      ageBand: data['ageBand']?.toString() ?? '',
+      gender: data['gender']?.toString() ?? '',
     );
   }
 
@@ -131,6 +157,7 @@ class OnboardingProfile {
   const OnboardingProfile({
     required this.userId,
     required this.displayName,
+    required this.handle,
     required this.phoneNumber,
     required this.ageBand,
     required this.gender,
@@ -138,6 +165,7 @@ class OnboardingProfile {
 
   final String userId;
   final String displayName;
+  final String handle;
   final String phoneNumber;
   final String ageBand;
   final String gender;

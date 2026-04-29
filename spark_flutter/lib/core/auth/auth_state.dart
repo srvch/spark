@@ -6,6 +6,7 @@ class AuthSession {
     required this.userId,
     required this.phoneNumber,
     required this.displayName,
+    this.handle,
     this.ageBand,
     this.gender,
     this.hidePhoneNumber = true,
@@ -15,6 +16,7 @@ class AuthSession {
   final String userId;
   final String phoneNumber;
   final String displayName;
+  final String? handle;
   final String? ageBand;
   final String? gender;
   final bool hidePhoneNumber;
@@ -24,6 +26,7 @@ class AuthSession {
     'userId': userId,
     'phoneNumber': phoneNumber,
     'displayName': displayName,
+    'handle': handle,
     'ageBand': ageBand,
     'gender': gender,
     'hidePhoneNumber': hidePhoneNumber,
@@ -34,6 +37,7 @@ class AuthSession {
     userId: '${json['userId']}',
     phoneNumber: '${json['phoneNumber']}',
     displayName: '${json['displayName']}',
+    handle: json['handle']?.toString(),
     ageBand: json['ageBand']?.toString(),
     gender: json['gender']?.toString(),
     hidePhoneNumber: json['hidePhoneNumber'] == true,
@@ -44,9 +48,18 @@ class AuthSession {
 
   bool get hasCompletedMandatoryProfile {
     if (isGuestShowcase) return true;
-    final age = (ageBand ?? '').trim();
-    final gen = (gender ?? '').trim();
-    return displayName.trim().length >= 2 && age.isNotEmpty && gen.isNotEmpty;
+    final name = displayName.trim();
+    final userHandle = (handle ?? '').trim().toLowerCase();
+    final age = (ageBand ?? '').trim().toUpperCase();
+    final gen = (gender ?? '').trim().toUpperCase();
+    const validAgeBands = {'18-24', '25-34', '35-44', '45+'};
+    const validGenders = {'MALE', 'FEMALE', 'OTHER'};
+    final hasValidHandle = RegExp(r'^[a-z0-9_]{3,32}$').hasMatch(userHandle);
+    final hasValidName = name.length >= 2 && name.toLowerCase() != 'spark user';
+    return hasValidName &&
+        hasValidHandle &&
+        validAgeBands.contains(age) &&
+        validGenders.contains(gen);
   }
 }
 
@@ -61,6 +74,7 @@ AuthSession buildGuestShowcaseSession() {
     userId: guestShowcaseUserId,
     phoneNumber: 'Guest',
     displayName: 'Guest user',
+    handle: 'guest',
   );
 }
 

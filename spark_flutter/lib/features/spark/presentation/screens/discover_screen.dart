@@ -17,6 +17,9 @@ import 'spark_detail_screen.dart';
 import 'activity_screen.dart';
 import '../widgets/location_picker_sheet.dart';
 
+const _kHeroActionBlue = Color(0xFF355588);
+const _kHeroActionBlueDeep = Color(0xFF294975);
+
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -745,7 +748,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.accent.withValues(
+                                  color: _kHeroActionBlueDeep.withValues(
                                     alpha: 0.15,
                                   ),
                                   blurRadius: 12,
@@ -755,7 +758,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             ),
                             child: FilledButton(
                               style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.accent,
+                                backgroundColor: _kHeroActionBlue,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
@@ -1494,13 +1497,13 @@ class _SearchScreenState extends State<_SearchScreen> {
                             decoration: BoxDecoration(
                               color:
                                   isActive
-                                      ? AppColors.accent
+                                      ? _kHeroActionBlue
                                       : AppColors.chipSelectedBg,
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
                                 color:
                                     isActive
-                                        ? AppColors.accent
+                                        ? _kHeroActionBlueDeep
                                         : AppColors.chipBorder,
                                 width: 1,
                               ),
@@ -1755,7 +1758,7 @@ class _CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final isEmpty = count != null && count! == 0;
 
-    const activeBg = AppColors.accent;
+    const activeBg = _kHeroActionBlue;
     const activeText = Colors.white;
     const iconColor = Colors.white;
 
@@ -1770,15 +1773,23 @@ class _CategoryChip extends StatelessWidget {
           decoration: BoxDecoration(
             color:
                 selected
-                    ? activeBg
+                    ? null
                     : isEmpty
                     ? AppColors.pillSurface.withValues(alpha: 0.5)
                     : Colors.white,
+            gradient:
+                selected
+                    ? const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [_kHeroActionBlue, _kHeroActionBlueDeep],
+                    )
+                    : null,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color:
                   selected
-                      ? activeBg
+                      ? _kHeroActionBlueDeep
                       : isEmpty
                       ? AppColors.border.withValues(alpha: 0.3)
                       : AppColors.border.withValues(alpha: 0.8),
@@ -1788,9 +1799,9 @@ class _CategoryChip extends StatelessWidget {
                 selected
                     ? [
                       BoxShadow(
-                        color: activeBg.withValues(alpha: 0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: _kHeroActionBlueDeep.withValues(alpha: 0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5),
                       ),
                     ]
                     : null,
@@ -1874,8 +1885,8 @@ class _EmptyState extends ConsumerWidget {
             icon: const Icon(Icons.add_circle_outline, size: 16),
             label: const Text('Be the first — create one'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.accent,
-              side: const BorderSide(color: AppColors.accent),
+              foregroundColor: _kHeroActionBlue,
+              side: const BorderSide(color: _kHeroActionBlue),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
@@ -2296,7 +2307,7 @@ class _CreateNudge extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.bolt_rounded, size: 22, color: AppColors.accent),
+              const Icon(Icons.bolt_rounded, size: 22, color: _kHeroActionBlue),
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
@@ -2304,7 +2315,7 @@ class _CreateNudge extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.accent,
+                    color: _kHeroActionBlue,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -2330,8 +2341,19 @@ class _CreateNudge extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 13),
               decoration: BoxDecoration(
-                color: AppColors.accent,
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [_kHeroActionBlue, _kHeroActionBlueDeep],
+                ),
                 borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: _kHeroActionBlueDeep.withValues(alpha: 0.22),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -2374,7 +2396,7 @@ class _MapListToggle extends StatelessWidget {
         height: 30,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isMap ? AppColors.accent : AppColors.surfaceSubtle,
+          color: isMap ? _kHeroActionBlue : AppColors.surfaceSubtle,
           shape: BoxShape.circle,
         ),
         child: Icon(
@@ -2406,18 +2428,26 @@ class _SelectionChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? AppColors.accent : AppColors.chipBg,
+          color: selected ? null : AppColors.chipBg,
+          gradient:
+              selected
+                  ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [_kHeroActionBlue, _kHeroActionBlueDeep],
+                  )
+                  : null,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? AppColors.accent : AppColors.chipBorder,
+            color: selected ? _kHeroActionBlueDeep : AppColors.chipBorder,
             width: 1,
           ),
           boxShadow:
               selected
                   ? [
                     BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.12),
-                      blurRadius: 8,
+                      color: _kHeroActionBlueDeep.withValues(alpha: 0.2),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ]

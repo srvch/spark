@@ -14,7 +14,8 @@ class FriendProfileScreen extends ConsumerStatefulWidget {
   final FriendUser friend;
 
   @override
-  ConsumerState<FriendProfileScreen> createState() => _FriendProfileScreenState();
+  ConsumerState<FriendProfileScreen> createState() =>
+      _FriendProfileScreenState();
 }
 
 class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
@@ -25,26 +26,29 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     HapticFeedback.mediumImpact();
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: Text(widget.friend.displayName),
-        message: const Text('Remove this person from your friends?'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove friend'),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: Text(widget.friend.displayName),
+            message: const Text('Remove this person from your friends?'),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Remove friend'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancel'),
-        ),
-      ),
     );
     if (confirmed != true || !mounted) return;
     setState(() => _unfriending = true);
     try {
-      await ref.read(socialControllerProvider).unfriend(userId: widget.friend.userId);
+      await ref
+          .read(socialControllerProvider)
+          .unfriend(userId: widget.friend.userId);
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (_) {
@@ -59,26 +63,31 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     HapticFeedback.mediumImpact();
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: Text(widget.friend.displayName),
-        message: const Text('Block this person? They will be removed from your friends and won\'t be able to send you requests.'),
-        actions: [
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Block'),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: Text(widget.friend.displayName),
+            message: const Text(
+              'Block this person? They will be removed from your friends and won\'t be able to send you requests.',
+            ),
+            actions: [
+              CupertinoActionSheetAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Block'),
+              ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
           ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancel'),
-        ),
-      ),
     );
     if (confirmed != true || !mounted) return;
     setState(() => _blocking = true);
     try {
-      await ref.read(socialControllerProvider).blockUser(userId: widget.friend.userId);
+      await ref
+          .read(socialControllerProvider)
+          .blockUser(userId: widget.friend.userId);
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (_) {
@@ -94,31 +103,37 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
     String? selectedReason;
     await showCupertinoModalPopup<void>(
       context: context,
-      builder: (ctx) => CupertinoActionSheet(
-        title: const Text('Report'),
-        message: const Text('Why are you reporting this person?'),
-        actions: [
-          for (final reason in ['Spam', 'Harassment', 'Fake account', 'Inappropriate content', 'Other'])
-            CupertinoActionSheetAction(
-              onPressed: () {
-                selectedReason = reason;
-                Navigator.of(ctx).pop();
-              },
-              child: Text(reason),
+      builder:
+          (ctx) => CupertinoActionSheet(
+            title: const Text('Report'),
+            message: const Text('Why are you reporting this person?'),
+            actions: [
+              for (final reason in [
+                'Spam',
+                'Harassment',
+                'Fake account',
+                'Inappropriate content',
+                'Other',
+              ])
+                CupertinoActionSheetAction(
+                  onPressed: () {
+                    selectedReason = reason;
+                    Navigator.of(ctx).pop();
+                  },
+                  child: Text(reason),
+                ),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
             ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text('Cancel'),
-        ),
-      ),
+          ),
     );
     if (selectedReason == null || !mounted) return;
     try {
-      await ref.read(socialControllerProvider).reportUser(
-            userId: widget.friend.userId,
-            reason: selectedReason,
-          );
+      await ref
+          .read(socialControllerProvider)
+          .reportUser(userId: widget.friend.userId, reason: selectedReason);
       if (!mounted) return;
       _toast('Report submitted. Thank you.');
     } catch (_) {
@@ -128,13 +143,15 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
   }
 
   void _toast(String msg, {bool error = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: error ? AppColors.errorText : AppColors.accent,
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: error ? AppColors.errorText : AppColors.accent,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -151,7 +168,7 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
               padding: const EdgeInsets.fromLTRB(8, 16, 16, 4),
               child: Row(
                 children: [
-                   IconButton(
+                  IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(
                       Icons.chevron_left_rounded,
@@ -164,10 +181,10 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                     child: Text(
                       'Profile',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                        letterSpacing: -0.6,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -177,36 +194,53 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                       HapticFeedback.lightImpact();
                       showCupertinoModalPopup<void>(
                         context: context,
-                        builder: (ctx) => CupertinoActionSheet(
-                          actions: [
-                            CupertinoActionSheetAction(
-                              onPressed: () {
-                                Navigator.of(ctx).pop();
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) => QrCodeScreen(userId: widget.friend.userId, name: widget.friend.displayName),
-                                ));
-                              },
-                              child: const Text('Share profile'),
+                        builder:
+                            (ctx) => CupertinoActionSheet(
+                              actions: [
+                                CupertinoActionSheetAction(
+                                  onPressed: () {
+                                    Navigator.of(ctx).pop();
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => QrCodeScreen(
+                                              userId: widget.friend.userId,
+                                              name: widget.friend.displayName,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Share profile'),
+                                ),
+                                CupertinoActionSheetAction(
+                                  isDestructiveAction: true,
+                                  onPressed: () {
+                                    Navigator.of(ctx).pop();
+                                    _report();
+                                  },
+                                  child: const Text('Report'),
+                                ),
+                                CupertinoActionSheetAction(
+                                  isDestructiveAction: true,
+                                  onPressed: () {
+                                    Navigator.of(ctx).pop();
+                                    _block();
+                                  },
+                                  child: const Text('Block'),
+                                ),
+                              ],
+                              cancelButton: CupertinoActionSheetAction(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('Cancel'),
+                              ),
                             ),
-                            CupertinoActionSheetAction(
-                              isDestructiveAction: true,
-                              onPressed: () { Navigator.of(ctx).pop(); _report(); },
-                              child: const Text('Report'),
-                            ),
-                            CupertinoActionSheetAction(
-                              isDestructiveAction: true,
-                              onPressed: () { Navigator.of(ctx).pop(); _block(); },
-                              child: const Text('Block'),
-                            ),
-                          ],
-                          cancelButton: CupertinoActionSheetAction(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            child: const Text('Cancel'),
-                          ),
-                        ),
                       );
                     },
-                    icon: const Icon(CupertinoIcons.ellipsis_circle, color: AppColors.accent, size: 24),
+                    icon: const Icon(
+                      CupertinoIcons.ellipsis_circle,
+                      color: AppColors.accent,
+                      size: 24,
+                    ),
                   ),
                 ],
               ),
@@ -220,14 +254,17 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                       child: Column(
                         children: [
                           const SizedBox(height: 8),
-                          PersonAvatar(name: widget.friend.displayName, radius: 44),
+                          PersonAvatar(
+                            name: widget.friend.displayName,
+                            radius: 44,
+                          ),
                           const SizedBox(height: 14),
                           Text(
                             widget.friend.displayName,
                             style: const TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF000000),
+                              color: AppColors.textPrimary,
                               letterSpacing: -0.5,
                               fontFamily: 'Manrope',
                             ),
@@ -235,26 +272,41 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                           const SizedBox(height: 4),
                           Text(
                             widget.friend.phoneNumber,
-                            style: const TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF8E8E93),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           if (widget.friend.isAvailable)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF34C759).withValues(alpha: 0.12),
+                                color: const Color(
+                                  0xFF34C759,
+                                ).withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(99),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(CupertinoIcons.circle_fill, size: 8, color: Color(0xFF34C759)),
+                                  Icon(
+                                    CupertinoIcons.circle_fill,
+                                    size: 8,
+                                    color: Color(0xFF34C759),
+                                  ),
                                   SizedBox(width: 5),
-                                  Text('Open to plans',
-                                      style: TextStyle(
-                                          fontSize: 13,
-                                          color: Color(0xFF34C759),
-                                          fontWeight: FontWeight.w600)),
+                                  Text(
+                                    'Open to plans',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF34C759),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -264,9 +316,16 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                               HapticFeedback.lightImpact();
                               _toast('Messaging coming soon');
                             },
-                            onQr: () => Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => QrCodeScreen(userId: widget.friend.userId, name: widget.friend.displayName),
-                            )),
+                            onQr:
+                                () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => QrCodeScreen(
+                                          userId: widget.friend.userId,
+                                          name: widget.friend.displayName,
+                                        ),
+                                  ),
+                                ),
                             onRemove: _unfriend,
                             unfriending: _unfriending,
                             blocking: _blocking,
@@ -294,15 +353,16 @@ class _FriendProfileScreenState extends ConsumerState<FriendProfileScreen> {
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, i) {
-                            final g = sharedGroups[i];
-                            final isFirst = i == 0;
-                            final isLast = i == sharedGroups.length - 1;
-                            return _GroupRow(group: g, isFirst: isFirst, isLast: isLast);
-                          },
-                          childCount: sharedGroups.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, i) {
+                          final g = sharedGroups[i];
+                          final isFirst = i == 0;
+                          final isLast = i == sharedGroups.length - 1;
+                          return _GroupRow(
+                            group: g,
+                            isFirst: isFirst,
+                            isLast: isLast,
+                          );
+                        }, childCount: sharedGroups.length),
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 40)),
@@ -351,9 +411,10 @@ class _ActionRow extends StatelessWidget {
         ),
         const SizedBox(width: 20),
         _CircleAction(
-          icon: unfriending || blocking
-              ? CupertinoIcons.hourglass
-              : CupertinoIcons.person_badge_minus,
+          icon:
+              unfriending || blocking
+                  ? CupertinoIcons.hourglass
+                  : CupertinoIcons.person_badge_minus,
           label: 'Remove',
           color: const Color(0xFFFF3B30),
           onTap: onRemove,
@@ -407,7 +468,11 @@ class _CircleAction extends StatelessWidget {
 }
 
 class _GroupRow extends StatelessWidget {
-  const _GroupRow({required this.group, required this.isFirst, required this.isLast});
+  const _GroupRow({
+    required this.group,
+    required this.isFirst,
+    required this.isLast,
+  });
   final SparkGroup group;
   final bool isFirst;
   final bool isLast;
@@ -423,7 +488,10 @@ class _GroupRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 0 : 1),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: _radius),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: _radius,
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
@@ -435,22 +503,33 @@ class _GroupRow extends StatelessWidget {
                 color: AppColors.accent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(CupertinoIcons.person_2_fill,
-                  size: 16, color: AppColors.accent),
+              child: const Icon(
+                CupertinoIcons.person_2_fill,
+                size: 16,
+                color: AppColors.accent,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(group.name,
-                      style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF000000),
-                          fontFamily: 'Manrope')),
-                  Text('${group.memberCount} members',
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93))),
+                  Text(
+                    group.name,
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                  Text(
+                    '${group.memberCount} members',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF8E8E93),
+                    ),
+                  ),
                 ],
               ),
             ),

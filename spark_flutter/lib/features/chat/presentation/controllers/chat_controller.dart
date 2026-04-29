@@ -29,8 +29,11 @@ class ChatMessage {
   final bool isAi;
 }
 
-final chatThreadsProvider =
-    StateNotifierProvider.family<ChatThreadNotifier, List<ChatMessage>, String>((ref, sparkId) {
+final chatThreadsProvider = StateNotifierProvider.family<
+  ChatThreadNotifier,
+  List<ChatMessage>,
+  String
+>((ref, sparkId) {
   return ChatThreadNotifier(ref.watch(chatApiRepositoryProvider), sparkId);
 });
 
@@ -57,10 +60,14 @@ class ChatThreadNotifier extends StateNotifier<List<ChatMessage>> {
   }
 
   ChatMessage _toUiMessage(domain.ChatMessage msg) {
+    final senderLabel =
+        msg.senderId.length >= 4
+            ? 'User ${msg.senderId.substring(0, 4)}'
+            : 'User';
     return ChatMessage(
       id: msg.id,
       senderId: msg.senderId,
-      sender: msg.isAi ? 'Spark Bot' : 'User ${msg.senderId.substring(0, 4)}',
+      sender: senderLabel,
       text: msg.text,
       isMine: false, // In production, check against current user ID
       timeLabel: '${msg.createdAt.hour}:${msg.createdAt.minute}',
@@ -89,8 +96,8 @@ class ChatModerationState {
   }
 }
 
-final chatModerationProvider =
-    StateProvider<Map<String, ChatModerationState>>((ref) => {});
+final chatModerationProvider = StateProvider<Map<String, ChatModerationState>>(
+  (ref) => {},
+);
 
-final lockedSparkIdsProvider =
-    StateProvider<Set<String>>((ref) => <String>{});
+final lockedSparkIdsProvider = StateProvider<Set<String>>((ref) => <String>{});

@@ -9,7 +9,6 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/navigation/root_shell.dart';
 import '../../../../shared/widgets/person_avatar.dart';
 import '../../../../shared/widgets/primary_button.dart';
-import '../../../spark/domain/spark.dart';
 import '../../../spark/domain/spark_invite.dart';
 import '../../../spark/presentation/controllers/spark_controller.dart';
 import '../../../spark/presentation/screens/activity_screen.dart';
@@ -17,9 +16,7 @@ import '../../../../features/auth/presentation/controllers/auth_controller.dart'
 import '../../../../features/auth/presentation/screens/phone_login_screen.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_preferences_controller.dart';
-import '../controllers/availability_controller.dart';
 import '../../data/safety_api_repository.dart';
-import '../widgets/availability_sheet.dart';
 
 const _kNavy = AppColors.accent;
 const _kDivider = AppColors.border;
@@ -63,6 +60,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               UserProfile(
                 userId: session.userId,
                 displayName: session.displayName,
+                handle: session.handle ?? 'guest',
                 phoneNumber: session.phoneNumber,
                 memberSince: DateTime(2026, 3, 1),
                 ageBand: session.ageBand ?? '',
@@ -329,14 +327,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ? 'Alerts on'
                                 : 'All alerts off',
                         onTap: () => _showAlertsSheet(context),
-                      ),
-                      _MenuRow(
-                        icon: Icons.calendar_today_outlined,
-                        label: 'My Availability',
-                        sublabel: AvailabilityHelper.summaryLabel(
-                          ref.watch(availabilityProvider),
-                        ),
-                        onTap: () => showAvailabilitySheet(context),
                       ),
 
                       const _Divider(),
@@ -634,40 +624,105 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmSignOut(BuildContext ctx) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showModalBottomSheet<bool>(
       context: ctx,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder:
-          (dialogCtx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            title: const Text(
-              'Sign out?',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontFamily: 'Manrope',
-              ),
-            ),
-            content: const Text(
-              "You'll need your phone number to sign back in.",
-              style: TextStyle(fontSize: 14, height: 1.4),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.errorText,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+          (sheetCtx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.accentTint,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.logout_rounded,
+                          size: 20,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Sign out?',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'Manrope',
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              "You'll need your phone number to sign back in.",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                onPressed: () => Navigator.of(dialogCtx).pop(true),
-                child: const Text('Sign out'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(sheetCtx).pop(false),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            side: const BorderSide(color: AppColors.border),
+                            foregroundColor: AppColors.textPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            backgroundColor: AppColors.errorText,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(sheetCtx).pop(true),
+                          child: const Text(
+                            'Sign out',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
     );
 
@@ -677,117 +732,191 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _confirmDeleteAccount(BuildContext ctx) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showModalBottomSheet<bool>(
       context: ctx,
+      showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder:
-          (dialogCtx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            title: Row(
-              children: [
-                Icon(
-                  Icons.warning_rounded,
-                  color: AppColors.errorText,
-                  size: 22,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'Delete account?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontFamily: 'Manrope',
-                      fontSize: 18,
+          (sheetCtx) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.errorSurface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.warning_rounded,
+                          color: AppColors.errorText,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Delete account?',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'Manrope',
+                                fontSize: 18,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'This will permanently delete your account and Spark history.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'This will permanently delete:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  _BulletItem('Your profile and phone number'),
+                  _BulletItem('All sparks you created'),
+                  _BulletItem('Your join history and activity'),
+                  _BulletItem('Groups, friends, and invites'),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.errorText.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.errorText,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'This cannot be undone.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.errorText,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This will permanently delete:',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 10),
-                _BulletItem('Your profile and phone number'),
-                _BulletItem('All sparks you created'),
-                _BulletItem('Your join history and activity'),
-                _BulletItem('Groups, friends, and invites'),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.errorText.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
+                  const SizedBox(height: 14),
+                  Row(
                     children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: AppColors.errorText,
-                        size: 16,
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.of(sheetCtx).pop(false),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            side: const BorderSide(color: AppColors.border),
+                            foregroundColor: AppColors.textPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Keep account',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'This cannot be undone.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.errorText,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            backgroundColor: AppColors.errorText,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(sheetCtx).pop(true),
+                          child: const Text(
+                            'Delete account',
+                            style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(false),
-                child: const Text('Keep account'),
-              ),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.errorText,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () => Navigator.of(dialogCtx).pop(true),
-                child: const Text('Delete account'),
-              ),
-            ],
           ),
     );
 
     if (confirmed != true || !ctx.mounted) return;
 
-    // Show loading overlay while deleting
-    showDialog<void>(
+    // Show loading bottom sheet while deleting
+    showModalBottomSheet<void>(
       context: ctx,
-      barrierDismissible: false,
+      isDismissible: false,
+      enableDrag: false,
+      showDragHandle: false,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder:
-          (_) => const AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
-            content: SizedBox(
-              height: 56,
+          (_) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               child: Row(
+                mainAxisSize: MainAxisSize.max,
                 children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.accentTint,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
                   ),
-                  SizedBox(width: 16),
-                  Text('Deleting account…'),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Deleting account…',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Manrope',
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -799,7 +928,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       // Session cleared → SparkApp navigates to login; loading dialog auto-dismissed.
     } catch (e) {
       if (ctx.mounted) {
-        Navigator.of(ctx).pop(); // Close loading dialog
+        Navigator.of(ctx).pop();
         ScaffoldMessenger.of(ctx).showSnackBar(
           const SnackBar(
             content: Text('Could not delete account. Please try again.'),

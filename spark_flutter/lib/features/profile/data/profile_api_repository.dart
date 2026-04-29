@@ -4,6 +4,7 @@ class UserProfile {
   const UserProfile({
     required this.userId,
     required this.displayName,
+    required this.handle,
     required this.phoneNumber,
     required this.memberSince,
     required this.ageBand,
@@ -13,6 +14,7 @@ class UserProfile {
 
   final String userId;
   final String displayName;
+  final String handle;
   final String phoneNumber;
   final DateTime memberSince;
   final String ageBand;
@@ -21,6 +23,7 @@ class UserProfile {
 
   UserProfile copyWith({
     String? displayName,
+    String? handle,
     String? ageBand,
     String? gender,
     bool? hidePhoneNumber,
@@ -28,6 +31,7 @@ class UserProfile {
     return UserProfile(
       userId: userId,
       displayName: displayName ?? this.displayName,
+      handle: handle ?? this.handle,
       phoneNumber: phoneNumber,
       memberSince: memberSince,
       ageBand: ageBand ?? this.ageBand,
@@ -48,6 +52,7 @@ class ProfileApiRepository {
     return UserProfile(
       userId: '${data['userId']}',
       displayName: '${data['displayName']}',
+      handle: '${data['handle'] ?? ''}',
       phoneNumber: '${data['phoneNumber']}',
       memberSince: DateTime.tryParse('${data['createdAt']}') ?? DateTime.now(),
       ageBand: '${data['ageBand'] ?? ''}',
@@ -58,12 +63,14 @@ class ProfileApiRepository {
 
   Future<UserProfile> updateProfile({
     required String displayName,
+    required String handle,
     required String ageBand,
     required String gender,
     bool? hidePhoneNumber,
   }) async {
     final Map<String, dynamic> updateData = {};
     updateData['displayName'] = displayName;
+    updateData['handle'] = handle;
     updateData['ageBand'] = ageBand;
     updateData['gender'] = gender;
     if (hidePhoneNumber != null) updateData['hidePhoneNumber'] = hidePhoneNumber;
@@ -76,6 +83,7 @@ class ProfileApiRepository {
     return UserProfile(
       userId: '${data['userId']}',
       displayName: '${data['displayName']}',
+      handle: '${data['handle'] ?? ''}',
       phoneNumber: '${data['phoneNumber']}',
       memberSince: DateTime.tryParse('${data['createdAt']}') ?? DateTime.now(),
       ageBand: '${data['ageBand'] ?? ''}',

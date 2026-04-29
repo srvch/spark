@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../chat/presentation/screens/chat_screen.dart';
+import '../../../spark/presentation/controllers/spark_controller.dart';
+import '../../../spark/presentation/screens/spark_detail_screen.dart';
 import '../controllers/notification_controller.dart';
 import '../../data/notification_api_repository.dart';
+
+const _kScreenTitleSize = 24.0;
 
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
@@ -29,55 +34,62 @@ class NotificationScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Notifications',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                        letterSpacing: -0.6,
+                        fontSize: _kScreenTitleSize,
+                        fontWeight: FontWeight.w800,
+                        color: context.palette.textPrimary,
+                        letterSpacing: -0.7,
                         fontFamily: 'Manrope',
                       ),
                     ),
                   ),
                   IconButton(
-                    onPressed: () => ref.read(notificationControllerProvider.notifier).refresh(),
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
+                    onPressed:
+                        () =>
+                            ref
+                                .read(notificationControllerProvider.notifier)
+                                .refresh(),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: notificationsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (list) {
-          if (list.isEmpty) {
-            return const Center(
-              child: Text(
-                'No notifications yet',
-                style: TextStyle(color: AppColors.textSecondary),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (list) {
+                  if (list.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No notifications yet',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: list.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final n = list[index];
+                      return _NotificationCard(notification: n);
+                    },
+                  );
+                },
               ),
-            );
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: list.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final n = list[index];
-              return _NotificationCard(notification: n);
-            },
-          );
-        },
+            ),
+          ],
+        ),
       ),
-    ),
-  ],
-),
-),
-);
-}
+    );
+  }
 }
 
 class _NotificationCard extends ConsumerWidget {
@@ -89,19 +101,51 @@ class _NotificationCard extends ConsumerWidget {
     final isRead = notification.readAt != null;
 
     return InkWell(
-      onTap: () {
+      onTap: () async {
         if (!isRead) {
-          ref.read(notificationControllerProvider.notifier).markRead(notification.id);
+          await ref
+              .read(notificationControllerProvider.notifier)
+              .markRead(notification.id);
         }
-        // TODO: Handle navigation based on notification type/sparkId
+        final sparkId = notification.sparkId;
+        if (sparkId == null || sparkId.isEmpty) return;
+        await ref.read(sparkDataControllerProvider).fetchSparkDetail(sparkId);
+        final spark =
+            ref
+                .read(allSparksProvider)
+                .where((s) => s.id == sparkId)
+                .firstOrNull;
+        if (spark == null || !context.mounted) return;
+        final type = notification.type.toUpperCase();
+        final openChat =
+            type.contains('JOIN') ||
+            type.contains('LEAVE') ||
+            type.contains('START') ||
+            type.contains('FILLING') ||
+            type.contains('CHAT');
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (_) =>
+                    openChat
+                        ? ChatScreen(spark: spark)
+                        : SparkDetailScreen(spark: spark),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isRead ? Colors.white : AppColors.accentSurface.withValues(alpha: 0.1),
+          color:
+              isRead
+                  ? context.palette.surface
+                  : AppColors.accentSurface.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isRead ? AppColors.border : AppColors.accent.withValues(alpha: 0.2),
+            color:
+                isRead
+                    ? AppColors.border
+                    : AppColors.accent.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -140,10 +184,7 @@ class _NotificationCard extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               _formatDate(notification.createdAt),
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.textMuted,
-              ),
+              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
             ),
           ],
         ),

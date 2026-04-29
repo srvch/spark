@@ -35,6 +35,7 @@ public class UserController {
         return new ProfileResponse(
                 user.getId().toString(),
                 user.getDisplayName(),
+                user.getHandle(),
                 user.getPhoneNumber(),
                 user.getCreatedAt(),
                 user.getAgeBand(),
@@ -50,13 +51,20 @@ public class UserController {
         CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
         AppUserEntity user = appUserRepository.findById(UUID.fromString(currentUser.userId()))
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found."));
+        String normalizedHandle = normalizeHandle(request.handle());
+        if (appUserRepository.existsByHandleIgnoreCase(normalizedHandle)
+                && (user.getHandle() == null || !user.getHandle().equalsIgnoreCase(normalizedHandle))) {
+            throw new IllegalArgumentException("Handle is already taken.");
+        }
         user.setDisplayName(request.displayName().trim());
+        user.setHandle(normalizedHandle);
         user.setAgeBand(normalizeAgeBand(request.ageBand()));
         user.setGender(normalizeGender(request.gender()));
         AppUserEntity saved = appUserRepository.save(user);
         return new ProfileResponse(
                 saved.getId().toString(),
                 saved.getDisplayName(),
+                saved.getHandle(),
                 saved.getPhoneNumber(),
                 saved.getCreatedAt(),
                 saved.getAgeBand(),
@@ -86,6 +94,7 @@ public class UserController {
     public record ProfileResponse(
             String userId,
             String displayName,
+            String handle,
             String phoneNumber,
             Instant createdAt,
             String ageBand,
@@ -94,9 +103,21 @@ public class UserController {
 
     public record UpdateProfileRequest(
             @NotBlank @Size(min = 2, max = 120) String displayName,
+            @NotBlank @Size(min = 3, max = 32) String handle,
             @NotBlank String ageBand,
             @NotBlank String gender
     ) {}
+
+    private String normalizeHandle(String handle) {
+        String value = handle.trim().toLowerCase();
+        if (value.startsWith("@")) {
+            value = value.substring(1);
+        }
+        if (!value.matches("^[a-z0-9_]{3,32}$")) {
+            throw new IllegalArgumentException("Handle must be 3-32 chars (a-z, 0-9, underscore).");
+        }
+        return value;
+    }
 
     private String normalizeAgeBand(String ageBand) {
         final String value = ageBand.trim().toUpperCase();

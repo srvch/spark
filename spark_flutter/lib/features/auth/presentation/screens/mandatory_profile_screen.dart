@@ -17,18 +17,24 @@ class _MandatoryProfileScreenState extends ConsumerState<MandatoryProfileScreen>
   static const List<String> _genders = ['MALE', 'FEMALE', 'OTHER'];
 
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _handleController = TextEditingController();
   String? _ageBand;
   String? _gender;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _handleController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
-    if (name.length < 2 || _ageBand == null || _gender == null) {
+    final handle = _normalizeHandle(_handleController.text);
+    if (name.length < 2 ||
+        !RegExp(r'^[a-z0-9_]{3,32}$').hasMatch(handle) ||
+        _ageBand == null ||
+        _gender == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all required fields.')),
       );
@@ -38,9 +44,18 @@ class _MandatoryProfileScreenState extends ConsumerState<MandatoryProfileScreen>
         .read(authControllerProvider.notifier)
         .completeMandatoryProfile(
           displayName: name,
+          handle: handle,
           ageBand: _ageBand!,
           gender: _gender!,
         );
+  }
+
+  String _normalizeHandle(String raw) {
+    var value = raw.trim().toLowerCase();
+    if (value.startsWith('@')) {
+      value = value.substring(1);
+    }
+    return value;
   }
 
   @override
@@ -65,7 +80,7 @@ class _MandatoryProfileScreenState extends ConsumerState<MandatoryProfileScreen>
               ),
               const SizedBox(height: 8),
               const Text(
-                'Name, age band, and gender are required to continue.',
+                'Name, handle, age band, and gender are required to continue.',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -77,6 +92,17 @@ class _MandatoryProfileScreenState extends ConsumerState<MandatoryProfileScreen>
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Full name *'),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _handleController,
+                textInputAction: TextInputAction.next,
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  labelText: 'Handle *',
+                  hintText: 'e.g. @saurav',
+                  helperText: '3-32 chars: a-z, 0-9, underscore',
+                ),
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(

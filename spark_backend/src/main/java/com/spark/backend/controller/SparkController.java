@@ -184,6 +184,51 @@ public class SparkController {
         sparkService.cancelSpark(sparkId, currentUser.userId());
     }
 
+    @PutMapping("/{sparkId}")
+    public SparkResponse update(
+            Authentication authentication,
+            @PathVariable UUID sparkId,
+            @Valid @RequestBody CreateSparkRequest req
+    ) {
+        CurrentUser currentUser = (CurrentUser) authentication.getPrincipal();
+        SparkVisibility visibility = req.visibility() == null ? SparkVisibility.PUBLIC : req.visibility();
+        List<UUID> circleIds = req.circleIds() == null
+                ? List.of()
+                : req.circleIds().stream().filter(id -> id != null).distinct().toList();
+        List<String> inviteUserIds = req.inviteUserIds() == null
+                ? List.of()
+                : req.inviteUserIds().stream()
+                .filter(id -> id != null && !id.isBlank())
+                .map(String::trim)
+                .distinct()
+                .collect(Collectors.toList());
+        validateAudience(visibility, circleIds, inviteUserIds);
+
+        SparkEventEntity spark = sparkService.updateSpark(
+                new SparkService.UpdateSparkCommand(
+                        sparkId,
+                        currentUser.userId(),
+                        req.category(),
+                        req.title(),
+                        req.note(),
+                        req.locationName(),
+                        req.latitude(),
+                        req.longitude(),
+                        req.startsAt(),
+                        req.endsAt(),
+                        req.maxSpots(),
+                        visibility,
+                        circleIds,
+                        inviteUserIds,
+                        req.recurrenceType(),
+                        req.recurrenceDayOfWeek(),
+                        req.recurrenceTime(),
+                        req.recurrenceEndDate()
+                )
+        );
+        return toResponse(spark, sparkService.joinedCount(spark.getId()), currentUser.userId());
+    }
+
     @GetMapping("/{sparkId}/participants")
     public List<String> participants(@PathVariable UUID sparkId) {
         return sparkService.listParticipants(sparkId);

@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface AppUserRepository extends JpaRepository<AppUserEntity, UUID> {
     Optional<AppUserEntity> findByPhoneNumber(String phoneNumber);
+    boolean existsByHandleIgnoreCase(String handle);
 }
