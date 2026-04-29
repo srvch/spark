@@ -796,24 +796,6 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.spark});
   final Spark spark;
 
-  static String _emoji(SparkCategory? cat) => switch (cat) {
-    SparkCategory.sports  => '⚽',
-    SparkCategory.study   => '📚',
-    SparkCategory.ride    => '🛵',
-    SparkCategory.events  => '🎉',
-    SparkCategory.hangout => '☕',
-    _                     => '⚡',
-  };
-
-  static Color _bgColor(SparkCategory? cat) => switch (cat) {
-    SparkCategory.sports  => AppColors.catSports,
-    SparkCategory.study   => AppColors.catStudy,
-    SparkCategory.ride    => AppColors.catRide,
-    SparkCategory.events  => AppColors.catEvents,
-    SparkCategory.hangout => AppColors.catHangout,
-    _                     => AppColors.accentSurface,
-  };
-
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -822,17 +804,21 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Spark logo — not category emoji
             Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: _bgColor(spark.category),
+                color: AppColors.accentSurface,
                 borderRadius: BorderRadius.circular(24),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                _emoji(spark.category),
-                style: const TextStyle(fontSize: 38),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(
+                'assets/images/spark_logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Text('⚡', style: TextStyle(fontSize: 38)),
+                ),
               ),
             ),
             const SizedBox(height: 20),
