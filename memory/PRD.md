@@ -130,16 +130,17 @@ _(see full list above)_
 - **Sectioned card layout** replacing single-card form: `What → When → Where → Who → Extras`
 - **Sticky bottom CTA** `_StickyCreateBar` with live preview ("title · in 30 min · Near you · 5 spots") + Create button
 - **Slimmer header** (`_CreateScreenHeader`): back-arrow circle button, title + tagline, animated category icon orb (uses `category.accentColor`)
-- **Title input** redesigned (`_TitleField`): borderless, large 17px Manrope, light-gray fill, focuses to action-blue
-- **Category rail** (`_CategoryRail`): vertical icon-tile design (78px wide), icon circle + label. Selected = category accent tint background + colored shadow
-- **Time chips** (`_TimeChips`): Now / 30 min / 1 hr / 2 hr / Custom — with selected drop-shadow pop & `_TimeConfirmation` accent pill below ("Today, 6:30 PM · in 30 min")
-- **Place row** (`_PlaceTile`): icon-circle + title + subline ("Tap to change place" / "We'll use your current area")
-- **Visibility toggle** (`_VisibilitySegmented`): animated sliding-thumb segmented control (Public ↔ Private), 240ms easeOutCubic glide
-- **Group size block** (`_GroupSizeBlock`): switch row for "Open group" + animated stepper for limited spots. Uses `_BigStepper` w/ ScaleTransition on count change
-- **Note tile** (`_NoteTile`): tappable icon-row with helpful subtext when empty
-- **Recurrence** preserved as-is inside the When card
+- **Title input** redesigned (`_TitleField`): borderless, 16px Manrope on a soft tinted bg, focuses to action-blue
+- **Category as compact pills** (`_CategoryPill`): inline `icon + label`, selected fills with category accent — replaces earlier chunky tile
+- **Time chips** (`_TimeChips`): Now / 30 min / 1 hr / 2 hr / Custom — selected drop-shadow + `_TimeConfirmation` accent pill below
+- **Place row** (`_PlaceTile`): flat row inside the card (no nested bg) with icon-circle + title + subline
+- **Visibility toggle** (`_VisibilitySegmented`): animated sliding-thumb segmented (Public ↔ Private)
+- **Group size** (`_GroupSizeBlock` + `_InlineStepper`): flat — switch row + inline stepper (big animated number, +/- circles, disabled state at bounds)
+- **Note tile** (`_NoteTile`): flat tappable row
+- **Section header** (`_SectionLabel`): clean bold 15px title with thin accent leader bar (no icon-box)
+- **Suggestions** capped at **2**; `_smartSuggestions` returns short labels ("Cricket at 6", "Evening walk") without "near {city}" suffix
+- **Plurals fixed**: "1 spot" / "5 spots", "1 seat" / "2 seats"
 - **All preserved**: AI parsing logic (dormant), `_createSpark`, validation, location picker, recurrence, audience pickers
-- File grew from 3777 → 4549 lines (new widgets appended; old build replaced)
 
 ## P2 / Future
 - [ ] Read receipts in chat

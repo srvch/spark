@@ -207,7 +207,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                               spacing: 8,
                               runSpacing: 8,
                               children: dynamicSuggestions
-                                  .take(3)
+                                  .take(2)
                                   .map(
                                     (label) => _SuggestionChip(
                                       label: label,
@@ -499,8 +499,8 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
         spotsLabel: _manualOpenGroup
             ? 'Open group'
             : (_manualCategory == SparkCategory.ride
-                ? '${_manualSpotsValue()} seats'
-                : '${_manualSpotsValue()} spots'),
+                ? '${_manualSpotsValue()} ${_manualSpotsValue() == 1 ? "seat" : "seats"}'
+                : '${_manualSpotsValue()} ${_manualSpotsValue() == 1 ? "spot" : "spots"}'),
         category: _manualCategory,
         ctaLabel: _isCreatingSpark
             ? (_isEditMode ? 'Saving…' : 'Creating…')
@@ -560,27 +560,21 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   List<String> _smartSuggestions(String selectedLocation) {
     final hour = DateTime.now().hour;
-    final isGeneric = selectedLocation == 'Near you' ||
-        selectedLocation == 'Current location';
-    final loc = isGeneric ? '' : ' near $selectedLocation';
     if (hour < 11) {
       return [
-        'Morning run$loc',
-        'Chai catch-up now$loc',
-        'Interview prep in 2 hrs$loc',
+        'Morning run',
+        'Chai catch-up',
       ];
     }
     if (hour < 17) {
       return [
-        'Lunch hangout$loc',
-        'Study sprint in 1 hr$loc',
-        'Ride to office in 30 min$loc',
+        'Lunch hangout',
+        'Study sprint',
       ];
     }
     return [
-      'Cricket at 6$loc',
-      'Coffee catch-up now$loc',
-      'Evening walk$loc',
+      'Cricket at 6',
+      'Evening walk',
     ];
   }
 
@@ -3497,7 +3491,7 @@ class _TypeChip extends StatelessWidget {
 // New design components for Create Spark redesign (Feb 2026)
 // ──────────────────────────────────────────────────────────────────────
 
-/// Soft white card used per-section. Subtle shadow + generous padding.
+/// Soft white card used per-section. Subtle shadow + comfortable padding.
 class _SoftCard extends StatelessWidget {
   const _SoftCard({required this.child});
   final Widget child;
@@ -3506,16 +3500,20 @@ class _SoftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
-            blurRadius: 14,
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 16,
             offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+            blurRadius: 1,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -3524,7 +3522,7 @@ class _SoftCard extends StatelessWidget {
   }
 }
 
-/// Section eyebrow label with a small leading icon.
+/// Section header. Bold title with a tiny accent leader.
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel({required this.icon, required this.text});
   final IconData icon;
@@ -3535,23 +3533,21 @@ class _SectionLabel extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 26,
-          height: 26,
+          width: 4,
+          height: 16,
           decoration: BoxDecoration(
-            color: AppColors.accentSurface,
-            borderRadius: BorderRadius.circular(8),
+            color: AppColors.accent,
+            borderRadius: BorderRadius.circular(2),
           ),
-          alignment: Alignment.center,
-          child: Icon(icon, size: 14, color: AppColors.accent),
         ),
         const SizedBox(width: 10),
         Text(
           text,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
-            letterSpacing: -0.2,
+            letterSpacing: -0.3,
             fontFamily: 'Manrope',
           ),
         ),
@@ -3560,7 +3556,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-/// Large, friendly title input with no harsh border.
+/// Large, friendly title input. Borderless on a soft tinted bg.
 class _TitleField extends StatelessWidget {
   const _TitleField({required this.controller, required this.onChanged});
   final TextEditingController controller;
@@ -3570,7 +3566,7 @@ class _TitleField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F6FA),
+        color: const Color(0xFFF4F6FB),
         borderRadius: BorderRadius.circular(14),
       ),
       child: TextField(
@@ -3580,7 +3576,7 @@ class _TitleField extends StatelessWidget {
         maxLength: 60,
         textInputAction: TextInputAction.done,
         style: const TextStyle(
-          fontSize: 17,
+          fontSize: 16,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
           letterSpacing: -0.3,
@@ -3591,12 +3587,12 @@ class _TitleField extends StatelessWidget {
           hintStyle: TextStyle(
             color: AppColors.textPrimary.withValues(alpha: 0.32),
             fontWeight: FontWeight.w600,
-            fontSize: 16,
+            fontSize: 15,
           ),
           counterText: '',
           isDense: true,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           filled: true,
           fillColor: Colors.transparent,
           border: OutlineInputBorder(
@@ -3618,7 +3614,7 @@ class _TitleField extends StatelessWidget {
   }
 }
 
-/// Horizontal category icon-rail. Selected = colored bg using category accent.
+/// Horizontal category pill rail. Compact pills, selected = filled with category accent.
 class _CategoryRail extends StatelessWidget {
   const _CategoryRail({required this.selected, required this.onChanged});
   final SparkCategory selected;
@@ -3633,8 +3629,8 @@ class _CategoryRail extends StatelessWidget {
         children: SparkCategory.values
             .map(
               (c) => Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: _CategoryTile(
+                padding: const EdgeInsets.only(right: 8),
+                child: _CategoryPill(
                   category: c,
                   selected: c == selected,
                   onTap: () => onChanged(c),
@@ -3647,8 +3643,8 @@ class _CategoryRail extends StatelessWidget {
   }
 }
 
-class _CategoryTile extends StatelessWidget {
-  const _CategoryTile({
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({
     required this.category,
     required this.selected,
     required this.onTap,
@@ -3663,56 +3659,42 @@ class _CategoryTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
-        width: 78,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? accent.withValues(alpha: 0.14) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: selected ? accent : Colors.white,
+          borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected
-                ? accent.withValues(alpha: 0.55)
-                : AppColors.border,
-            width: selected ? 1.4 : 1,
+            color: selected ? accent : AppColors.border,
+            width: 1,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: accent.withValues(alpha: 0.22),
+                    color: accent.withValues(alpha: 0.28),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : null,
         ),
-        child: Column(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: selected ? accent : accent.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                category.icon,
-                size: 18,
-                color: selected ? Colors.white : accent,
-              ),
+            Icon(
+              category.icon,
+              size: 15,
+              color: selected ? Colors.white : accent,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(width: 7),
             Text(
               category.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-                color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-                letterSpacing: -0.1,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : AppColors.textPrimary,
+                letterSpacing: -0.2,
                 fontFamily: 'Manrope',
               ),
             ),
@@ -3906,7 +3888,7 @@ class _TimeConfirmation extends StatelessWidget {
   }
 }
 
-/// Tappable row showing the chosen place.
+/// Tappable row showing the chosen place (flat — no inner card).
 class _PlaceTile extends StatelessWidget {
   const _PlaceTile({
     required this.location,
@@ -3923,22 +3905,17 @@ class _PlaceTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4F6FA),
-            borderRadius: BorderRadius.circular(14),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
+                  color: AppColors.accent.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -3959,10 +3936,10 @@ class _PlaceTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
-                        letterSpacing: -0.2,
+                        letterSpacing: -0.3,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -3972,7 +3949,7 @@ class _PlaceTile extends StatelessWidget {
                           ? 'We\'ll use your current area'
                           : 'Tap to change place',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                         fontFamily: 'Manrope',
@@ -4102,7 +4079,7 @@ class _VisibilitySegmented extends StatelessWidget {
   }
 }
 
-/// Group size block: Limited (with stepper) ↔ Open group switch.
+/// Group size block: Open group switch + inline stepper. Flat (no inner card).
 class _GroupSizeBlock extends StatelessWidget {
   const _GroupSizeBlock({
     required this.isOpenGroup,
@@ -4122,96 +4099,89 @@ class _GroupSizeBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF4F6FA),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          // Open group switch row
-          Padding(
-            padding:
-                EdgeInsets.fromLTRB(14, 12, 10, isOpenGroup ? 12 : 4),
-            child: Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.public_rounded,
-                    size: 16,
-                    color: AppColors.accent,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Open group',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.2,
-                          fontFamily: 'Manrope',
-                        ),
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        isOpenGroup
-                            ? 'Anyone can join — no spot limit.'
-                            : 'Limited spots. Tap to switch.',
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                          fontFamily: 'Manrope',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Switch.adaptive(
-                  value: isOpenGroup,
-                  onChanged: onSetOpen,
-                  activeColor: _kActionBlue,
-                ),
-              ],
+    return Column(
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.public_rounded,
+                size: 16,
+                color: AppColors.accent,
+              ),
             ),
-          ),
-          // Stepper (only when limited)
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: isOpenGroup
-                ? const SizedBox(width: double.infinity, height: 0)
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
-                    child: _BigStepper(
-                      value: spots,
-                      label: isRideCategory ? 'seats' : 'spots',
-                      onIncrease: onIncrease,
-                      onDecrease: onDecrease,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Open group',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.2,
+                      fontFamily: 'Manrope',
                     ),
                   ),
-          ),
-        ],
-      ),
+                  const SizedBox(height: 1),
+                  Text(
+                    isOpenGroup
+                        ? 'Anyone can join — no spot limit.'
+                        : 'Limited spots. Tap to switch.',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      fontFamily: 'Manrope',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Transform.scale(
+              scale: 0.92,
+              child: Switch.adaptive(
+                value: isOpenGroup,
+                onChanged: onSetOpen,
+                activeColor: _kActionBlue,
+              ),
+            ),
+          ],
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          child: isOpenGroup
+              ? const SizedBox(width: double.infinity, height: 0)
+              : Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _InlineStepper(
+                    value: spots,
+                    label: isRideCategory
+                        ? (spots == 1 ? 'seat' : 'seats')
+                        : (spots == 1 ? 'spot' : 'spots'),
+                    onIncrease: onIncrease,
+                    onDecrease: onDecrease,
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
 
-class _BigStepper extends StatelessWidget {
-  const _BigStepper({
+class _InlineStepper extends StatelessWidget {
+  const _InlineStepper({
     required this.value,
     required this.label,
     required this.onIncrease,
@@ -4225,63 +4195,70 @@ class _BigStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          _StepCircle(icon: Icons.remove_rounded, onTap: onDecrease),
-          Expanded(
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                transitionBuilder: (child, anim) => ScaleTransition(
-                  scale: anim,
-                  child: FadeTransition(opacity: anim, child: child),
-                ),
-                child: RichText(
-                  key: ValueKey(value),
-                  text: TextSpan(
-                    style: const TextStyle(fontFamily: 'Manrope'),
-                    children: [
-                      TextSpan(
-                        text: '$value',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
+    return Row(
+      children: [
+        _StepCircle(
+          icon: Icons.remove_rounded,
+          enabled: value > 1,
+          onTap: onDecrease,
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: anim,
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: RichText(
+                key: ValueKey(value),
+                text: TextSpan(
+                  style: const TextStyle(fontFamily: 'Manrope'),
+                  children: [
+                    TextSpan(
+                      text: '$value',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.6,
                       ),
-                      TextSpan(
-                        text: '  $label',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
-                        ),
+                    ),
+                    TextSpan(
+                      text: '  $label',
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-          _StepCircle(icon: Icons.add_rounded, onTap: onIncrease),
-        ],
-      ),
+        ),
+        const SizedBox(width: 14),
+        _StepCircle(
+          icon: Icons.add_rounded,
+          enabled: value < 20,
+          onTap: onIncrease,
+        ),
+      ],
     );
   }
 }
 
 class _StepCircle extends StatelessWidget {
-  const _StepCircle({required this.icon, required this.onTap});
+  const _StepCircle({
+    required this.icon,
+    required this.onTap,
+    this.enabled = true,
+  });
   final IconData icon;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -4289,23 +4266,31 @@ class _StepCircle extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         customBorder: const CircleBorder(),
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         child: Container(
-          width: 40,
-          height: 40,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
-            color: AppColors.accent.withValues(alpha: 0.1),
+            color: enabled
+                ? AppColors.accent.withValues(alpha: 0.1)
+                : AppColors.border.withValues(alpha: 0.4),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: Icon(icon, size: 18, color: AppColors.accent),
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled
+                ? AppColors.accent
+                : AppColors.textMuted.withValues(alpha: 0.6),
+          ),
         ),
       ),
     );
   }
 }
 
-/// Tappable note / details row.
+/// Tappable note / details row (flat — no inner card).
 class _NoteTile extends StatelessWidget {
   const _NoteTile({required this.note, required this.onTap});
   final String note;
@@ -4317,29 +4302,24 @@ class _NoteTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF4F6FA),
-            borderRadius: BorderRadius.circular(14),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.1),
+                  color: AppColors.accent.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
                   Icons.notes_rounded,
-                  size: 16,
+                  size: 17,
                   color: AppColors.accent,
                 ),
               ),
@@ -4354,13 +4334,12 @@ class _NoteTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            isEmpty ? FontWeight.w700 : FontWeight.w600,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
                         color: isEmpty
-                            ? AppColors.textPrimary.withValues(alpha: 0.5)
+                            ? AppColors.textPrimary.withValues(alpha: 0.55)
                             : AppColors.textPrimary,
-                        letterSpacing: -0.2,
+                        letterSpacing: -0.3,
                         fontFamily: 'Manrope',
                       ),
                     ),
@@ -4369,7 +4348,7 @@ class _NoteTile extends StatelessWidget {
                       const Text(
                         'Tell guests what to bring or where to meet',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textSecondary,
                           fontFamily: 'Manrope',
@@ -4379,6 +4358,7 @@ class _NoteTile extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 6),
               Icon(
                 isEmpty ? Icons.add_rounded : Icons.edit_rounded,
                 size: 18,
@@ -4440,23 +4420,18 @@ class _StickyCreateBar extends StatelessWidget {
             // Live preview row
             Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(14),
-              ),
+                  const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.18),
+                      color: accent.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child:
-                        Icon(category.icon, size: 16, color: accent),
+                    child: Icon(category.icon, size: 14, color: accent),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
