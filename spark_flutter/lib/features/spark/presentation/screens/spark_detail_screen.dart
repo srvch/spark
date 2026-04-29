@@ -1521,30 +1521,8 @@ class _CountdownBadgeState extends State<_CountdownBadge>
   }
 }
 
-class _MetaInline extends StatelessWidget {
-  const _MetaInline({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
 
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-}
+
 
 class _OnMyWayButton extends ConsumerWidget {
   const _OnMyWayButton({required this.sparkId});

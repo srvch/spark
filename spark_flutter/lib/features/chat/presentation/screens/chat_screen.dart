@@ -107,7 +107,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ...moderation.removedUserIds,
     };
 
-    final thread = ref.watch(chatThreadsProvider(widget.spark.id));
+    final thread = ref.watch(chatThreadsProvider((widget.spark.id, currentUserId)));
+
+    // Auto-scroll when history first arrives.
+    ref.listen(chatThreadsProvider((widget.spark.id, currentUserId)),
+        (prev, next) {
+      if ((prev == null || prev.isEmpty) && next.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(
+                _scrollController.position.maxScrollExtent);
+          }
+        });
+      }
+    });
     final messages =
         [
           ...thread,
@@ -258,25 +271,63 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             // ── Message list ──────────────────────────────────────────
             Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final message = messages[index];
-                  final showSender =
-                      index == 0 ||
-                      messages[index - 1].senderId != message.senderId;
-                  final isLast =
-                      index == messages.length - 1 ||
-                      messages[index + 1].senderId != message.senderId;
-                  return _MessageBubble(
-                    message: message,
-                    showSender: showSender,
-                    isLast: isLast,
-                  );
-                },
-              ),
+              child: messages.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.accentSurface,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 34,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No messages yet',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Be the first to say hi!',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      itemCount: _buildMessageItems(messages).length,
+                      itemBuilder: (context, index) {
+                        final item = _buildMessageItems(messages)[index];
+                        if (item is _DateSeparatorItem) {
+                          return _buildDateSeparator(item.label);
+                        }
+                        final entry = item as _MessageItem;
+                        return _MessageBubble(
+                          message: entry.message,
+                          showSender: entry.showSender,
+                          isLast: entry.isLast,
+                        );
+                      },
+                    ),
             ),
             // ── Quick replies ─────────────────────────────────────────
             Container(
@@ -381,50 +432,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  // ── Message helpers ───────────────────────────────────────────────────────
+  // ── Date separator helpers ────────────────────────────────────────────────
 
-  List<ChatMessage> _initialMessages({
-    required Spark spark,
-    required String currentUserId,
-    required String currentUserName,
-  }) {
-    final hostName =
-        spark.createdBy == currentUserId ? currentUserName : 'Spark host';
-    return [
-      ChatMessage(
-        id: 'init_1',
-        senderId: spark.createdBy,
-        sender: hostName,
-        text: 'I am at the location.',
-        isMine: spark.createdBy == currentUserId,
-        timeLabel: '6:12 PM',
-        isHost: true,
-      ),
-      ChatMessage(
-        id: 'init_2',
-        senderId: currentUserId,
-        sender: currentUserName,
-        text: 'Running 10 min late',
-        isMine: true,
-        timeLabel: '6:13 PM',
-        isHost: spark.createdBy == currentUserId,
-      ),
-      ChatMessage(
-        id: 'init_3',
-        senderId: 'p_1',
-        sender: _nameFromInitial('SN', 1),
-        text: 'Got it. Reaching in 5.',
-        isMine: false,
-        timeLabel: '6:14 PM',
-      ),
-    ];
+  List<Object> _buildMessageItems(List<ChatMessage> messages) {
+    final items = <Object>[];
+    for (var i = 0; i < messages.length; i++) {
+      final msg = messages[i];
+      final prev = i > 0 ? messages[i - 1] : null;
+      if (prev == null ||
+          !_isSameDay(prev.createdAt, msg.createdAt)) {
+        items.add(_DateSeparatorItem(_dateLabelFor(msg.createdAt)));
+      }
+      final showSender =
+          i == 0 || messages[i - 1].senderId != msg.senderId;
+      final isLast =
+          i == messages.length - 1 ||
+          messages[i + 1].senderId != msg.senderId;
+      items.add(_MessageItem(msg, showSender: showSender, isLast: isLast));
+    }
+    return items;
   }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  String _dateLabelFor(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final date = DateTime(dt.year, dt.month, dt.day);
+    if (date == today) return 'Today';
+    if (date == yesterday) return 'Yesterday';
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${months[dt.month - 1]} ${dt.day}';
+  }
+
+  Widget _buildDateSeparator(String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          const Expanded(
+              child: Divider(height: 1, color: AppColors.cardDivider)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const Expanded(
+              child: Divider(height: 1, color: AppColors.cardDivider)),
+        ],
+      ),
+    );
+  }
+
+  // ── Host controls sheet ───────────────────────────────────────────────────
 
   void _sendMessage(String currentUserId, String currentUserName) {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    ref.read(chatThreadsProvider(widget.spark.id).notifier).sendMessage(text);
+    ref
+        .read(chatThreadsProvider((widget.spark.id, currentUserId)).notifier)
+        .sendMessage(text);
 
     ref
         .read(analyticsServiceProvider)
@@ -443,8 +523,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
   }
-
-  // ── Host controls sheet ───────────────────────────────────────────────────
 
   Future<void> _openHostControls(
     BuildContext context,
@@ -692,32 +770,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context,
     ).showSnackBar(const SnackBar(content: Text('Participant blocked')));
   }
-
-  String _formatNow() {
-    final now = TimeOfDay.now();
-    final hour = now.hourOfPeriod == 0 ? 12 : now.hourOfPeriod;
-    final min = now.minute.toString().padLeft(2, '0');
-    final suffix = now.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour:$min $suffix';
-  }
-
-  static String _nameFromInitial(String raw, int index) {
-    const fallback = ['Rahul', 'Sneha', 'Aditya', 'Meera', 'Karan', 'Priya'];
-    if (raw.trim().length > 2) return raw;
-    if (raw.trim().isEmpty) return fallback[index % fallback.length];
-    final upper = raw.trim().toUpperCase();
-    return switch (upper) {
-      'AA' => 'Aarav',
-      'RK' => 'Rohan',
-      'SN' => 'Sneha',
-      'VK' => 'Vikram',
-      'TJ' => 'Tanvi',
-      'PS' => 'Pranav',
-      'MD' => 'Madhav',
-      'AN' => 'Ananya',
-      _ => fallback[index % fallback.length],
-    };
-  }
 }
 
 // ── Data types ────────────────────────────────────────────────────────────────
@@ -727,6 +779,19 @@ class _ChatUser {
   final String id;
   final String name;
   final bool isHost;
+}
+
+class _DateSeparatorItem {
+  const _DateSeparatorItem(this.label);
+  final String label;
+}
+
+class _MessageItem {
+  const _MessageItem(this.message,
+      {required this.showSender, required this.isLast});
+  final ChatMessage message;
+  final bool showSender;
+  final bool isLast;
 }
 
 // ── Message bubble ────────────────────────────────────────────────────────────

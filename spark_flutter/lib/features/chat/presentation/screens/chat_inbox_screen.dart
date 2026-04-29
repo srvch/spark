@@ -289,25 +289,5 @@ class _Badge extends StatelessWidget {
   }
 }
 
-class _HeaderAction extends StatelessWidget {
-  const _HeaderAction({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSubtle,
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: Icon(icon, size: 19, color: AppColors.accent),
-      ),
-    );
-  }
-}
+

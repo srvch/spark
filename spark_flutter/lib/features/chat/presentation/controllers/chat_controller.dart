@@ -15,6 +15,7 @@ class ChatMessage {
     required this.text,
     required this.isMine,
     required this.timeLabel,
+    required this.createdAt,
     this.isHost = false,
     this.isAi = false,
   });
@@ -25,29 +26,39 @@ class ChatMessage {
   final String text;
   final bool isMine;
   final String timeLabel;
+  final DateTime createdAt;
   final bool isHost;
   final bool isAi;
 }
 
+// Family key: (sparkId, currentUserId)
 final chatThreadsProvider = StateNotifierProvider.family<
   ChatThreadNotifier,
   List<ChatMessage>,
-  String
->((ref, sparkId) {
-  return ChatThreadNotifier(ref.watch(chatApiRepositoryProvider), sparkId);
+  (String, String)
+>((ref, params) {
+  final (sparkId, currentUserId) = params;
+  return ChatThreadNotifier(
+    ref.watch(chatApiRepositoryProvider),
+    sparkId,
+    currentUserId,
+  );
 });
 
 class ChatThreadNotifier extends StateNotifier<List<ChatMessage>> {
-  ChatThreadNotifier(this._repository, this._sparkId) : super([]) {
+  ChatThreadNotifier(this._repository, this._sparkId, this._currentUserId)
+      : super([]) {
     fetchHistory();
   }
 
   final ChatApiRepository _repository;
   final String _sparkId;
+  final String _currentUserId;
 
   Future<void> fetchHistory() async {
     try {
       final page = await _repository.fetchChatHistory(sparkId: _sparkId);
+      // API returns newest-first; reverse so oldest is at top of the list.
       state = page.items.map(_toUiMessage).toList().reversed.toList();
     } catch (_) {}
   }
@@ -60,19 +71,30 @@ class ChatThreadNotifier extends StateNotifier<List<ChatMessage>> {
   }
 
   ChatMessage _toUiMessage(domain.ChatMessage msg) {
-    final senderLabel =
-        msg.senderId.length >= 4
+    final isMe = msg.senderId == _currentUserId;
+    final senderLabel = isMe
+        ? 'You'
+        : (msg.senderId.length >= 4
             ? 'User ${msg.senderId.substring(0, 4)}'
-            : 'User';
+            : 'User');
     return ChatMessage(
       id: msg.id,
       senderId: msg.senderId,
       sender: senderLabel,
       text: msg.text,
-      isMine: false, // In production, check against current user ID
-      timeLabel: '${msg.createdAt.hour}:${msg.createdAt.minute}',
+      isMine: isMe,
+      timeLabel: _formatTimestamp(msg.createdAt),
+      createdAt: msg.createdAt,
       isAi: msg.isAi,
     );
+  }
+
+  static String _formatTimestamp(DateTime dt) {
+    final hour =
+        dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final suffix = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $suffix';
   }
 }
 

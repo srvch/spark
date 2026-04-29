@@ -32,7 +32,7 @@ class CreateSparkScreen extends ConsumerStatefulWidget {
 
 class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
   final TextEditingController _planController = TextEditingController(
-    text: 'Cricket at 6 near Central Park',
+    text: '',
   );
   final TextEditingController _manualTitleController = TextEditingController();
   final TextEditingController _manualLocationController =
@@ -120,7 +120,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
         ref.read(selectedLocationProvider.notifier).state =
             _prefillLocationToApply!;
       }
-      _scheduleAiParse();
       unawaited(ref.read(socialControllerProvider).refreshAll());
     });
   }
@@ -162,8 +161,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     }
 
     final manualPlan = _manualDraft();
-    final validationMessage = _manualValidationMessage();
-    final ctaHint = null;
     final dynamicSuggestions = _smartSuggestions(selectedLocation);
     final manualLocation =
         _manualLocationController.text.trim().isEmpty
@@ -477,7 +474,12 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                     const SizedBox(width: 8),
                                     _QuickChoiceChip(
                                       label: 'Custom',
-                                      selected: false,
+                                      selected: (() {
+                                        final diff = _manualStartsAt()
+                                            .difference(DateTime.now())
+                                            .inMinutes;
+                                        return diff > 65;
+                                      })(),
                                       onTap: _editManualTime,
                                     ),
                                   ],
@@ -775,21 +777,6 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (ctaHint != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    ctaHint,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color:
-                          _isManualMode
-                              ? AppColors.dangerText
-                              : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
               PrimaryButton(
                 label:
                     _isCreatingSpark

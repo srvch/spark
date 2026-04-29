@@ -412,7 +412,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.accent,
+                                      color: AppColors.errorText,
                                     ),
                                   ),
                                 ),

@@ -17,7 +17,7 @@ final selectedRadiusProvider = StateProvider<int>((ref) => 5);
 final selectedSortProvider = StateProvider<SparkSort>(
   (ref) => SparkSort.nearest,
 );
-final selectedLocationProvider = StateProvider<String>((ref) => 'Indiranagar');
+final selectedLocationProvider = StateProvider<String>((ref) => 'Near you');
 
 /// Holds an optional groupId for pre-filling "Create Spark" from a group screen
 final sparkCreationContextProvider = StateProvider<String?>((ref) => null);
@@ -34,11 +34,23 @@ final savedLocationsProvider = Provider<List<String>>((ref) {
 });
 
 final recentLocationsProvider = Provider<List<String>>((ref) {
-  return const ['Indiranagar', 'Koramangala', 'City Center'];
+  return const ['Downtown', 'City Center', 'Campus'];
 });
 
 final locationCatalogProvider = Provider<List<String>>((ref) {
   return const [
+    'Current location',
+    'Central Park',
+    'Downtown',
+    'City Center',
+    'Campus',
+    'Airport',
+    'Main Gate',
+    'Hostel Area',
+    'Metro Station',
+    'Library',
+    'Sports Ground',
+    'Shopping Mall',
     'Indiranagar',
     'Koramangala',
     'HSR Layout',
@@ -50,17 +62,8 @@ final locationCatalogProvider = Provider<List<String>>((ref) {
     'Bellandur',
     'JP Nagar',
     'Jayanagar',
-    'Yelahanka',
     'Hebbal',
     'Sarjapur Road',
-    'Central Park',
-    'Library Circle',
-    'Main Gate',
-    'Hostel Area',
-    'Metro Exit Gate',
-    'City Center',
-    'Downtown',
-    'Airport Terminal 3',
   ];
 });
 
