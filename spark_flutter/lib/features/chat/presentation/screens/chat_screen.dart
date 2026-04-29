@@ -172,103 +172,90 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ),
         titleSpacing: 2,
-        title: Row(
-          children: [
-            // Category badge
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: _categoryBgColor(widget.spark.category),
-                borderRadius: BorderRadius.circular(12),
+        title: GestureDetector(
+          onTap: () => _openInfoPanel(context, participants, moderation),
+          child: Row(
+            children: [
+              // Spark logo
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.accentSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/images/spark_logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('⚡', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                _categoryEmoji(widget.spark.category),
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.spark.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: _kNavy,
-                            fontFamily: 'Manrope',
-                          ),
-                        ),
-                      ),
-                      if (isLocked) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.pillSurface,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Locked',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.mutedIcon,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.spark.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: _kNavy,
+                              fontFamily: 'Manrope',
                             ),
                           ),
                         ),
+                        if (isLocked) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.pillSurface,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Locked',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.mutedIcon,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  Text(
-                    '$visibleCount ${visibleCount == 1 ? 'person' : 'people'} · ${widget.spark.timeLabel}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textMuted,
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (isHost)
-            IconButton(
-              tooltip: 'Host controls',
-              onPressed: () =>
-                  _openHostControls(context, participants, moderation),
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.shield_outlined,
-                      color: _kNavy, size: 21),
-                  if (isLocked)
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF97316),
-                          shape: BoxShape.circle,
-                        ),
+                    Text(
+                      '$visibleCount ${visibleCount == 1 ? 'person' : 'people'} · ${widget.spark.timeLabel}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
+          ),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Spark info',
+            onPressed: () =>
+                _openInfoPanel(context, participants, moderation),
+            icon: const Icon(Icons.info_outline_rounded,
+                color: _kNavy, size: 22),
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -479,28 +466,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return _kSenderPalette[hash % _kSenderPalette.length];
   }
 
-  static String _categoryEmoji(SparkCategory? cat) {
-    return switch (cat) {
-      SparkCategory.sports  => '⚽',
-      SparkCategory.study   => '📚',
-      SparkCategory.ride    => '🛵',
-      SparkCategory.events  => '🎉',
-      SparkCategory.hangout => '☕',
-      _                     => '⚡',
-    };
-  }
-
-  static Color _categoryBgColor(SparkCategory? cat) {
-    return switch (cat) {
-      SparkCategory.sports  => AppColors.catSports,
-      SparkCategory.study   => AppColors.catStudy,
-      SparkCategory.ride    => AppColors.catRide,
-      SparkCategory.events  => AppColors.catEvents,
-      SparkCategory.hangout => AppColors.catHangout,
-      _                     => AppColors.accentSurface,
-    };
-  }
-
   List<Object> _buildItems(List<ChatMessage> messages) {
     final items = <Object>[];
     for (var i = 0; i < messages.length; i++) {
@@ -567,8 +532,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
-  // ── Host controls ─────────────────────────────────────────────────────────
-  Future<void> _openHostControls(
+  // ── Spark info / participants panel (WhatsApp-style) ─────────────────────
+  Future<void> _openInfoPanel(
     BuildContext context,
     List<_ChatUser> users,
     ChatModerationState moderation,
@@ -584,194 +549,170 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             final locked = ref
                 .read(lockedSparkIdsProvider)
                 .contains(widget.spark.id);
-            final members = users
-                .where((u) => u.id != widget.spark.createdBy)
-                .toList();
+            final isHost =
+                widget.spark.createdBy ==
+                ref.read(currentUserIdProvider);
 
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.65,
+              minChildSize: 0.4,
+              maxChildSize: 0.92,
+              builder: (ctx, scrollCtrl) {
+                return ListView(
+                  controller: scrollCtrl,
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.accentSurface,
-                            borderRadius:
-                                BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                              Icons.shield_outlined,
-                              color: _kNavy,
-                              size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        const Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Host controls',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: _kNavy,
-                                fontFamily: 'Manrope',
-                              ),
-                            ),
-                            Text(
-                              'Manage participants & settings',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Lock toggle
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceDim,
-                        borderRadius:
-                            BorderRadius.circular(14),
-                        border: Border.all(
-                            color: AppColors.cardBorder),
-                      ),
-                      child: Row(
+                    // ── Spark header ─────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      child: Column(
                         children: [
+                          // Logo
                           Container(
-                            width: 36,
-                            height: 36,
+                            width: 72,
+                            height: 72,
                             decoration: BoxDecoration(
-                              color: locked
-                                  ? AppColors.pillSurface
-                                  : AppColors.accentSurface,
+                              color: AppColors.accentSurface,
                               borderRadius:
-                                  BorderRadius.circular(10),
+                                  BorderRadius.circular(20),
                             ),
-                            child: Icon(
-                              locked
-                                  ? Icons.lock_rounded
-                                  : Icons.lock_open_rounded,
-                              size: 18,
-                              color: locked
-                                  ? AppColors.mutedIcon
-                                  : _kNavy,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  locked
-                                      ? 'Spark is locked'
-                                      : 'Lock spark',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: _kNavy,
-                                    fontFamily: 'Manrope',
-                                  ),
-                                ),
-                                Text(
-                                  locked
-                                      ? 'No new members can join'
-                                      : 'Stop new members joining',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                              ],
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              'assets/images/spark_logo.png',
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const Center(
+                                child: Text('⚡',
+                                    style:
+                                        TextStyle(fontSize: 32)),
+                              ),
                             ),
                           ),
-                          Switch(
-                            value: locked,
-                            activeColor: _kNavy,
-                            onChanged: (val) {
-                              _toggleLock(val);
-                              setSheetState(() {});
-                            },
+                          const SizedBox(height: 12),
+                          Text(
+                            widget.spark.title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _kNavy,
+                              fontFamily: 'Manrope',
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Meta pills
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              _InfoPill(
+                                icon: Icons.schedule_rounded,
+                                label: widget.spark.timeLabel,
+                              ),
+                              _InfoPill(
+                                icon: Icons.location_on_rounded,
+                                label: widget.spark.location,
+                              ),
+                              _InfoPill(
+                                icon: Icons.category_rounded,
+                                label: widget.spark.category.label,
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
 
-                    if (members.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      const Text(
-                        'PARTICIPANTS',
-                        style: TextStyle(
+                    const Divider(height: 1, indent: 20, endIndent: 20),
+
+                    // ── Lock toggle (host only) ───────────────────
+                    if (isHost) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            20, 16, 20, 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Lock spark',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: _kNavy,
+                                      fontFamily: 'Manrope',
+                                    ),
+                                  ),
+                                  Text(
+                                    locked
+                                        ? 'No new members can join'
+                                        : 'Allow new members to join',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: locked,
+                              activeColor: _kNavy,
+                              onChanged: (val) {
+                                _toggleLock(val);
+                                setSheetState(() {});
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, indent: 20, endIndent: 20),
+                    ],
+
+                    // ── Participants ──────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          20, 16, 20, 8),
+                      child: Text(
+                        '${users.length} PARTICIPANT${users.length == 1 ? '' : 'S'}',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: AppColors.mutedIcon,
                           letterSpacing: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      ...members.map((user) {
-                        final removed = moderation
-                            .removedUserIds
-                            .contains(user.id);
-                        final blocked = moderation
-                            .blockedUserIds
-                            .contains(user.id);
-                        return _HostControlRow(
-                          user: user,
-                          removed: removed,
-                          blocked: blocked,
-                          onRemove: () {
-                            _removeUser(user.id);
-                            Navigator.of(ctx).pop();
-                          },
-                          onBlock: () {
-                            _blockUser(user.id);
-                            Navigator.of(ctx).pop();
-                          },
-                        );
-                      }),
-                    ] else ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 14),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceDim,
-                          borderRadius:
-                              BorderRadius.circular(14),
-                          border: Border.all(
-                              color: AppColors.cardBorder),
-                        ),
-                        child: const Text(
-                          'No participants yet. They appear once they join.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
+                    ...users.map((user) {
+                      final removed = moderation
+                          .removedUserIds
+                          .contains(user.id);
+                      final blocked = moderation
+                          .blockedUserIds
+                          .contains(user.id);
+                      return _ParticipantRow(
+                        user: user,
+                        removed: removed,
+                        blocked: blocked,
+                        canManage: isHost && !user.isHost,
+                        onRemove: () {
+                          _removeUser(user.id);
+                          Navigator.of(ctx).pop();
+                        },
+                        onBlock: () {
+                          _blockUser(user.id);
+                          Navigator.of(ctx).pop();
+                        },
+                      );
+                    }),
                   ],
-                ),
-              ),
+                );
+              },
             );
           },
         );
@@ -1073,11 +1014,8 @@ class _MessageBubble extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // Avatar: only on last bubble in a group
-          SizedBox(
-            width: 32,
-            child: isLast ? _Avatar(name: message.sender) : null,
-          ),
+          // Avatar: always shown for incoming messages
+          _Avatar(name: message.sender),
           const SizedBox(width: 6),
           Flexible(
             child: Column(
@@ -1310,13 +1248,50 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-// ── Host control row ──────────────────────────────────────────────────────────
+// ── Info pill (for spark meta in the info panel) ──────────────────────────────
 
-class _HostControlRow extends StatelessWidget {
-  const _HostControlRow({
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceDim,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.cardDivider),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.accent),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: _kNavy,
+              fontFamily: 'Manrope',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Participant row (WhatsApp-style) ─────────────────────────────────────────
+
+class _ParticipantRow extends StatelessWidget {
+  const _ParticipantRow({
     required this.user,
     required this.removed,
     required this.blocked,
+    required this.canManage,
     required this.onRemove,
     required this.onBlock,
   });
@@ -1324,17 +1299,18 @@ class _HostControlRow extends StatelessWidget {
   final _ChatUser user;
   final bool removed;
   final bool blocked;
+  final bool canManage;
   final VoidCallback onRemove;
   final VoidCallback onBlock;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
           _Avatar(name: user.name),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1360,6 +1336,7 @@ class _HostControlRow extends StatelessWidget {
               ],
             ),
           ),
+          // Status or actions
           if (removed || blocked)
             Container(
               padding: const EdgeInsets.symmetric(
@@ -1371,53 +1348,34 @@ class _HostControlRow extends StatelessWidget {
               child: Text(
                 removed ? 'Removed' : 'Blocked',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: AppColors.mutedIcon,
                 ),
               ),
             )
-          else ...[
-            GestureDetector(
-              onTap: onRemove,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.pillSurface,
-                  borderRadius: BorderRadius.circular(8),
+          else if (canManage)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded,
+                  size: 20, color: AppColors.mutedIcon),
+              onSelected: (val) {
+                if (val == 'remove') onRemove();
+                if (val == 'block') onBlock();
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'remove',
+                  child: Text('Remove from spark'),
                 ),
-                child: const Text(
-                  'Remove',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.mutedIcon,
+                const PopupMenuItem(
+                  value: 'block',
+                  child: Text(
+                    'Block',
+                    style: TextStyle(color: AppColors.errorText),
                   ),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(width: 6),
-            GestureDetector(
-              onTap: onBlock,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.errorSurface,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Block',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.errorText,
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

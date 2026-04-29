@@ -887,25 +887,27 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   List<String> _smartSuggestions(String selectedLocation) {
     final hour = DateTime.now().hour;
-    final near = selectedLocation;
+    final isGeneric = selectedLocation == 'Near you' ||
+        selectedLocation == 'Current location';
+    final loc = isGeneric ? '' : ' near $selectedLocation';
     if (hour < 11) {
       return [
-        'Morning run near $near',
-        'Chai now near $near',
-        'Interview prep in 2 hrs near $near',
+        'Morning run$loc',
+        'Chai catch-up now$loc',
+        'Interview prep in 2 hrs$loc',
       ];
     }
     if (hour < 17) {
       return [
-        'Lunch hangout near $near',
-        'Study sprint in 1 hr near $near',
-        'Ride to office in 30 min from $near',
+        'Lunch hangout$loc',
+        'Study sprint in 1 hr$loc',
+        'Ride to office in 30 min$loc',
       ];
     }
     return [
-      'Cricket at 6 near $near',
-      'Coffee catch-up now near $near',
-      'Evening walk near $near',
+      'Cricket at 6$loc',
+      'Coffee catch-up now$loc',
+      'Evening walk$loc',
     ];
   }
 
