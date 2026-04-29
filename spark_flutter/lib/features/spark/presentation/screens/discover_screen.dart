@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/auth/auth_state.dart';
+import '../../../../core/services/search_history_service.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../features/notifications/presentation/screens/notification_screen.dart';
 import '../../../../features/profile/presentation/screens/profile_screen.dart';
@@ -1319,28 +1320,19 @@ class _HeroBannerSearch extends StatelessWidget {
 }
 
 // ── Full-screen search page — Swiggy-style ─────────────────────────────────
-class _SearchScreen extends StatefulWidget {
+class _SearchScreen extends ConsumerStatefulWidget {
   const _SearchScreen({required this.initialQuery});
   final String initialQuery;
 
   @override
-  State<_SearchScreen> createState() => _SearchScreenState();
+  ConsumerState<_SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<_SearchScreen> {
+class _SearchScreenState extends ConsumerState<_SearchScreen> {
   late final TextEditingController _ctrl = TextEditingController(
     text: widget.initialQuery,
   );
   String _query = '';
-
-  static const _recentTags = [
-    'Cricket',
-    'Coffee',
-    'Study',
-    'Cycling',
-    'Drive',
-    'Badminton',
-  ];
 
   @override
   void initState() {
@@ -1356,6 +1348,9 @@ class _SearchScreenState extends State<_SearchScreen> {
 
   void _submit(String value) {
     final q = value.trim();
+    if (q.isNotEmpty) {
+      ref.read(searchHistoryProvider.notifier).add(q);
+    }
     Navigator.of(context).pop(q.toLowerCase());
   }
 
@@ -1465,79 +1460,116 @@ class _SearchScreenState extends State<_SearchScreen> {
               ),
               const SizedBox(height: 24),
               // ── Recently searched ─────────────────────────────────
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'RECENTLY SEARCHED',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children:
-                      _recentTags.map((tag) {
-                        final isActive =
-                            _query.toLowerCase() == tag.toLowerCase();
-                        return GestureDetector(
-                          onTap: () => _submit(tag),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  isActive
-                                      ? _kHeroActionBlue
-                                      : AppColors.chipSelectedBg,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color:
-                                    isActive
-                                        ? _kHeroActionBlueDeep
-                                        : AppColors.chipBorder,
-                                width: 1,
+              Builder(builder: (context) {
+                final history = ref.watch(searchHistoryProvider);
+                if (history.isEmpty) return const SizedBox.shrink();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'RECENTLY SEARCHED',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textSecondary,
+                                letterSpacing: 0.8,
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.history_rounded,
-                                  size: 13,
-                                  color:
-                                      isActive
-                                          ? Colors.white
-                                          : AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  tag,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color:
-                                        isActive
-                                            ? Colors.white
-                                            : AppColors.textPrimary,
-                                  ),
-                                ),
-                              ],
+                          ),
+                          GestureDetector(
+                            onTap: () => ref
+                                .read(searchHistoryProvider.notifier)
+                                .clear(),
+                            child: const Text(
+                              'Clear all',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.accent,
+                              ),
                             ),
                           ),
-                        );
-                      }).toList(),
-                ),
-              ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: history.map((tag) {
+                          final isActive =
+                              _query.toLowerCase() == tag.toLowerCase();
+                          return GestureDetector(
+                            onTap: () => _submit(tag),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? _kHeroActionBlue
+                                    : AppColors.chipSelectedBg,
+                                borderRadius:
+                                    BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: isActive
+                                      ? _kHeroActionBlueDeep
+                                      : AppColors.chipBorder,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.history_rounded,
+                                    size: 13,
+                                    color: isActive
+                                        ? Colors.white
+                                        : AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    tag,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isActive
+                                          ? Colors.white
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: () => ref
+                                        .read(searchHistoryProvider
+                                            .notifier)
+                                        .remove(tag),
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 13,
+                                      color: isActive
+                                          ? Colors.white
+                                              .withValues(alpha: 0.7)
+                                          : AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                );
+              }),
             ],
           ),
         ),

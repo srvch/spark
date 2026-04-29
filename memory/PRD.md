@@ -19,6 +19,46 @@
 ## Completed Work
 
 ### Session 1 – Pre-launch Bug Fixes & Polish (Feb 2026)
+_(see full list above)_
+
+### Session 2 – Chat Revamp + Launch Readiness (Feb 2026)
+
+#### Chat — WhatsApp-Quality Revamp
+- Full rewrite of `chat_screen.dart` in correct **light theme** with gray canvas `#F0F2F5`
+- WhatsApp-style bubble tails, white incoming bubbles with shadow, navy own bubbles
+- Category emoji badge in app bar, colored sender names per-user, avatars
+- Animated mic→send button, multi-line input, double-tick sent indicator
+- Chat inbox also revamped (emoji badges, light theme consistency)
+
+#### Haptic Feedback + Pop Animation
+- `HapticFeedback.lightImpact()` on every message send
+- `_PopIn` widget: `AnimationController` with `Curves.easeOutBack` (slight overshoot)
+  wraps every `_MessageBubble` via `ValueKey(message.id)` — plays once on entry
+- File: `chat_screen.dart`
+
+#### Optimistic Message UI
+- `isPending: bool` added to `ChatMessage` model (default `false`)
+- `sendMessage()` now adds temp message instantly with `isPending: true`  
+- On API success: replaces temp with confirmed server message
+- On API failure: removes temp (user sees message disappear = send failed)
+- Pending indicator: small `CircularProgressIndicator` instead of double-tick
+- File: `chat_controller.dart`
+
+#### Real Geocoding (`_coordsFor()`)
+- Replaced hardcoded Bangalore-only lookup with async geocoding
+- "Near you" / "Current location" → `Geolocator.getCurrentPosition()` with permission flow
+- Named locations → `geocoding.locationFromAddress()` (platform native geocoding)
+- Fallback: Bangalore center `(12.9716, 77.5946)` if both fail
+- All 4 callers (`refreshNearby`, `fetchNextNearbyPage`, `createSpark`, `updateSpark`) updated to `await`
+- File: `spark_controller.dart`
+
+#### Persistent Recent Searches
+- New `SearchHistoryService` backed by `SharedPreferences` (key: `spark_recent_searches`, max 8)
+- `searchHistoryProvider` (StateNotifierProvider) loads on init, updates on add/remove/clear
+- `_SearchScreen` converted from `StatefulWidget` → `ConsumerStatefulWidget`
+- Each history chip shows a × delete button + "Clear all" link
+- Saves on every explicit search submit (not on back navigation)
+- File: `search_history_service.dart` (new), `discover_screen.dart`
 
 #### Bug Fixes
 1. **Chat `isMine` always `false`** (CRITICAL)

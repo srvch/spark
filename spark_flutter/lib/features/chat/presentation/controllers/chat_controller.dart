@@ -18,6 +18,7 @@ class ChatMessage {
     required this.createdAt,
     this.isHost = false,
     this.isAi = false,
+    this.isPending = false,
   });
 
   final String id;
@@ -29,6 +30,8 @@ class ChatMessage {
   final DateTime createdAt;
   final bool isHost;
   final bool isAi;
+  /// true while the message is being sent (optimistic UI)
+  final bool isPending;
 }
 
 // Family key: (sparkId, currentUserId)
@@ -64,10 +67,32 @@ class ChatThreadNotifier extends StateNotifier<List<ChatMessage>> {
   }
 
   Future<void> sendMessage(String text) async {
+    // ── Optimistic: show message immediately ────────────────────────────────
+    final tempId = 'pending_${DateTime.now().millisecondsSinceEpoch}';
+    final optimistic = ChatMessage(
+      id: tempId,
+      senderId: _currentUserId,
+      sender: 'You',
+      text: text,
+      isMine: true,
+      timeLabel: _formatTimestamp(DateTime.now()),
+      createdAt: DateTime.now(),
+      isPending: true,
+    );
+    state = [...state, optimistic];
+
     try {
-      final sent = await _repository.sendMessage(sparkId: _sparkId, text: text);
-      state = [...state, _toUiMessage(sent)];
-    } catch (_) {}
+      final sent =
+          await _repository.sendMessage(sparkId: _sparkId, text: text);
+      // Replace optimistic entry with confirmed server message
+      state = [
+        ...state.where((m) => m.id != tempId),
+        _toUiMessage(sent),
+      ];
+    } catch (_) {
+      // Remove failed optimistic message so user knows it didn't send
+      state = state.where((m) => m.id != tempId).toList();
+    }
   }
 
   ChatMessage _toUiMessage(domain.ChatMessage msg) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/analytics/analytics_service.dart';
@@ -318,12 +319,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           return _DateSeparatorWidget(label: item.label);
                         }
                         final entry = item as _MessageItem;
-                        return _MessageBubble(
-                          message: entry.message,
-                          showSender: entry.showSender,
-                          isLast: entry.isLast,
-                          senderColor:
-                              _senderColor(entry.message.senderId),
+                        return _PopIn(
+                          key: ValueKey(entry.message.id),
+                          child: _MessageBubble(
+                            message: entry.message,
+                            showSender: entry.showSender,
+                            isLast: entry.isLast,
+                            senderColor:
+                                _senderColor(entry.message.senderId),
+                          ),
                         );
                       },
                     ),
@@ -551,6 +555,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
 
     _inputController.clear();
+    HapticFeedback.lightImpact(); // tactile confirm on send
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -1031,12 +1036,22 @@ class _MessageBubble extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 3),
-                      Icon(
-                        Icons.done_all_rounded,
-                        size: 13,
-                        color:
-                            Colors.white.withValues(alpha: 0.55),
-                      ),
+                      if (message.isPending)
+                        SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        )
+                      else
+                        Icon(
+                          Icons.done_all_rounded,
+                          size: 13,
+                          color:
+                              Colors.white.withValues(alpha: 0.55),
+                        ),
                     ],
                   ),
                 ],
@@ -1204,6 +1219,55 @@ class _MessageBubble extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Pop-in animation wrapper ──────────────────────────────────────────────────
+/// Plays a quick scale + fade entrance when a widget first appears.
+class _PopIn extends StatefulWidget {
+  const _PopIn({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<_PopIn> createState() => _PopInState();
+}
+
+class _PopInState extends State<_PopIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
+  late final Animation<double> _scale = CurvedAnimation(
+    parent: _ctrl,
+    curve: Curves.easeOutBack,
+  );
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _ctrl,
+    curve: Curves.easeOut,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: ScaleTransition(
+        scale: _scale,
+        child: widget.child,
       ),
     );
   }

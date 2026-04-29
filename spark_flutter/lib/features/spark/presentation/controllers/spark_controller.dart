@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geocoding/geocoding.dart' as geo;
+import 'package:geolocator/geolocator.dart';
 
 import '../../data/plan_parse_api_repository.dart';
 import '../../data/places_autocomplete_service.dart';
@@ -247,7 +249,7 @@ class SparkDataController {
     ref.read(nearbyHasMoreProvider.notifier).state = false;
     try {
       final location = ref.read(selectedLocationProvider);
-      final (lat, lng) = _coordsFor(location);
+      final (lat, lng) = await _coordsFor(location);
       final radius = radiusKm ?? ref.read(selectedRadiusProvider).toDouble();
       final page = await ref
           .read(sparkApiRepositoryProvider)
@@ -285,7 +287,7 @@ class SparkDataController {
     ref.read(sparksLoadingMoreProvider.notifier).state = true;
     try {
       final location = ref.read(selectedLocationProvider);
-      final (lat, lng) = _coordsFor(location);
+      final (lat, lng) = await _coordsFor(location);
       final radius = radiusKm ?? ref.read(selectedRadiusProvider).toDouble();
       final nextPage = ref.read(nearbyPageProvider) + 1;
       final page = await ref
@@ -434,7 +436,7 @@ class SparkDataController {
       );
     }
     final location = ref.read(selectedLocationProvider);
-    final (lat, lng) = _coordsFor(
+    final (lat, lng) = await _coordsFor(
       locationName == 'Nearby' ? location : locationName,
     );
     final created = await ref
@@ -492,7 +494,7 @@ class SparkDataController {
     DateTime? recurrenceEndDate,
   }) async {
     final location = ref.read(selectedLocationProvider);
-    final (lat, lng) = _coordsFor(
+    final (lat, lng) = await _coordsFor(
       locationName == 'Nearby' ? location : locationName,
     );
     final updated = await ref
@@ -607,13 +609,39 @@ class SparkDataController {
     }
   }
 
-  (double, double) _coordsFor(String location) {
-    final lower = location.toLowerCase();
-    if (lower.contains('koramangala')) return (12.9352, 77.6245);
-    if (lower.contains('indiranagar')) return (12.9784, 77.6408);
-    if (lower.contains('whitefield')) return (12.9698, 77.7499);
-    if (lower.contains('electronic')) return (12.8456, 77.6603);
-    if (lower.contains('hsr')) return (12.9116, 77.6474);
+  Future<(double, double)> _coordsFor(String location) async {
+    final lower = location.toLowerCase().trim();
+
+    // ── Device GPS for "near you" / "current location" ─────────────────────
+    if (lower == 'near you' || lower == 'current location') {
+      try {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          var perm = await Geolocator.checkPermission();
+          if (perm == LocationPermission.denied) {
+            perm = await Geolocator.requestPermission();
+          }
+          if (perm == LocationPermission.whileInUse ||
+              perm == LocationPermission.always) {
+            final pos = await Geolocator.getCurrentPosition(
+              desiredAccuracy: LocationAccuracy.medium,
+              timeLimit: const Duration(seconds: 5),
+            );
+            return (pos.latitude, pos.longitude);
+          }
+        }
+      } catch (_) {}
+    }
+
+    // ── Platform geocoding for named places ─────────────────────────────────
+    try {
+      final results = await geo.locationFromAddress(location);
+      if (results.isNotEmpty) {
+        return (results.first.latitude, results.first.longitude);
+      }
+    } catch (_) {}
+
+    // ── Last-resort fallback ─────────────────────────────────────────────────
     return (12.9716, 77.5946);
   }
 
