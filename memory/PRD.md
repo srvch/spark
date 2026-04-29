@@ -119,6 +119,13 @@ _(see full list above)_
 - [ ] App Store / Play Store submission checklist
 - [ ] iOS build + TestFlight distribution
 
+### Session 3 – Create Spark Screen Polish (Feb 2026)
+- Title field: visible border + `maxLength: 60` (silent)
+- Time confirmation: live "Starting at 6:30 PM today" below chips
+- Location & Note rows: bordered `surfaceDim` containers — clearly tappable
+- Category chips: now show emoji (`⚽ Sports`, `📚 Study`, `🛵 Ride`, `🎉 Events`, `☕ Hangout`)
+- 2 suggestion chips shown (up from 1); `_smartSuggestions()` returns 3 per time-slot
+
 ## P2 / Future
 - [ ] Read receipts in chat
 - [ ] Scroll-to-bottom FAB when user has scrolled up in chat

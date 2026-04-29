@@ -193,6 +193,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             controller: _manualTitleController,
                             onChanged: (_) => setState(() {}),
                             maxLines: 1,
+                            maxLength: 60,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -206,15 +207,31 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                 ),
                                 fontWeight: FontWeight.w500,
                               ),
+                              counterText: '',
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 12,
                               ),
                               filled: true,
-                              fillColor: AppColors.background,
+                              fillColor: AppColors.surfaceDim,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                                borderSide: const BorderSide(
+                                  color: AppColors.cardBorder,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.cardBorder,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: _kActionBlue,
+                                  width: 1.5,
+                                ),
                               ),
                             ),
                           ),
@@ -226,7 +243,7 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             runSpacing: 8,
                             children:
                                 dynamicSuggestions
-                                    .take(1)
+                                    .take(2)
                                     .map(
                                       (label) => _SuggestionChip(
                                         label: label,
@@ -269,7 +286,8 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                                           right: 8,
                                         ),
                                         child: _QuickChoiceChip(
-                                          label: c.label,
+                                          label:
+                                              '${_categoryEmoji(c)} ${c.label}',
                                           selected: c == _manualCategory,
                                           onTap:
                                               () => setState(() {
@@ -488,6 +506,31 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                             ),
                           ],
                         ),
+                        // Time confirmation feedback
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6, left: 2),
+                          child: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.textSecondary,
+                                fontFamily: 'Manrope',
+                              ),
+                              children: [
+                                const TextSpan(text: 'Starting '),
+                                TextSpan(
+                                  text: _previewTimeLabel(
+                                    _manualStartsAt(),
+                                  ),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: _kActionBlue,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 10),
                         const Text(
                           'Place / Venue',
@@ -509,8 +552,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.background,
+                              color: AppColors.surfaceDim,
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.cardBorder),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -589,9 +633,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surfaceDim,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: AppColors.cardBorder),
                             ),
                             child: const Text(
                               'Anyone can join',
@@ -637,8 +681,9 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
                               vertical: 12,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.background,
+                              color: AppColors.surfaceDim,
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.cardBorder),
                             ),
                             child: Row(
                               children: [
@@ -817,6 +862,14 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
 
   static Color _categoryAccentColor(SparkCategory cat) => cat.accentColor;
 
+  static String _categoryEmoji(SparkCategory cat) => switch (cat) {
+    SparkCategory.sports  => '⚽',
+    SparkCategory.study   => '📚',
+    SparkCategory.ride    => '🛵',
+    SparkCategory.events  => '🎉',
+    SparkCategory.hangout => '☕',
+  };
+
   static IconData _categoryIcon(SparkCategory cat) => switch (cat) {
     SparkCategory.sports => Icons.directions_run_rounded,
     SparkCategory.study => Icons.auto_stories_rounded,
@@ -836,15 +889,24 @@ class _CreateSparkScreenState extends ConsumerState<CreateSparkScreen> {
     final hour = DateTime.now().hour;
     final near = selectedLocation;
     if (hour < 11) {
-      return ['Interview prep in 2 hours near $near', 'Chai now near $near'];
+      return [
+        'Morning run near $near',
+        'Chai now near $near',
+        'Interview prep in 2 hrs near $near',
+      ];
     }
     if (hour < 17) {
       return [
+        'Lunch hangout near $near',
+        'Study sprint in 1 hr near $near',
         'Ride to office in 30 min from $near',
-        'Study sprint in 1 hour near $near',
       ];
     }
-    return ['Cricket at 6 near $near', 'Coffee catch-up now near $near'];
+    return [
+      'Cricket at 6 near $near',
+      'Coffee catch-up now near $near',
+      'Evening walk near $near',
+    ];
   }
 
   Future<void> _pickCircles() async {
